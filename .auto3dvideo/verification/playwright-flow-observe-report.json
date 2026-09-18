@@ -1,0 +1,331 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "ready",
+  "projectUrl": "https://flow.google.com/project/2e6bbd85-88d8-415c-8d72-0dcbf29a9658",
+  "targetUrl": "https://flow.google.com/project/2e6bbd85-88d8-415c-8d72-0dcbf29a9658",
+  "mode": "observe",
+  "screenshotPath": ".auto3dvideo/verification/playwright-flow-observe.png",
+  "operation": "playwright_observe_flow",
+  "observed": {
+    "url": "https://flow.google.com/project/2e6bbd85-88d8-415c-8d72-0dcbf29a9658",
+    "title": "Google Flow project",
+    "controls": [
+      {
+        "role": "link",
+        "label": "Skip to main content",
+        "disabled": false,
+        "rect": {
+          "x": 8,
+          "y": -889,
+          "width": 182,
+          "height": 42
+        }
+      },
+      {
+        "role": "link",
+        "label": "apps_spark_2 Tools",
+        "disabled": false,
+        "rect": {
+          "x": 16,
+          "y": 237,
+          "width": 215,
+          "height": 48
+        }
+      },
+      {
+        "role": "link",
+        "label": "delete Trash",
+        "disabled": false,
+        "rect": {
+          "x": 16,
+          "y": 740,
+          "width": 215,
+          "height": 48
+        }
+      },
+      {
+        "role": "button",
+        "label": "Download batch",
+        "disabled": false,
+        "rect": {
+          "x": 1442,
+          "y": -358,
+          "width": 28,
+          "height": 28
+        }
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "disabled": false,
+        "rect": {
+          "x": 1472,
+          "y": -358,
+          "width": 28,
+          "height": 28
+        }
+      },
+      {
+        "role": "button",
+        "label": "Trash batch",
+        "disabled": false,
+        "rect": {
+          "x": 1502,
+          "y": -358,
+          "width": 28,
+          "height": 28
+        }
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "disabled": false,
+        "rect": {
+          "x": 1766,
+          "y": -307,
+          "width": 34,
+          "height": 34
+        }
+      },
+      {
+        "role": "button",
+        "label": "Expand prompt",
+        "disabled": false,
+        "rect": {
+          "x": 1800,
+          "y": -307,
+          "width": 34,
+          "height": 34
+        }
+      },
+      {
+        "role": "button",
+        "label": "Download batch",
+        "disabled": false,
+        "rect": {
+          "x": 1442,
+          "y": 13,
+          "width": 28,
+          "height": 28
+        }
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "disabled": false,
+        "rect": {
+          "x": 1472,
+          "y": 13,
+          "width": 28,
+          "height": 28
+        }
+      },
+      {
+        "role": "button",
+        "label": "Trash batch",
+        "disabled": false,
+        "rect": {
+          "x": 1502,
+          "y": 13,
+          "width": 28,
+          "height": 28
+        }
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "disabled": false,
+        "rect": {
+          "x": 1766,
+          "y": 64,
+          "width": 34,
+          "height": 34
+        }
+      },
+      {
+        "role": "button",
+        "label": "Expand prompt",
+        "disabled": false,
+        "rect": {
+          "x": 1800,
+          "y": 64,
+          "width": 34,
+          "height": 34
+        }
+      },
+      {
+        "role": "button",
+        "label": "Download batch",
+        "disabled": false,
+        "rect": {
+          "x": 1442,
+          "y": 384,
+          "width": 28,
+          "height": 28
+        }
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "disabled": false,
+        "rect": {
+          "x": 1472,
+          "y": 384,
+          "width": 28,
+          "height": 28
+        }
+      },
+      {
+        "role": "button",
+        "label": "Trash batch",
+        "disabled": false,
+        "rect": {
+          "x": 1502,
+          "y": 384,
+          "width": 28,
+          "height": 28
+        }
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "disabled": false,
+        "rect": {
+          "x": 1766,
+          "y": 435,
+          "width": 34,
+          "height": 34
+        }
+      },
+      {
+        "role": "button",
+        "label": "Expand prompt",
+        "disabled": false,
+        "rect": {
+          "x": 1800,
+          "y": 435,
+          "width": 34,
+          "height": 34
+        }
+      },
+      {
+        "role": "div",
+        "label": "editable control",
+        "disabled": false,
+        "rect": {
+          "x": 679,
+          "y": 776,
+          "width": 528,
+          "height": 20
+        }
+      },
+      {
+        "role": "button",
+        "label": "Expand",
+        "disabled": false,
+        "rect": {
+          "x": 1219,
+          "y": 768,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "role": "button",
+        "label": "Add ingredients to the prompt box",
+        "disabled": false,
+        "rect": {
+          "x": 671,
+          "y": 816,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "role": "button",
+        "label": "Agent",
+        "disabled": false,
+        "rect": {
+          "x": 713,
+          "y": 818,
+          "width": 63,
+          "height": 28
+        }
+      },
+      {
+        "role": "button",
+        "label": "Agent instructions",
+        "disabled": false,
+        "rect": {
+          "x": 1147,
+          "y": 816,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "role": "button",
+        "label": "Settings",
+        "disabled": false,
+        "rect": {
+          "x": 1183,
+          "y": 816,
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "role": "button",
+        "label": "Start generation",
+        "disabled": true,
+        "rect": {
+          "x": 1219,
+          "y": 816,
+          "width": 32,
+          "height": 32
+        }
+      }
+    ],
+    "batches": [
+      {
+        "index": 0,
+        "visible": true,
+        "hasShotId": true,
+        "hasRevisionId": false,
+        "shotIds": [
+          "SHOT-001"
+        ],
+        "revisionIds": [],
+        "downloadControlCount": 1
+      },
+      {
+        "index": 1,
+        "visible": true,
+        "hasShotId": false,
+        "hasRevisionId": false,
+        "shotIds": [],
+        "revisionIds": [],
+        "downloadControlCount": 1
+      },
+      {
+        "index": 2,
+        "visible": true,
+        "hasShotId": true,
+        "hasRevisionId": true,
+        "shotIds": [
+          "SHOT-001"
+        ],
+        "revisionIds": [
+          "rev-001."
+        ],
+        "downloadControlCount": 1
+      }
+    ],
+    "controlCount": 25,
+    "batchCount": 3,
+    "axNodeCount": 210,
+    "domNodeCount": 1148,
+    "screenshotCaptured": true
+  },
+  "message": "Đã đọc Flow bằng screenshot, Accessibility tree và DOMSnapshot; chưa click control."
+}

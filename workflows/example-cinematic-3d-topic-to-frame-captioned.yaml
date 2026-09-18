@@ -1,0 +1,130 @@
+schema_version: "1.0.0"
+workflow_id: "cinematic-3d-topic-to-frame-captioned"
+name: "Cinematic 3D: topic to frame-locked captioned delivery"
+profile: "hybrid"
+inputs:
+  brief: "examples/minimal-3d-video/brief.md"
+  language: "vi-VN"
+  aspect_ratio: "9:16"
+  frame_rate: 30
+  duration_seconds: 30
+provider_defaults:
+  llm: llm_director
+  vision: llm_vision
+  image: image_local
+  render3d: blender_local
+  tts: voice_primary
+  stt: stt_local
+  media: media_local
+policy:
+  dry_run_default: true
+  paid_generation: false
+  external_publish: false
+  rights_required: true
+  voice_rights_required: true
+  max_retries_per_shot: 2
+  max_gpu_jobs: 1
+stages:
+  - id: normalize_brief
+    type: brief.normalize
+    executor: mock
+    resource: cpu
+    outputs: [01-brief/normalized-brief.json]
+  - id: research_topic
+    type: topic.research
+    depends_on: [normalize_brief]
+    executor: mock
+    resource: network
+    approval: required
+    outputs: [01-brief/research-ledger.json]
+  - id: director_plan
+    type: director.plan
+    depends_on: [research_topic]
+    executor: provider_adapter
+    resource: cpu
+    model_profile: llm_director
+    approval: required
+    outputs: [01-brief/script.json, 01-brief/style-bible.json, 01-brief/shot-plan.json]
+  - id: prepare_reference_assets
+    type: asset.reference_prepare
+    depends_on: [director_plan]
+    executor: provider_adapter
+    resource: paid_api
+    model_profile: image_local
+    approval: required
+    outputs: [02-assets/reference-manifest.json, 02-assets/prompt-pack.json]
+  - id: register_assets
+    type: asset.register
+    depends_on: [prepare_reference_assets]
+    executor: mock
+    resource: io_heavy
+    outputs: [02-assets/asset-registry.json, 02-assets/rights-ledger.json]
+  - id: build_blender_scene
+    type: render.scene_build
+    depends_on: [register_assets]
+    executor: blender
+    operation: scene.build
+    resource: gpu
+    model_profile: blender_local
+    approval: required
+    outputs: [03-blender/scene.blend, 03-blender/scene-manifest.json, 03-blender/edit-plan.json]
+  - id: render_3d_preview
+    type: render.preview
+    depends_on: [build_blender_scene]
+    executor: blender
+    operation: render.preview
+    resource: gpu
+    model_profile: blender_local
+    outputs: [03-blender/preview/]
+  - id: render_3d_master
+    type: render.final
+    depends_on: [render_3d_preview]
+    executor: blender
+    operation: render.final
+    resource: gpu
+    model_profile: blender_local
+    approval: required
+    outputs: [04-media/frames/]
+  - id: synthesize_voice
+    type: audio.voiceover
+    depends_on: [director_plan]
+    executor: provider_adapter
+    resource: paid_api
+    model_profile: voice_primary
+    approval: required
+    outputs: [04-media/voice/voiceover.wav, 04-media/voice/voice-manifest.json]
+  - id: align_transcript
+    type: caption.align
+    depends_on: [synthesize_voice, director_plan]
+    executor: provider_adapter
+    resource: cpu_heavy
+    model_profile: stt_local
+    outputs: [05-caption/alignment.json]
+  - id: lock_captions_to_frames
+    type: caption.frame_lock
+    depends_on: [align_transcript, render_3d_master]
+    executor: mock
+    resource: cpu
+    outputs: [05-caption/frame-caption-plan.json, 05-caption/captions.vi-VN.srt]
+  - id: compose_master
+    type: media.compose
+    depends_on: [render_3d_master, synthesize_voice, lock_captions_to_frames]
+    executor: ffmpeg
+    operation: mux
+    resource: cpu_heavy
+    model_profile: media_local
+    outputs: [06-delivery/master-captioned.mp4, 06-delivery/timeline.json]
+  - id: quality_gate
+    type: quality.gate
+    depends_on: [compose_master]
+    executor: interactive
+    resource: interactive
+    approval: required
+    outputs: [06-delivery/quality-report.json]
+  - id: delivery_package
+    type: delivery.package
+    depends_on: [quality_gate]
+    executor: mock
+    resource: io_heavy
+    approval: required
+    outputs: [06-delivery/manifest.json]

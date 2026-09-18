@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/provider-result.schema.json",
+  "title": "Auto3Dvideo Normalized Provider Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "requestId", "status", "attempt", "outputs", "evidence"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "requestId": {"type": "string", "minLength": 1, "maxLength": 100},
+    "status": {"type": "string", "enum": ["queued", "running", "succeeded", "retryable", "blocked", "failed", "cancelled"]},
+    "attempt": {"type": "integer", "minimum": 1, "maximum": 10},
+    "providerJobId": {"type": ["string", "null"], "maxLength": 300},
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assetId", "mediaKind", "path", "sha256"],
+        "properties": {
+          "assetId": {"type": "string"},
+          "mediaKind": {"type": "string"},
+          "path": {"type": "string"},
+          "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+          "mimeType": {"type": ["string", "null"]},
+          "durationSeconds": {"type": ["number", "null"], "minimum": 0}
+        }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pricingMode", "currency", "estimated", "actual"],
+      "properties": {
+        "pricingMode": {"type": "string"},
+        "currency": {"type": "string", "minLength": 3, "maxLength": 3},
+        "estimated": {"type": ["number", "null"], "minimum": 0},
+        "actual": {"type": ["number", "null"], "minimum": 0},
+        "receiptRef": {"type": ["string", "null"]}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["providerId", "profileId", "model", "termsReviewed", "requestHash"],
+      "properties": {
+        "providerId": {"type": "string"},
+        "profileId": {"type": "string"},
+        "model": {"type": "string"},
+        "termsReviewed": {"type": "boolean"},
+        "termsSource": {"type": ["string", "null"], "format": "uri"},
+        "requestHash": {"type": "string"},
+        "receivedAt": {"type": "string", "format": "date-time"}
+      }
+    },
+    "error": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["code", "retryable", "safeMessage"],
+      "properties": {
+        "code": {"type": "string"},
+        "retryable": {"type": "boolean"},
+        "safeMessage": {"type": "string"}
+      }
+    }
+  }
+}

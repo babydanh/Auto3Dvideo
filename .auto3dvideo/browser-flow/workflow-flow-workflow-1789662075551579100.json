@@ -1,0 +1,1452 @@
+{
+  "schemaVersion": "1.0.0",
+  "workflowId": "flow-workflow-1789662075551579100",
+  "projectId": "project-default",
+  "name": "Tạo một video cinematic 3D dài khoảng 60 giây, 12 shot, tỉ lệ 16:9, chủ đề: “Hắc · Google Flow workflow",
+  "provider": "browsermcp-google-flow",
+  "targetUrl": "https://labs.google/fx/tools/flow",
+  "phase": "waiting_user",
+  "discoveryStatus": "ready",
+  "discoveryPath": ".auto3dvideo/reports/browsermcp-snapshot-run_1789662097187784500.json",
+  "handoffId": null,
+  "sessionId": "video-session-1789650831022801100",
+  "providerProjectIdentity": {
+    "providerProjectKey": "2d478b58-f5fa-4606-baef-71425ab7476c",
+    "providerProjectLabel": "Google Flow project 2d478b58-f5fa-4606-baef-71425ab7476c",
+    "currentUrl": "https://flow.google.com/project/2d478b58-f5fa-4606-baef-71425ab7476c",
+    "evidenceHash": "e2c424addf83293f1192dc7510a173c6c30d104275121882409592d804b62a7c",
+    "observedAt": "1789665641"
+  },
+  "currentUrl": "https://flow.google.com/project/2d478b58-f5fa-4606-baef-71425ab7476c",
+  "projectEntryConfirmed": true,
+  "pinnedBrowserTarget": {
+    "providerProjectKey": "2d478b58-f5fa-4606-baef-71425ab7476c",
+    "providerProjectLabel": "Google Flow project 2d478b58-f5fa-4606-baef-71425ab7476c",
+    "pinnedUrl": "https://flow.google.com/project/2d478b58-f5fa-4606-baef-71425ab7476c",
+    "evidenceHash": "e2c424addf83293f1192dc7510a173c6c30d104275121882409592d804b62a7c",
+    "pinnedAt": "1789665478"
+  },
+  "currentStep": 30,
+  "route": [
+    {
+      "stepId": "discover-open-target",
+      "name": "Đọc tab Google Flow đang Connect",
+      "operation": "snapshot",
+      "capability": "safe_discovery",
+      "state": "succeeded",
+      "requiresUser": false,
+      "toolName": "browser_snapshot",
+      "note": "Giữ nguyên tab đã Connect; không tự điều hướng khỏi project hiện tại (https://labs.google/fx/tools/flow)"
+    },
+    {
+      "stepId": "discover-read-tab",
+      "name": "Quét cấu trúc tab lần đầu",
+      "operation": "snapshot",
+      "capability": "discovery",
+      "state": "succeeded",
+      "requiresUser": false,
+      "toolName": "browser_snapshot",
+      "note": "Chỉ lưu capability và ref UI giới hạn; không lưu nội dung trang/cookie/token"
+    },
+    {
+      "stepId": "project-select-or-create",
+      "name": "Xác định project / flow hiện tại",
+      "operation": "snapshot",
+      "capability": "route_learning",
+      "state": "succeeded",
+      "requiresUser": true,
+      "toolName": "browser_snapshot",
+      "note": "Nếu snapshot là trang Flow ngoài project, app chỉ bấm ref Start Creating/New project được xác nhận rồi đọc lại URL project mới."
+    },
+    {
+      "stepId": "project-create",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "capability": "provider_project_identity",
+      "state": "waiting_user",
+      "requiresUser": false,
+      "toolName": "browser_snapshot",
+      "note": "Tự tạo/mở project bằng UI ref mới trong snapshot; chỉ tiếp tục khi URL /project/<id> được xác nhận."
+    },
+    {
+      "stepId": "prompt-enter",
+      "name": "Nạp prompt vào Flow",
+      "operation": "type",
+      "capability": "prompt_input",
+      "state": "waiting_user",
+      "requiresUser": false,
+      "toolName": "browser_type",
+      "note": "Tự chạy sau discovery nếu snapshot có ref textbox; dừng rõ nếu không tìm thấy ô prompt"
+    },
+    {
+      "stepId": "asset-attach",
+      "name": "Gắn asset theo ID",
+      "operation": "manual_upload",
+      "capability": "manual_file_upload",
+      "state": "waiting_user",
+      "requiresUser": true,
+      "toolName": null,
+      "note": "BrowserMCP v0.1.3 không có upload_file; app mở đúng Ingredients, chờ file chooser và chỉ xác nhận sau snapshot có evidence."
+    },
+    {
+      "stepId": "generate-video",
+      "name": "Duyệt tạo video Omni",
+      "operation": "click",
+      "capability": "paid_or_external_generation",
+      "state": "waiting_user",
+      "requiresUser": true,
+      "toolName": "browser_click",
+      "note": "Luôn cần người dùng duyệt trước khi click Generate; chi phí/quyền phải được kiểm tra"
+    },
+    {
+      "stepId": "review-result",
+      "name": "Quét trạng thái kết quả",
+      "operation": "snapshot",
+      "capability": "review_only",
+      "state": "waiting_user",
+      "requiresUser": true,
+      "toolName": "browser_snapshot",
+      "note": "BrowserMCP v0.1.3 không có download_file; sau khi bạn bấm Download trên Flow, app quét Downloads và nhập file local có kiểm tra."
+    }
+  ],
+  "roadmap": [
+    {
+      "milestoneId": "roadmap-discovery",
+      "name": "Quét và học route Google Flow",
+      "status": "succeeded",
+      "dependsOn": [],
+      "processId": "process-step-1789665638898091000",
+      "evidence": ".auto3dvideo/reports/browsermcp-wait-run_1789665638898667100.json",
+      "nextAction": "Bước an toàn đã xong; kiểm tra roadmap để tiếp tục."
+    },
+    {
+      "milestoneId": "roadmap-project",
+      "name": "Xác định project / không gian làm việc",
+      "status": "waiting_user",
+      "dependsOn": [
+        "roadmap-discovery"
+      ],
+      "processId": "process-step-1789665469768478000",
+      "evidence": ".auto3dvideo/reports/browsermcp-click_project-run_1789665469769056000.json",
+      "nextAction": "Roadmap đã chuyển mốc; kiểm tra điều kiện và xác nhận bước kế tiếp."
+    },
+    {
+      "milestoneId": "roadmap-prompt",
+      "name": "Chuẩn bị và nạp prompt của shot hiện tại",
+      "status": "blocked",
+      "dependsOn": [
+        "roadmap-project"
+      ],
+      "processId": "process-step-1789665641331995900",
+      "evidence": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665641332578100.json",
+      "nextAction": "Chat/Agent route không được coi là image/video composer."
+    },
+    {
+      "milestoneId": "roadmap-assets",
+      "name": "Tạo và gắn asset cho đúng shot",
+      "status": "pending",
+      "dependsOn": [
+        "roadmap-prompt"
+      ],
+      "processId": null,
+      "evidence": null,
+      "nextAction": "Chọn đúng reference/asset của shot hiện tại, đọc lại snapshot để xác nhận thumbnail/tên file; không dùng asset lịch sử hoặc asset của shot khác."
+    },
+    {
+      "milestoneId": "roadmap-generate",
+      "name": "Chờ, tải và kiểm tra output từng shot",
+      "status": "pending",
+      "dependsOn": [
+        "roadmap-assets"
+      ],
+      "processId": null,
+      "evidence": null,
+      "nextAction": "Chỉ Generate sau khi được duyệt; chờ output của shot hiện tại, mở đúng menu output và tải đúng file rồi mới chuyển review."
+    },
+    {
+      "milestoneId": "roadmap-review",
+      "name": "Review, duyệt và mới chuyển shot kế tiếp",
+      "status": "pending",
+      "dependsOn": [
+        "roadmap-generate"
+      ],
+      "processId": null,
+      "evidence": null,
+      "nextAction": "Xác nhận file mới đúng shot, nhập và kiểm tra local; chờ duyệt rồi mới quay lại bước prompt cho shot tiếp theo. Chỉ ghép video sau khi đủ shot."
+    }
+  ],
+  "availableTools": [
+    "tabs",
+    "tab_groups",
+    "history",
+    "navigate",
+    "snapshot",
+    "diff",
+    "act",
+    "download",
+    "upload",
+    "read",
+    "grep",
+    "screenshot",
+    "pdf",
+    "wait",
+    "windows",
+    "evaluate",
+    "run",
+    "connector_mcp_servers",
+    "discover_server_categories_or_actions",
+    "get_category_actions",
+    "get_action_details",
+    "execute_action",
+    "search_documentation",
+    "handle_auth_failure"
+  ],
+  "uiRefs": [
+    {
+      "role": "link",
+      "label": "Skip to main content",
+      "reference": "e1"
+    },
+    {
+      "role": "button",
+      "label": "Home",
+      "reference": "e2"
+    },
+    {
+      "role": "textbox",
+      "label": "Editable text",
+      "reference": "e3"
+    },
+    {
+      "role": "button",
+      "label": "More options for the project",
+      "reference": "e4"
+    },
+    {
+      "role": "button",
+      "label": "Search",
+      "reference": "e5"
+    },
+    {
+      "role": "textbox",
+      "label": "Search",
+      "reference": "e6"
+    },
+    {
+      "role": "button",
+      "label": "Filtering and sorting options",
+      "reference": "e7"
+    },
+    {
+      "role": "button",
+      "label": "Add media menu",
+      "reference": "e8"
+    },
+    {
+      "role": "button",
+      "label": "Product help",
+      "reference": "e9"
+    },
+    {
+      "role": "button",
+      "label": "Tile grid settings",
+      "reference": "e10"
+    },
+    {
+      "role": "button",
+      "label": "More options",
+      "reference": "e11"
+    },
+    {
+      "role": "button",
+      "label": "Account details",
+      "reference": "e12"
+    },
+    {
+      "role": "button",
+      "label": "Google Account: sigma6969 whynot (sigmawhynot08@gmail.com), Google membership",
+      "reference": "e13"
+    },
+    {
+      "role": "generic",
+      "label": "generic",
+      "reference": "e14"
+    },
+    {
+      "role": "generic",
+      "label": "generic",
+      "reference": "e15"
+    },
+    {
+      "role": "generic",
+      "label": "generic",
+      "reference": "e16"
+    },
+    {
+      "role": "generic",
+      "label": "generic",
+      "reference": "e17"
+    },
+    {
+      "role": "link",
+      "label": "Tools",
+      "reference": "e18"
+    },
+    {
+      "role": "link",
+      "label": "Trash",
+      "reference": "e19"
+    },
+    {
+      "role": "generic",
+      "label": "generic",
+      "reference": "e20"
+    },
+    {
+      "role": "generic",
+      "label": "generic",
+      "reference": "e21"
+    },
+    {
+      "role": "button",
+      "label": "Retry",
+      "reference": "e318"
+    },
+    {
+      "role": "button",
+      "label": "Reuse prompt",
+      "reference": "e319"
+    },
+    {
+      "role": "button",
+      "label": "Delete",
+      "reference": "e320"
+    },
+    {
+      "role": "button",
+      "label": "Open session history",
+      "reference": "e195"
+    },
+    {
+      "role": "button",
+      "label": "Start new session",
+      "reference": "e196"
+    },
+    {
+      "role": "button",
+      "label": "Close",
+      "reference": "e37"
+    },
+    {
+      "role": "generic",
+      "label": "generic",
+      "reference": "e197"
+    },
+    {
+      "role": "button",
+      "label": "Good response",
+      "reference": "e198"
+    },
+    {
+      "role": "button",
+      "label": "Bad response",
+      "reference": "e199"
+    },
+    {
+      "role": "button",
+      "label": "Copy",
+      "reference": "e200"
+    },
+    {
+      "role": "button",
+      "label": "Flag output",
+      "reference": "e201"
+    },
+    {
+      "role": "button",
+      "label": "Open image in editor",
+      "reference": "e202"
+    },
+    {
+      "role": "button",
+      "label": "Good response",
+      "reference": "e203"
+    },
+    {
+      "role": "button",
+      "label": "Bad response",
+      "reference": "e204"
+    },
+    {
+      "role": "button",
+      "label": "Copy",
+      "reference": "e205"
+    },
+    {
+      "role": "button",
+      "label": "Flag output",
+      "reference": "e206"
+    },
+    {
+      "role": "button",
+      "label": "Open image in editor",
+      "reference": "e207"
+    },
+    {
+      "role": "button",
+      "label": "Good response",
+      "reference": "e208"
+    },
+    {
+      "role": "button",
+      "label": "Bad response",
+      "reference": "e209"
+    },
+    {
+      "role": "button",
+      "label": "Copy",
+      "reference": "e210"
+    },
+    {
+      "role": "button",
+      "label": "Flag output",
+      "reference": "e211"
+    },
+    {
+      "role": "button",
+      "label": "Show thinking",
+      "reference": "e212"
+    },
+    {
+      "role": "button",
+      "label": "Open image in editor",
+      "reference": "e213"
+    },
+    {
+      "role": "button",
+      "label": "Good response",
+      "reference": "e214"
+    },
+    {
+      "role": "button",
+      "label": "Bad response",
+      "reference": "e215"
+    },
+    {
+      "role": "button",
+      "label": "Copy",
+      "reference": "e216"
+    },
+    {
+      "role": "button",
+      "label": "Flag output",
+      "reference": "e217"
+    },
+    {
+      "role": "button",
+      "label": "Open image in editor",
+      "reference": "e218"
+    },
+    {
+      "role": "button",
+      "label": "Good response",
+      "reference": "e219"
+    },
+    {
+      "role": "button",
+      "label": "Bad response",
+      "reference": "e220"
+    },
+    {
+      "role": "button",
+      "label": "Copy",
+      "reference": "e221"
+    },
+    {
+      "role": "button",
+      "label": "Flag output",
+      "reference": "e222"
+    },
+    {
+      "role": "button",
+      "label": "Open image in editor",
+      "reference": "e223"
+    },
+    {
+      "role": "button",
+      "label": "Good response",
+      "reference": "e224"
+    },
+    {
+      "role": "button",
+      "label": "Bad response",
+      "reference": "e225"
+    },
+    {
+      "role": "button",
+      "label": "Copy",
+      "reference": "e226"
+    },
+    {
+      "role": "button",
+      "label": "Flag output",
+      "reference": "e227"
+    },
+    {
+      "role": "button",
+      "label": "Open image in editor",
+      "reference": "e228"
+    },
+    {
+      "role": "button",
+      "label": "Good response",
+      "reference": "e229"
+    },
+    {
+      "role": "button",
+      "label": "Bad response",
+      "reference": "e230"
+    },
+    {
+      "role": "button",
+      "label": "Copy",
+      "reference": "e231"
+    },
+    {
+      "role": "button",
+      "label": "Flag output",
+      "reference": "e232"
+    },
+    {
+      "role": "button",
+      "label": "Open image in editor",
+      "reference": "e233"
+    },
+    {
+      "role": "button",
+      "label": "Good response",
+      "reference": "e234"
+    },
+    {
+      "role": "button",
+      "label": "Bad response",
+      "reference": "e235"
+    },
+    {
+      "role": "button",
+      "label": "Copy",
+      "reference": "e236"
+    },
+    {
+      "role": "button",
+      "label": "Flag output",
+      "reference": "e237"
+    },
+    {
+      "role": "button",
+      "label": "Open image in editor",
+      "reference": "e238"
+    },
+    {
+      "role": "button",
+      "label": "Good response",
+      "reference": "e239"
+    },
+    {
+      "role": "button",
+      "label": "Bad response",
+      "reference": "e240"
+    },
+    {
+      "role": "button",
+      "label": "Copy",
+      "reference": "e241"
+    },
+    {
+      "role": "button",
+      "label": "Flag output",
+      "reference": "e242"
+    },
+    {
+      "role": "button",
+      "label": "Open image in editor",
+      "reference": "e243"
+    },
+    {
+      "role": "button",
+      "label": "Good response",
+      "reference": "e244"
+    },
+    {
+      "role": "button",
+      "label": "Bad response",
+      "reference": "e245"
+    },
+    {
+      "role": "button",
+      "label": "Copy",
+      "reference": "e246"
+    },
+    {
+      "role": "button",
+      "label": "Flag output",
+      "reference": "e247"
+    },
+    {
+      "role": "button",
+      "label": "Open image in editor",
+      "reference": "e248"
+    },
+    {
+      "role": "button",
+      "label": "Good response",
+      "reference": "e249"
+    }
+  ],
+  "visualStatePath": ".auto3dvideo/browseros/screenshots/flow-1789662098780-881df0d2fa91d8.png",
+  "assets": [
+    {
+      "assetId": "asset-shot-01",
+      "name": "SHOT-001.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-001.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "assetId": "asset-shot-02",
+      "name": "SHOT-002.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-002.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "assetId": "asset-shot-03",
+      "name": "SHOT-003.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-003.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "assetId": "asset-shot-04",
+      "name": "SHOT-004.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-004.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "assetId": "asset-shot-05",
+      "name": "SHOT-005.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-005.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "assetId": "asset-shot-06",
+      "name": "SHOT-006.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-006.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "assetId": "asset-shot-07",
+      "name": "SHOT-007.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-007.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "assetId": "asset-shot-08",
+      "name": "SHOT-008.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-008.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "assetId": "asset-shot-09",
+      "name": "SHOT-009.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-009.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "assetId": "asset-shot-10",
+      "name": "SHOT-010.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-010.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "assetId": "asset-shot-11",
+      "name": "SHOT-011.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-011.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "assetId": "asset-shot-12",
+      "name": "SHOT-012.png",
+      "relativePath": "outputs/blender/shot-composer-preview/shots/SHOT-012.png",
+      "mediaKind": "image",
+      "role": "semantic_shot",
+      "processId": "process-discovery-1789662075551591000"
+    }
+  ],
+  "files": [
+    {
+      "fileId": "file-blender-scene",
+      "name": "Blender scene",
+      "relativePath": "outputs/blender/shot-composer-preview/multishot-previs.blend",
+      "kind": "blender_scene",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "fileId": "file-storyboard-manifest",
+      "name": "Storyboard manifest",
+      "relativePath": "outputs/blender/shot-composer-preview/shot-manifest.json",
+      "kind": "storyboard_manifest",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "fileId": "file-storyboard-preview",
+      "name": "Storyboard preview",
+      "relativePath": "outputs/blender/shot-composer-preview/preview.png",
+      "kind": "storyboard_preview",
+      "processId": "process-discovery-1789662075551591000"
+    },
+    {
+      "fileId": "file-edit-plan",
+      "name": "Edit plan",
+      "relativePath": "outputs/blender/shot-composer-preview/edit-plan.json",
+      "kind": "edit_plan",
+      "processId": "process-discovery-1789662075551591000"
+    }
+  ],
+  "downloadedFiles": [],
+  "processes": [
+    {
+      "processId": "process-discovery-1789662075551591000",
+      "name": "Browser Flow · quét route lần đầu",
+      "operation": "snapshot",
+      "state": "succeeded",
+      "stepIndex": 0,
+      "startedAt": "1789662075",
+      "updatedAt": "1789662094",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789662075557296400.json",
+      "message": "BrowserOS snapshot đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "BrowserMCP chưa trả ref textbox/button điều khiển; giữ nguyên tab và quét lại sau khi accessibility snapshot ổn định."
+    },
+    {
+      "processId": "process-wait-1789662094656957700",
+      "name": "Browser Flow · chờ tab ổn định",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 1,
+      "startedAt": "1789662094",
+      "updatedAt": "1789662097",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789662094657369000.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Tiếp tục bước discovery kế tiếp."
+    },
+    {
+      "processId": "process-map-1789662097186180700",
+      "name": "Browser Flow · đọc bản đồ UI",
+      "operation": "snapshot",
+      "state": "succeeded",
+      "stepIndex": 2,
+      "startedAt": "1789662097",
+      "updatedAt": "1789662097",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789662097187784500.json",
+      "message": "BrowserOS snapshot đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "BrowserMCP chưa trả ref textbox/button điều khiển; giữ nguyên tab và quét lại sau khi accessibility snapshot ổn định."
+    },
+    {
+      "processId": "process-wait-1789662097810059200",
+      "name": "Browser Flow · chụp visual state",
+      "operation": "screenshot",
+      "state": "succeeded",
+      "stepIndex": 3,
+      "startedAt": "1789662097",
+      "updatedAt": "1789662098",
+      "output": ".auto3dvideo/reports/browsermcp-screenshot-run_1789662097810482400.json",
+      "message": "BrowserOS screenshot đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Đã chụp fallback màn hình; terminal/workspace sẽ hiển thị đường dẫn để review."
+    },
+    {
+      "processId": "process-step-1789662098858721300",
+      "name": "Xác định project / flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 4,
+      "startedAt": "1789662098",
+      "updatedAt": "1789662099",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789662098859275900.json",
+      "message": "Snapshot đã nhận nhưng chưa có URL Google Flow /project/<id>; không coi tab hiện tại là đúng project và không cho type/click.",
+      "nextAction": "Mở đúng project Flow rồi chạy snapshot lại; không bấm Dự án mới theo nhãn chung."
+    },
+    {
+      "processId": "process-step-1789662494471036000",
+      "name": "Xác định project / flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 4,
+      "startedAt": "1789662494",
+      "updatedAt": "1789662495",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789662494472658800.json",
+      "message": "Snapshot đã nhận nhưng chưa có URL Google Flow /project/<id>; không coi tab hiện tại là đúng project và không cho type/click.",
+      "nextAction": "Mở đúng project Flow rồi chạy snapshot lại; không bấm Dự án mới theo nhãn chung."
+    },
+    {
+      "processId": "process-step-1789663183839115400",
+      "name": "Xác định project / flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 4,
+      "startedAt": "1789663183",
+      "updatedAt": "1789663184",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789663183840897800.json",
+      "message": "Snapshot đã nhận nhưng chưa có URL Google Flow /project/<id>; không coi tab hiện tại là đúng project và không cho type/click.",
+      "nextAction": "Mở đúng project Flow rồi chạy snapshot lại; không bấm Dự án mới theo nhãn chung."
+    },
+    {
+      "processId": "process-step-1789665231238796700",
+      "name": "Xác định project / flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 4,
+      "startedAt": "1789665231",
+      "updatedAt": "1789665231",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665231239306600.json",
+      "message": "Snapshot đã nhận nhưng chưa có URL Google Flow /project/<id>; không coi tab hiện tại là đúng project và không cho type/click.",
+      "nextAction": "Mở đúng project Flow rồi chạy snapshot lại; không bấm Dự án mới theo nhãn chung."
+    },
+    {
+      "processId": "process-step-1789665469433311500",
+      "name": "Xác định project / flow hiện tại",
+      "operation": "snapshot",
+      "state": "succeeded",
+      "stepIndex": 4,
+      "startedAt": "1789665469",
+      "updatedAt": "1789665469",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665469434709200.json",
+      "message": "BrowserOS snapshot đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665469768478000",
+      "name": "Browser Flow · click_project",
+      "operation": "click_project",
+      "state": "succeeded",
+      "stepIndex": 5,
+      "startedAt": "1789665469",
+      "updatedAt": "1789665475",
+      "output": ".auto3dvideo/reports/browsermcp-click_project-run_1789665469769056000.json",
+      "message": "BrowserOS click_project đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665475118734500",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 6,
+      "startedAt": "1789665475",
+      "updatedAt": "1789665477",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665475119176000.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665477552746800",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 7,
+      "startedAt": "1789665477",
+      "updatedAt": "1789665478",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665477553188100.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665549859635100",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 7,
+      "startedAt": "1789665549",
+      "updatedAt": "1789665550",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665549860157900.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665558376238500",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 7,
+      "startedAt": "1789665558",
+      "updatedAt": "1789665560",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665558376741900.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665560809122500",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 8,
+      "startedAt": "1789665560",
+      "updatedAt": "1789665561",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665560809663900.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665561339329900",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 8,
+      "startedAt": "1789665561",
+      "updatedAt": "1789665563",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665561341847900.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665563778129300",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 9,
+      "startedAt": "1789665563",
+      "updatedAt": "1789665564",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665563778636000.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665564305952800",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 9,
+      "startedAt": "1789665564",
+      "updatedAt": "1789665566",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665564306875400.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665566742775700",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 10,
+      "startedAt": "1789665566",
+      "updatedAt": "1789665567",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665566743273100.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665567372938900",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 10,
+      "startedAt": "1789665567",
+      "updatedAt": "1789665569",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665567373528900.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665569914106800",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 11,
+      "startedAt": "1789665569",
+      "updatedAt": "1789665570",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665569914690600.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665570543915900",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 11,
+      "startedAt": "1789665570",
+      "updatedAt": "1789665572",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665570544461500.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665572983946400",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 12,
+      "startedAt": "1789665572",
+      "updatedAt": "1789665573",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665572984553900.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665573610180100",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 12,
+      "startedAt": "1789665573",
+      "updatedAt": "1789665576",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665573610778800.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665576046190300",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 13,
+      "startedAt": "1789665576",
+      "updatedAt": "1789665576",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665576046912300.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665577316534500",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 13,
+      "startedAt": "1789665577",
+      "updatedAt": "1789665579",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665577317054100.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665579752182800",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 14,
+      "startedAt": "1789665579",
+      "updatedAt": "1789665580",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665579752771500.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665580873556300",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 14,
+      "startedAt": "1789665580",
+      "updatedAt": "1789665583",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665580874296100.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665583305872700",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 15,
+      "startedAt": "1789665583",
+      "updatedAt": "1789665583",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665583306436400.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665584408902300",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 15,
+      "startedAt": "1789665584",
+      "updatedAt": "1789665586",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665584409490000.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665586941579700",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 16,
+      "startedAt": "1789665586",
+      "updatedAt": "1789665587",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665586942116400.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665588215944400",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 16,
+      "startedAt": "1789665588",
+      "updatedAt": "1789665590",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665588216626900.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665590652632800",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 17,
+      "startedAt": "1789665590",
+      "updatedAt": "1789665591",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665590653224000.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665591938378700",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 17,
+      "startedAt": "1789665591",
+      "updatedAt": "1789665594",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665591938908800.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665594376177100",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 18,
+      "startedAt": "1789665594",
+      "updatedAt": "1789665595",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665594376743700.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665596368447800",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 18,
+      "startedAt": "1789665596",
+      "updatedAt": "1789665598",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665596369598500.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665598906118600",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 19,
+      "startedAt": "1789665598",
+      "updatedAt": "1789665599",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665598906754800.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665600144968600",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 19,
+      "startedAt": "1789665600",
+      "updatedAt": "1789665602",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665600145478600.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665602582193700",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 20,
+      "startedAt": "1789665602",
+      "updatedAt": "1789665603",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665602582830900.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665603663122300",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 20,
+      "startedAt": "1789665603",
+      "updatedAt": "1789665606",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665603663663700.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665606112945800",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 21,
+      "startedAt": "1789665606",
+      "updatedAt": "1789665606",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665606113574100.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665607705671900",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 21,
+      "startedAt": "1789665607",
+      "updatedAt": "1789665610",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665607706313200.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665610349960800",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 22,
+      "startedAt": "1789665610",
+      "updatedAt": "1789665611",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665610350615100.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665611766560500",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 22,
+      "startedAt": "1789665611",
+      "updatedAt": "1789665614",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665611767142900.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665614314412200",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 23,
+      "startedAt": "1789665614",
+      "updatedAt": "1789665615",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665614315053000.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665615710039200",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 23,
+      "startedAt": "1789665615",
+      "updatedAt": "1789665618",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665615710704100.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665618261319600",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 24,
+      "startedAt": "1789665618",
+      "updatedAt": "1789665619",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665618263302200.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665619843305500",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 24,
+      "startedAt": "1789665619",
+      "updatedAt": "1789665622",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665619843848000.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665622385797900",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 25,
+      "startedAt": "1789665622",
+      "updatedAt": "1789665623",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665622386510900.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665623983101500",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 25,
+      "startedAt": "1789665623",
+      "updatedAt": "1789665626",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665623983976700.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665626529772100",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 26,
+      "startedAt": "1789665626",
+      "updatedAt": "1789665627",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665626530518800.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665628086646900",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 26,
+      "startedAt": "1789665628",
+      "updatedAt": "1789665630",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665628087345700.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665630632821000",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 27,
+      "startedAt": "1789665630",
+      "updatedAt": "1789665631",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665630633489600.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665631877012700",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 27,
+      "startedAt": "1789665631",
+      "updatedAt": "1789665634",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665631877672300.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665634411685800",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 28,
+      "startedAt": "1789665634",
+      "updatedAt": "1789665634",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665634412280200.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665635455980300",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 28,
+      "startedAt": "1789665635",
+      "updatedAt": "1789665637",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665635456953700.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665637891259100",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 29,
+      "startedAt": "1789665637",
+      "updatedAt": "1789665638",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665637891893000.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    },
+    {
+      "processId": "process-step-1789665638898091000",
+      "name": "Browser Flow · wait",
+      "operation": "wait",
+      "state": "succeeded",
+      "stepIndex": 29,
+      "startedAt": "1789665638",
+      "updatedAt": "1789665641",
+      "output": ".auto3dvideo/reports/browsermcp-wait-run_1789665638898667100.json",
+      "message": "BrowserOS wait đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+      "nextAction": "Review log/output rồi chạy bước tiếp theo khi cần."
+    },
+    {
+      "processId": "process-step-1789665641331995900",
+      "name": "Chờ xác minh project Flow hiện tại",
+      "operation": "snapshot",
+      "state": "waiting_user",
+      "stepIndex": 30,
+      "startedAt": "1789665641",
+      "updatedAt": "1789665641",
+      "output": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665641332578100.json",
+      "message": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+      "nextAction": "Mở composer Nano Banana 2 hoặc Video/Text-to-video rồi snapshot lại."
+    }
+  ],
+  "uiRefCount": 80,
+  "browserSessionAttached": true,
+  "networkCallsMade": true,
+  "humanReviewRequired": true,
+  "lastMessage": "BLOCKED_CHAT_ROUTE: Flow project đã xác minh nhưng snapshot chưa có composer Nano Banana ảnh hoặc video thật; không tiếp tục.",
+  "updatedAt": "1789665641"
+}

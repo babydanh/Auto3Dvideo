@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/video-recipe.schema.json",
+  "title": "Auto3Dvideo Normalized Video Recipe",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "recipeId", "recipeKind", "frameRate", "output", "visualTracks", "audioTracks", "captionTracks", "worker", "policy"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "recipeId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"},
+    "recipeKind": {"type": "string", "enum": ["image_slideshow", "2d_motion_graphics", "html_to_video", "browser_demo_capture", "screen_demo", "ai_video_shot", "hybrid_2d_3d", "true_3d", "voiceover_package", "captioned_delivery"]},
+    "frameRate": {"type": "number", "exclusiveMinimum": 0, "maximum": 240},
+    "durationFrames": {"type": ["integer", "null"], "minimum": 1},
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height", "container", "videoCodec", "audioCodec"],
+      "properties": {
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "container": {"type": "string", "enum": ["mp4", "webm", "mov", "gif", "wav", "png_sequence"]},
+        "videoCodec": {"type": ["string", "null"]},
+        "audioCodec": {"type": ["string", "null"]},
+        "pixelFormat": {"type": ["string", "null"]},
+        "colorSpace": {"type": ["string", "null"]}
+      }
+    },
+    "visualTracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trackId", "kind", "startFrame", "durationFrames"],
+        "properties": {
+          "trackId": {"type": "string"},
+          "kind": {"type": "string", "enum": ["image", "video", "html", "svg", "3d", "screen", "overlay"]},
+          "assetIds": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "startFrame": {"type": "integer", "minimum": 0},
+          "durationFrames": {"type": "integer", "minimum": 1},
+          "fit": {"type": "string", "enum": ["contain", "cover", "stretch", "none"]},
+          "transitionIn": {"type": ["string", "null"]},
+          "transitionOut": {"type": ["string", "null"]},
+          "parameters": {"type": "object", "additionalProperties": true}
+        }
+      }
+    },
+    "audioTracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trackId", "mixRole", "startFrame", "durationFrames"],
+        "properties": {
+          "trackId": {"type": "string"},
+          "mixRole": {"type": "string", "enum": ["voice", "music", "sfx", "system"]},
+          "assetIds": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "startFrame": {"type": "integer", "minimum": 0},
+          "durationFrames": {"type": "integer", "minimum": 1},
+          "gainDb": {"type": "number", "minimum": -120, "maximum": 24},
+          "duckUnderVoice": {"type": "boolean"},
+          "parameters": {"type": "object", "additionalProperties": true}
+        }
+      }
+    },
+    "captionTracks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trackId", "language", "format"],
+        "properties": {
+          "trackId": {"type": "string"},
+          "language": {"type": "string", "maxLength": 20},
+          "format": {"type": "string", "enum": ["srt", "vtt", "ass", "burned_in"]},
+          "sourceAssetId": {"type": ["string", "null"]},
+          "burnIn": {"type": "boolean"},
+          "safeArea": {"type": "string", "enum": ["title_safe", "action_safe", "full_frame"]}
+        }
+      }
+    },
+    "worker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter", "profileId"],
+      "properties": {
+        "adapter": {"type": "string"},
+        "profileId": {"type": "string"},
+        "version": {"type": ["string", "null"]},
+        "parameters": {"type": "object", "additionalProperties": true}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rightsRequired", "humanReviewRequired", "externalPublish"],
+      "properties": {
+        "rightsRequired": {"type": "boolean"},
+        "humanReviewRequired": {"type": "boolean"},
+        "externalPublish": {"type": "boolean"},
+        "capturePrivacyReview": {"type": "boolean"},
+        "paidGenerationRequiresApproval": {"type": "boolean"}
+      }
+    },
+    "parameters": {"type": "object", "additionalProperties": true}
+  }
+}

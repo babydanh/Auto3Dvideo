@@ -1,0 +1,69 @@
+schema_version: "1.0.0"
+workflow_id: "voiceover-captioned"
+name: "Voiceover, Captions and Platform Variants"
+profile: "local"
+inputs:
+  source_video: "assets/source.mp4"
+  script: "examples/minimal-3d-video/brief.md"
+  language: "vi-VN"
+  target_languages: [vi-VN, en-US]
+provider_defaults:
+  tts: voice_primary
+  stt: stt_local
+  media: media_local
+policy:
+  dry_run_default: true
+  rights_required: true
+  voice_rights_required: true
+  paid_generation_requires_approval: true
+  external_publish: false
+stages:
+  - id: prepare_script
+    type: script.normalize
+    operation: structured_output
+    executor: mock
+    outputs: [script-segments.json]
+  - id: generate_voiceover
+    type: audio.voiceover
+    operation: synthesize_speech
+    depends_on: [prepare_script]
+    executor: provider_adapter
+    provider: configured-by-user
+    model_profile: voice_primary
+    approval: required
+    outputs: [voiceover.vi-VN.wav]
+  - id: transcribe_and_align
+    type: caption.generate
+    operation: transcribe
+    depends_on: [generate_voiceover]
+    executor: provider_adapter
+    provider: configured-by-user
+    model_profile: stt_local
+    outputs: [captions.vi-VN.srt, captions.vi-VN.vtt]
+  - id: translate_captions
+    type: caption.translate
+    operation: chat
+    depends_on: [transcribe_and_align]
+    executor: mock
+    model_profile: llm_local
+    outputs: [captions.en-US.srt, captions.en-US.vtt]
+  - id: mix_and_mux
+    type: media.compose
+    operation: mux
+    depends_on: [generate_voiceover, transcribe_and_align]
+    executor: ffmpeg
+    model_profile: media_local
+    outputs: [draft-voiceover.mp4]
+  - id: validate_variants
+    type: delivery.variant
+    operation: variant
+    depends_on: [mix_and_mux, translate_captions]
+    executor: ffmpeg
+    model_profile: media_local
+    outputs: [delivery/vertical.mp4, delivery/horizontal.mp4, delivery/metadata.json]
+  - id: human_review
+    type: human.review
+    depends_on: [validate_variants]
+    executor: interactive
+    approval: required
+    outputs: [review.json]

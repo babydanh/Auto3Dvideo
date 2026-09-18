@@ -1,0 +1,44 @@
+{
+  "animationMode": "licensed-footage-edit",
+  "audioDurationSeconds": 12.72,
+  "audioPath": ".auto3dvideo/pipeline/local-video-1787628303069715000/narration.wav",
+  "captionsPath": ".auto3dvideo/pipeline/local-video-1787628303069715000/captions.srt",
+  "costStatus": "not_called",
+  "durationSeconds": 12.7,
+  "externalAssetsUsed": true,
+  "ffprobe": {
+    "format": {
+      "duration": "12.700000"
+    },
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "codec_type": "video",
+        "height": 1280,
+        "width": 720
+      },
+      {
+        "channels": 1,
+        "codec_name": "aac",
+        "codec_type": "audio",
+        "sample_rate": "48000"
+      }
+    ]
+  },
+  "humanReviewRequired": true,
+  "networkCallsMade": false,
+  "projectId": "project-licensed-footage-e2e",
+  "reviewState": "needs_review",
+  "rightsStatus": "needs_review",
+  "runId": "local-video-1787628303069715000",
+  "sceneManifestPath": ".auto3dvideo/pipeline/local-video-1787628303069715000/scenes/scene-manifest.json",
+  "schemaVersion": "1.0.0",
+  "scriptApprovalStatus": "approved",
+  "scriptPath": "outputs/licensed-space-footage-2026-08-25/script.json",
+  "targetDurationSeconds": 12.72,
+  "videoPath": ".auto3dvideo/pipeline/local-video-1787628303069715000/master.mp4",
+  "videoSha256": "73808e1f1974de158db82a87c19090a6f17bba851ad9fc112c66c7b25ba68908",
+  "videoSizeBytes": 1369452
+}

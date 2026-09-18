@@ -1,0 +1,77 @@
+workflow_id: "licensed-space-footage"
+name: "Licensed Space Footage Composite"
+profile: "local-first"
+inputs:
+  brief: "outputs/licensed-space-footage-2026-08-25/script.json"
+  footage_manifest: "outputs/licensed-space-footage-2026-08-25/footage-manifest.json"
+  language: "vi-VN"
+  aspect_ratio: "9:16"
+  width: 720
+  height: 1280
+  frame_rate: 30
+  duration_seconds: 15
+provider_defaults:
+  llm: none_for_approved_sample
+  tts: vieneu_local
+  footage: licensed_manifest_only
+  media: media_local
+policy:
+  dry_run_default: false
+  max_retries_per_shot: 1
+  max_frames: 5400
+  allow_network_for_scene: false
+  allow_external_publish: false
+  paid_generation_requires_approval: true
+  human_review_required: true
+  claims_must_be_verified: true
+asset_policy:
+  mode: "public_domain_or_explicit_license_with_proof"
+  source_manifest_required: true
+  footage_manifest_required: true
+  review_state_default: "needs_review"
+  watermark_removal: false
+  repost_automation: false
+  social_downloader: false
+stages:
+  - id: verify_footage_manifest
+    type: asset.rights_review
+    operation: offline_manifest_verify
+    resource: cpu
+    executor: collect_licensed_footage
+    inputs: [footage_manifest]
+    outputs: [footage-manifest.json]
+  - id: review_script
+    type: human.review
+    depends_on: [verify_footage_manifest]
+    resource: interactive
+    approval: required
+    outputs: [script-approved.json]
+  - id: map_licensed_scenes
+    type: scene.build
+    operation: licensed_video_manifest
+    depends_on: [review_script]
+    resource: cpu
+    executor: local_licensed_footage_worker
+    inputs: [footage_manifest, script-approved.json]
+    outputs: [scene-manifest.json]
+  - id: synthesize_voice
+    type: voiceover_package
+    operation: tts
+    depends_on: [review_script]
+    resource: cpu_heavy
+    executor: vieneu_local
+    approval: required
+    outputs: [narration.wav]
+  - id: compose_video
+    type: media.compose
+    operation: video_concat
+    depends_on: [map_licensed_scenes, synthesize_voice]
+    resource: cpu_heavy
+    executor: ffmpeg
+    outputs: [master.mp4, captions.srt, manifest.json]
+  - id: final_review
+    type: human.review
+    depends_on: [compose_video]
+    resource: interactive
+    approval: required
+    outputs: [rights-ledger.json, attribution.md, review.json]

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectId": "space-editorial-pilot-001",
+  "fps": 30,
+  "focus": [0.0, 0.0, 1.0],
+  "shots": [
+    {"shotId":"S01-HOOK","startFrame":1,"endFrame":45,"event":"A quiet moon becomes a time machine","visualGrammar":{"composition":"hero_center","lighting":"cyan_key_red_rim","motion":"push_in"},"camera":{"type":"wide","motion":"push_in","lens":42},"continuityAssetIds":["moon-hero"]},
+    {"shotId":"S02-ORBIT","startFrame":46,"endFrame":90,"event":"Orbit reveals the far side","visualGrammar":{"composition":"three_quarter","lighting":"soft_rim","motion":"orbit"},"camera":{"type":"medium","motion":"orbit","lens":52},"continuityAssetIds":["moon-hero"]},
+    {"shotId":"S03-TIDE","startFrame":91,"endFrame":135,"event":"Gravity stretches the ocean","visualGrammar":{"composition":"low_angle","lighting":"blue_fill","motion":"rise"},"camera":{"type":"low_angle","motion":"rise","lens":48},"continuityAssetIds":["earth-hero","moon-hero"]},
+    {"shotId":"S04-SUNLIGHT","startFrame":136,"endFrame":180,"event":"Light arrives eight minutes late","visualGrammar":{"composition":"macro","lighting":"warm_key","motion":"push_in"},"camera":{"type":"macro","motion":"push_in","lens":70},"continuityAssetIds":["sun-hero"]},
+    {"shotId":"S05-SCALE","startFrame":181,"endFrame":225,"event":"Scale breaks the human frame","visualGrammar":{"composition":"wide_negative_space","lighting":"cyan_key","motion":"locked"},"camera":{"type":"wide","motion":"locked","lens":38},"continuityAssetIds":["earth-hero","moon-hero","sun-hero"]},
+    {"shotId":"S06-DUST","startFrame":226,"endFrame":270,"event":"Dust remembers an impact","visualGrammar":{"composition":"top_down","lighting":"red_rim","motion":"orbit"},"camera":{"type":"overhead","motion":"orbit","lens":55},"continuityAssetIds":["moon-hero"]},
+    {"shotId":"S07-CRATER","startFrame":271,"endFrame":315,"event":"A crater becomes a fossil record","visualGrammar":{"composition":"detail","lighting":"hard_key","motion":"push_in"},"camera":{"type":"detail","motion":"push_in","lens":85},"continuityAssetIds":["moon-hero"]},
+    {"shotId":"S08-ECLIPSE","startFrame":316,"endFrame":360,"event":"Alignment turns daylight into geometry","visualGrammar":{"composition":"silhouette","lighting":"backlight","motion":"locked"},"camera":{"type":"silhouette","motion":"locked","lens":60},"continuityAssetIds":["earth-hero","moon-hero"]},
+    {"shotId":"S09-RETURN","startFrame":361,"endFrame":405,"event":"The orbit returns to its first question","visualGrammar":{"composition":"hero_center","lighting":"cyan_key_red_rim","motion":"orbit"},"camera":{"type":"medium","motion":"orbit","lens":52},"continuityAssetIds":["moon-hero"]},
+    {"shotId":"S10-PAYOFF","startFrame":406,"endFrame":450,"event":"The moon is a clock in disguise","visualGrammar":{"composition":"hero_center","lighting":"final_glow","motion":"rise"},"camera":{"type":"wide","motion":"rise","lens":48},"continuityAssetIds":["moon-hero"]}
+  ]
+}

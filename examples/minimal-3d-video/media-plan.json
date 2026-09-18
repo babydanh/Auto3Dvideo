@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "planId": "minimal-preview-plan",
+  "operation": "image_sequence",
+  "executableId": "ffmpeg",
+  "workingDirectory": "jobs/minimal-preview",
+  "inputs": [
+    {
+      "relativePath": "assets/reference-01.png",
+      "kind": "image_sequence",
+      "required": true
+    }
+  ],
+  "output": {
+    "relativePath": "preview/mock-preview.mp4",
+    "kind": "video",
+    "overwritePolicy": "fail"
+  },
+  "target": {
+    "width": 1080,
+    "height": 1920,
+    "frameRate": 30,
+    "container": "mp4",
+    "videoCodec": "h264",
+    "audioRequired": false,
+    "captionMode": "none"
+  },
+  "expectedDurationSeconds": 5,
+  "timeoutSeconds": 1800,
+  "dryRun": true,
+  "externalPublish": false,
+  "paidGeneration": false
+}

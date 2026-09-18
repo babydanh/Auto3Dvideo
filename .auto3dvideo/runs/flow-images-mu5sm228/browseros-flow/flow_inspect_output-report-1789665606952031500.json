@@ -1,0 +1,822 @@
+{
+  "assistantClaimsGenerated": true,
+  "browserActionsPerformed": true,
+  "browserSessionAttached": true,
+  "composerFound": true,
+  "downloadControlFound": true,
+  "generatedMessageCount": 176,
+  "generationActive": true,
+  "historicalShotMediaCount": 0,
+  "historicalShotMediaIds": [],
+  "imageModeFound": true,
+  "matchingBatchCount": 0,
+  "matchingBatchMediaCount": 0,
+  "matchingBatchMediaIds": [],
+  "mediaCount": 36,
+  "mediaIds": [
+    "c73c8ea1-2c6b-45a1-bd0f-f92e75e57a13",
+    "906eb8e7-ae4c-486e-97f1-74524dc04ed8",
+    "3d2d2f67-8f48-43bf-98e0-424c12120d0e",
+    "6773a4d5-c592-4b90-944c-6be9474155cd",
+    "0b9d7478-a930-4ec6-9dfa-85f7d33ca1cc",
+    "e7da3160-d758-4561-ba4d-d54070c6b002",
+    "3db30df5-2691-4ed2-80b2-47332350cf42",
+    "5f8594b3-b558-4146-829e-365026c05d98",
+    "3bc87ff8-5fcc-45cd-a84a-a2680d758a97",
+    "0b1b6802-5b8f-425e-9fef-4f9f7d8a212f",
+    "4a5b051c-d7d8-4dd9-a548-f1e03a10f592",
+    "e539f2c4-a26e-4a1f-9f49-dde45029ab7c",
+    "bc67b411-1605-410b-8bec-23a09f70c56b",
+    "ad5126a5-f023-4efe-b312-c4df05d4cb97"
+  ],
+  "message": "BrowserOS flow_inspect_output đã hoàn tất.",
+  "networkCallsMade": true,
+  "operation": "flow_inspect_output",
+  "page": 1,
+  "promptEditorFound": true,
+  "protocolVersion": null,
+  "reportPath": "D:\\Duancanhan\\Auto3Dvideo\\.auto3dvideo\\runs\\flow-images-mu5sm228\\browseros-flow\\flow_inspect_output-report-1789665606952031500.json",
+  "selectedModel": "",
+  "serverInfo": {
+    "name": "browseros_mcp",
+    "title": "BrowserOS MCP server"
+  },
+  "shotRevisionBatchCount": 0,
+  "shotRevisionBatchMediaCount": 0,
+  "shotRevisionBatchMediaIds": [],
+  "status": "ready",
+  "targetUrl": "https://flow.google.com/project/2d478b58-f5fa-4606-baef-71425ab7476c",
+  "tools": [
+    "tabs",
+    "tab_groups",
+    "history",
+    "navigate",
+    "snapshot",
+    "diff",
+    "act",
+    "download",
+    "upload",
+    "read",
+    "grep",
+    "screenshot",
+    "pdf",
+    "wait",
+    "windows",
+    "evaluate",
+    "run",
+    "connector_mcp_servers",
+    "discover_server_categories_or_actions",
+    "get_category_actions",
+    "get_action_details",
+    "execute_action",
+    "search_documentation",
+    "handle_auth_failure"
+  ],
+  "uiRefs": [
+    {
+      "label": "Skip to main content",
+      "reference": "e1",
+      "role": "link"
+    },
+    {
+      "label": "Home",
+      "reference": "e2",
+      "role": "button"
+    },
+    {
+      "label": "Editable text",
+      "reference": "e3",
+      "role": "textbox"
+    },
+    {
+      "label": "More options for the project",
+      "reference": "e4",
+      "role": "button"
+    },
+    {
+      "label": "Search",
+      "reference": "e5",
+      "role": "button"
+    },
+    {
+      "label": "Search",
+      "reference": "e6",
+      "role": "textbox"
+    },
+    {
+      "label": "Filtering and sorting options",
+      "reference": "e7",
+      "role": "button"
+    },
+    {
+      "label": "Add media menu",
+      "reference": "e8",
+      "role": "button"
+    },
+    {
+      "label": "Product help",
+      "reference": "e9",
+      "role": "button"
+    },
+    {
+      "label": "Tile grid settings",
+      "reference": "e10",
+      "role": "button"
+    },
+    {
+      "label": "More options",
+      "reference": "e11",
+      "role": "button"
+    },
+    {
+      "label": "Account details",
+      "reference": "e12",
+      "role": "button"
+    },
+    {
+      "label": "Google Account: sigma6969 whynot (sigmawhynot08@gmail.com), Google membership",
+      "reference": "e13",
+      "role": "button"
+    },
+    {
+      "label": "generic",
+      "reference": "e14",
+      "role": "generic"
+    },
+    {
+      "label": "generic",
+      "reference": "e15",
+      "role": "generic"
+    },
+    {
+      "label": "generic",
+      "reference": "e16",
+      "role": "generic"
+    },
+    {
+      "label": "generic",
+      "reference": "e17",
+      "role": "generic"
+    },
+    {
+      "label": "Tools",
+      "reference": "e18",
+      "role": "link"
+    },
+    {
+      "label": "Trash",
+      "reference": "e19",
+      "role": "link"
+    },
+    {
+      "label": "generic",
+      "reference": "e20",
+      "role": "generic"
+    },
+    {
+      "label": "generic",
+      "reference": "e21",
+      "role": "generic"
+    },
+    {
+      "label": "Retry",
+      "reference": "e318",
+      "role": "button"
+    },
+    {
+      "label": "Reuse prompt",
+      "reference": "e319",
+      "role": "button"
+    },
+    {
+      "label": "Delete",
+      "reference": "e320",
+      "role": "button"
+    },
+    {
+      "label": "Open session history",
+      "reference": "e195",
+      "role": "button"
+    },
+    {
+      "label": "Start new session",
+      "reference": "e196",
+      "role": "button"
+    },
+    {
+      "label": "Close",
+      "reference": "e37",
+      "role": "button"
+    },
+    {
+      "label": "generic",
+      "reference": "e197",
+      "role": "generic"
+    },
+    {
+      "label": "Good response",
+      "reference": "e198",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e199",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e200",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e201",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e202",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e203",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e204",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e205",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e206",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e207",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e208",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e209",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e210",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e211",
+      "role": "button"
+    },
+    {
+      "label": "Show thinking",
+      "reference": "e212",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e213",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e214",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e215",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e216",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e217",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e218",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e219",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e220",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e221",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e222",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e223",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e224",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e225",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e226",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e227",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e228",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e229",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e230",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e231",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e232",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e233",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e234",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e235",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e236",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e237",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e238",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e239",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e240",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e241",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e242",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e243",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e244",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e245",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e246",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e247",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e248",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e249",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e250",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e251",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e252",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e253",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e254",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e255",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e256",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e257",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e258",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e259",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e260",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e261",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e262",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e263",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e264",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e265",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e266",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e267",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e268",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e269",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e270",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e271",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e272",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e273",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e274",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e275",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e276",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e277",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e278",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e279",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e280",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e281",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e282",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e283",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e284",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e285",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e286",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e287",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e288",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e289",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e290",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e291",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e292",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e293",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e294",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e295",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e296",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e297",
+      "role": "button"
+    },
+    {
+      "label": "Show thinking",
+      "reference": "e298",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e299",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e300",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e301",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e302",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e303",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e304",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e305",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e306",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e307",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e308",
+      "role": "button"
+    },
+    {
+      "label": "Open image in editor",
+      "reference": "e309",
+      "role": "button"
+    },
+    {
+      "label": "Good response",
+      "reference": "e310",
+      "role": "button"
+    },
+    {
+      "label": "Bad response",
+      "reference": "e311",
+      "role": "button"
+    },
+    {
+      "label": "Copy",
+      "reference": "e312",
+      "role": "button"
+    },
+    {
+      "label": "Flag output",
+      "reference": "e313",
+      "role": "button"
+    },
+    {
+      "label": "generic",
+      "reference": "e155",
+      "role": "generic"
+    },
+    {
+      "label": "Add ingredients to the prompt box",
+      "reference": "e156",
+      "role": "button"
+    },
+    {
+      "label": "Agent instructions",
+      "reference": "e157",
+      "role": "button"
+    },
+    {
+      "label": "Settings",
+      "reference": "e158",
+      "role": "button"
+    },
+    {
+      "label": "Stop",
+      "reference": "e315",
+      "role": "button"
+    }
+  ]
+}

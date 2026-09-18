@@ -1,0 +1,75 @@
+schema_version: "1.0.0"
+workflow_id: "2d-image-slideshow"
+name: "2D Image Slideshow with Voiceover"
+profile: "local"
+inputs:
+  image_folder: "assets/images"
+  brief: "examples/minimal-3d-video/brief.md"
+  language: "vi-VN"
+  aspect_ratio: "9:16"
+  duration_seconds: 30
+  fps: 30
+provider_defaults:
+  llm: llm_local
+  tts: voice_primary
+  stt: stt_local
+  media: media_local
+policy:
+  dry_run_default: true
+  rights_required: true
+  paid_generation_requires_approval: true
+  external_publish: false
+stages:
+  - id: prepare_images
+    type: image.sequence_prepare
+    operation: image_sequence
+    executor: mock
+    outputs: [image-sequence.json]
+  - id: draft_script
+    type: script.draft
+    operation: chat
+    executor: mock
+    model_profile: llm_local
+    outputs: [script.md]
+  - id: synthesize_voice
+    type: audio.voiceover
+    operation: synthesize_speech
+    executor: provider_adapter
+    provider: configured-by-user
+    model_profile: voice_primary
+    approval: required
+    outputs: [voiceover.wav]
+  - id: generate_captions
+    type: caption.generate
+    operation: transcribe
+    depends_on: [synthesize_voice]
+    executor: provider_adapter
+    provider: configured-by-user
+    model_profile: stt_local
+    outputs: [captions.vi-VN.srt, captions.vi-VN.vtt]
+  - id: render_slideshow
+    type: image.slideshow
+    operation: image_sequence
+    depends_on: [prepare_images]
+    executor: ffmpeg
+    model_profile: media_local
+    outputs: [slideshow.mp4]
+  - id: compose_audio_captions
+    type: media.compose
+    operation: mux
+    depends_on: [render_slideshow, synthesize_voice, generate_captions]
+    executor: ffmpeg
+    model_profile: media_local
+    outputs: [draft.mp4, draft.srt]
+  - id: review
+    type: human.review
+    depends_on: [compose_audio_captions]
+    executor: interactive
+    approval: required
+    outputs: [review.json]
+  - id: delivery
+    type: delivery.package
+    depends_on: [review]
+    executor: ffmpeg
+    model_profile: media_local
+    outputs: [delivery/manifest.json]

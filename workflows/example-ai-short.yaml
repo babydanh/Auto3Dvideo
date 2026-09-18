@@ -1,0 +1,79 @@
+schema_version: "1.0.0"
+workflow_id: "ai-short"
+name: "Original AI 3D Short"
+profile: "hybrid"
+inputs:
+  brief: "examples/minimal-3d-video/brief.md"
+  style_bible: "examples/minimal-3d-video/style-bible.yaml"
+  language: "vi-VN"
+  aspect_ratio: "9:16"
+  duration_seconds: 45
+provider_defaults:
+  llm: llm_local
+  image: image_local
+  video: video_primary
+  tts: voice_primary
+policy:
+  original_content_required: true
+  rights_required: true
+  ai_disclosure_review: true
+  paid_generation_requires_approval: true
+  external_publish: false
+stages:
+  - id: script
+    type: script.draft
+    operation: chat
+    executor: mock
+    model_profile: llm_local
+    outputs: [script.md]
+  - id: shots
+    type: shots.plan
+    depends_on: [script]
+    executor: mock
+    approval: required
+    outputs: [shot-list.yaml]
+  - id: reference
+    type: references.prepare
+    depends_on: [shots]
+    executor: mock
+    outputs: [references.json]
+  - id: generate
+    type: ai.generate
+    operation: generate_video
+    depends_on: [reference]
+    executor: provider_adapter
+    provider: "configured-by-user"
+    model_profile: video_primary
+    fallback_profiles: [image_local]
+    approval: required
+    outputs: [shots/]
+  - id: voice
+    type: media.compose
+    operation: synthesize_speech
+    depends_on: [script]
+    executor: provider_adapter
+    provider: "configured-by-user"
+    model_profile: voice_primary
+    approval: required
+    outputs: [voice.wav]
+  - id: captions
+    type: caption.generate
+    depends_on: [script, voice]
+    executor: mock
+    outputs: [captions.vi-VN.srt]
+  - id: compose
+    type: media.compose
+    depends_on: [generate, voice, captions]
+    executor: ffmpeg
+    outputs: [draft.mp4]
+  - id: rights_review
+    type: human.review
+    depends_on: [compose]
+    executor: interactive
+    approval: required
+    outputs: [rights-review.json]
+  - id: delivery
+    type: delivery.package
+    depends_on: [rights_review]
+    executor: ffmpeg
+    outputs: [delivery/manifest.json]

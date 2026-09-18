@@ -1,0 +1,52 @@
+{
+  "status": "blocked",
+  "operation": "screenshot",
+  "reportPath": ".auto3dvideo/reports/browseros-flow-screenshot-manual.json",
+  "serverInfo": {
+    "name": "browseros-neo"
+  },
+  "protocolVersion": "2025-03-26",
+  "toolCount": 20,
+  "tools": [
+    "tabs",
+    "tab_groups",
+    "history",
+    "navigate",
+    "snapshot",
+    "diff",
+    "act",
+    "download",
+    "upload",
+    "read",
+    "grep",
+    "screenshot",
+    "pdf",
+    "wait",
+    "windows",
+    "evaluate",
+    "run",
+    "name_session",
+    "save_skill",
+    "mark_skill_run"
+  ],
+  "toolName": "screenshot",
+  "approved": true,
+  "browserSessionAttached": false,
+  "browserActionsPerformed": false,
+  "networkCallsMade": false,
+  "operationResult": {
+    "isError": true,
+    "contentItemCount": 1,
+    "contentTypes": [
+      "text"
+    ],
+    "textBytes": 66,
+    "hasImage": false,
+    "uiRefCount": 0,
+    "uiRefs": [],
+    "currentUrl": "https://flow.google.com/about",
+    "detail": "screenshot failed: CDP error: Cannot take screenshot with 0 width."
+  },
+  "message": "BrowserOS screenshot bị từ chối: screenshot failed: CDP error: Cannot take screenshot with 0 width.",
+  "process": null
+}

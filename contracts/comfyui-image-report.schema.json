@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/comfyui-image-report.schema.json",
+  "title": "Auto3Dvideo ComfyUI Image Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "jobType", "projectId", "runId", "status", "outputs", "errors"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "jobType": {"type": "string", "const": "image.generate"},
+    "projectId": {"type": "string", "minLength": 1},
+    "runId": {"type": "string", "minLength": 1},
+    "status": {"type": "string", "enum": ["succeeded_needs_review", "blocked", "failed"]},
+    "workflowSha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assetId", "shotId", "title", "relativePath", "role", "rightsStatus", "status"],
+        "properties": {
+          "assetId": {"type": "string"},
+          "shotId": {"type": "string"},
+          "title": {"type": "string"},
+          "relativePath": {"type": "string"},
+          "role": {"type": "string"},
+          "rightsStatus": {"type": "string"},
+          "status": {"type": "string", "enum": ["ready", "failed"]},
+          "providerJobId": {"type": ["string", "null"]},
+          "sha256": {"type": ["string", "null"]},
+          "error": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "errors": {"type": "array", "items": {"type": "string"}},
+    "createdAt": {"type": "string", "format": "date-time"}
+  }
+}

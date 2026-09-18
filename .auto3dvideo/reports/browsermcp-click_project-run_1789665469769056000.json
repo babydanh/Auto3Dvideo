@@ -1,0 +1,59 @@
+{
+  "status": "ready",
+  "operation": "click_project",
+  "reportPath": ".auto3dvideo/reports/browsermcp-click_project-run_1789665469769056000.json",
+  "serverInfo": {
+    "name": "browseros_mcp",
+    "title": "BrowserOS MCP server"
+  },
+  "protocolVersion": "2025-03-26",
+  "toolCount": 24,
+  "tools": [
+    "tabs",
+    "tab_groups",
+    "history",
+    "navigate",
+    "snapshot",
+    "diff",
+    "act",
+    "download",
+    "upload",
+    "read",
+    "grep",
+    "screenshot",
+    "pdf",
+    "wait",
+    "windows",
+    "evaluate",
+    "run",
+    "connector_mcp_servers",
+    "discover_server_categories_or_actions",
+    "get_category_actions",
+    "get_action_details",
+    "execute_action",
+    "search_documentation",
+    "handle_auth_failure"
+  ],
+  "toolName": "act",
+  "approved": true,
+  "browserSessionAttached": true,
+  "browserActionsPerformed": true,
+  "networkCallsMade": true,
+  "operationResult": {
+    "isError": false,
+    "contentItemCount": 3,
+    "contentTypes": [
+      "text",
+      "text",
+      "text"
+    ],
+    "textBytes": 98,
+    "hasImage": false,
+    "uiRefCount": 0,
+    "uiRefs": [],
+    "currentUrl": null,
+    "detail": ""
+  },
+  "message": "BrowserOS click_project đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+  "process": null
+}

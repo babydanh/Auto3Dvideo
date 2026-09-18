@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectId": "prompt-grounded-tiger-001",
+  "sourcePrompt": "Tạo một video cinematic 3D: hổ Bengal đực Hắc Vân phóng đại 1,6 lần, cao vai 1,7 mét, dài 4,6 mét, nặng khoảng 500 kg, lông cam sọc đen, mắt vàng, sẹo nhỏ trên mắt phải. Hắc Vân xuyên qua vết rách thời gian vào rừng kỷ Phấn Trắng và solo với T-Rex đỏ nâu.",
+  "prompt": "Tạo một video cinematic 3D: hổ Bengal đực Hắc Vân phóng đại 1,6 lần, cao vai 1,7 mét, dài 4,6 mét, nặng khoảng 500 kg, lông cam sọc đen, mắt vàng, sẹo nhỏ trên mắt phải. Hắc Vân xuyên qua vết rách thời gian vào rừng kỷ Phấn Trắng và solo với T-Rex đỏ nâu.",
+  "storyboardMode": "prompt_grounded_previs",
+  "fps": 30,
+  "focus": [0.0, 2.0, 2.0],
+  "promptGrounding": {
+    "schemaVersion": "1.0.0",
+    "sourcePrompt": "Tạo một video cinematic 3D: hổ Bengal đực Hắc Vân phóng đại 1,6 lần, cao vai 1,7 mét, dài 4,6 mét, nặng khoảng 500 kg, lông cam sọc đen, mắt vàng, sẹo nhỏ trên mắt phải. Hắc Vân xuyên qua vết rách thời gian vào rừng kỷ Phấn Trắng và solo với T-Rex đỏ nâu.",
+    "worldBible": {
+      "environment": "Wet Cretaceous jungle with giant ferns, muddy river flats, basalt rocks and volcanic haze.",
+      "palette": "orange tiger, red-brown T-Rex, deep jungle green, amber key and cool blue rim",
+      "lighting": "wet atmospheric dusk, warm amber key, cool blue rim and volumetric mist",
+      "cameraLanguage": "wide scale shots, low combat angles and controlled close identity details",
+      "continuity": "preserve screen direction, identity and weight"
+    },
+    "characterBibles": [
+      {"characterId":"tiger-giant","lengthMeters":4.6,"shoulderHeightMeters":1.7,"massKg":500,"scaleMultiplier":1.6},
+      {"characterId":"trex","heightMeters":12.0,"lengthMeters":13.0}
+    ],
+    "constraints": ["Keep Hắc Vân as one stable giant Bengal tiger.","Keep the T-Rex as one separate red-brown opponent.","Use the rift as the cause of the time displacement."],
+    "subjectSummary": "Giant Bengal tiger Hắc Vân versus a red-brown T-Rex in a wet Cretaceous jungle, with a visible time rift as the transition cause."
+  },
+  "shots": [
+    {"shotId":"SHOT-001","startFrame":1,"endFrame":90,"event":"Hắc Vân bước ra khỏi vết rách thời gian vào rừng tiền sử.","visualGrammar":{"prompt":"Wide cinematic reveal of Hắc Vân emerging from a glowing time rift into a wet Cretaceous jungle.","subject":"Hắc Vân, a giant Bengal tiger with orange coat, black stripes, gold eyes and right-eye scar.","action":"The tiger steps through the rift, plants its paws in mud and scans the valley.","cameraIntent":"24mm wide establishing shot, slow dolly-in, low eye-line.","lightingIntent":"Amber key, blue rim, wet volumetric mist.","continuityNotes":"Keep the tiger scale and markings stable.","negativePrompt":"No extra humans, no vehicles, no duplicate tiger."},"camera":{"type":"wide","motion":"push_in","lens":28},"beats":[{"beatId":"beat-01","timeFraction":0.0,"purpose":"establish","imageRole":"establish","action":"Show the rift and the tiger's scale against the jungle.","cameraPrompt":"Wide low angle.","prompt":"Tiger and rift establish frame."},{"beatId":"beat-02","timeFraction":0.33,"purpose":"action","imageRole":"action","action":"Tiger steps forward into mud.","cameraPrompt":"Slow push-in.","prompt":"Tiger exits rift."},{"beatId":"beat-03","timeFraction":0.66,"purpose":"reveal","imageRole":"reveal","action":"Reveal the distant prehistoric valley.","cameraPrompt":"Reveal behind tiger.","prompt":"Rift light silhouettes tiger."},{"beatId":"beat-04","timeFraction":1.0,"purpose":"resolve","imageRole":"resolve","action":"Tiger locks onto a distant threat.","cameraPrompt":"Hold on profile.","prompt":"Tiger resolves into alert stance."}],"continuityAssetIds":["tiger-giant","time-rift","cretaceous-jungle"]},
+    {"shotId":"SHOT-002","startFrame":91,"endFrame":180,"event":"T-Rex lao tới, Hắc Vân hạ thấp người chuẩn bị solo.","visualGrammar":{"prompt":"Low-angle cinematic confrontation between Hắc Vân and a red-brown T-Rex beside the fading time rift.","subject":"Hắc Vân remains the same giant Bengal tiger; T-Rex is one red-brown opponent with large jaw and visible teeth.","action":"T-Rex advances with heavy footfall; tiger circles left, roars and prepares to attack.","cameraIntent":"35mm low combat angle, controlled orbit left-to-right, preserve screen direction.","lightingIntent":"Red-brown hide in amber key, cold blue rim from the rift, wet contact shadows.","continuityNotes":"Keep tiger markings, T-Rex scale and rift position continuous from shot 1.","negativePrompt":"No species morphing, no extra dinosaurs, no camera jump."},"camera":{"type":"medium","motion":"orbit","lens":35},"beats":[{"beatId":"beat-01","timeFraction":0.0,"purpose":"establish","imageRole":"establish","action":"Reveal both characters separated in depth.","cameraPrompt":"Low medium-wide.","prompt":"Tiger and T-Rex face off."},{"beatId":"beat-02","timeFraction":0.33,"purpose":"action","imageRole":"action","action":"T-Rex advances and the tiger circles.","cameraPrompt":"Orbit with the tiger.","prompt":"Heavy T-Rex step, tiger movement."},{"beatId":"beat-03","timeFraction":0.66,"purpose":"reveal","imageRole":"reveal","action":"Reveal the scale difference and the tiger's scarred face.","cameraPrompt":"Push to face detail.","prompt":"Scale and identity detail."},{"beatId":"beat-04","timeFraction":1.0,"purpose":"resolve","imageRole":"resolve","action":"Both lower into a combat stance.","cameraPrompt":"Hold before impact.","prompt":"Combat standoff resolves."}],"continuityAssetIds":["tiger-giant","trex","time-rift","cretaceous-jungle"]}
+  ]
+}

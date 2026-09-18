@@ -1,0 +1,78 @@
+workflow_id: "space-25d-infographic"
+name: "Space 2.5D Infographic"
+profile: "local-first"
+inputs:
+  brief: "examples/space-25d/brief.md"
+  language: "vi-VN"
+  aspect_ratio: "9:16"
+  width: 720
+  height: 1280
+  frame_rate: 30
+  duration_seconds: 20
+provider_defaults:
+  llm: llm_local
+  tts: voice_primary
+  render2d5d: local_space_25d
+  media: media_local
+policy:
+  dry_run_default: true
+  max_retries_per_shot: 2
+  max_frames: 1800
+  allow_network_for_scene: false
+  allow_external_publish: false
+  paid_generation_requires_approval: true
+  human_review_required: true
+  claims_must_be_verified: true
+asset_policy:
+  mode: "procedural_or_rights_verified"
+  external_video_import: "blocked_without_rights_record"
+  watermark_removal: false
+  repost_automation: false
+stages:
+  - id: normalize_brief
+    type: brief.normalize
+    resource: cpu
+    outputs: [normalized-brief.json]
+  - id: draft_script
+    type: script.draft
+    operation: chat
+    depends_on: [normalize_brief]
+    resource: cpu
+    model_profile: llm_local
+    outputs: [script-v1.json]
+  - id: review_script
+    type: human.review
+    depends_on: [draft_script]
+    resource: interactive
+    approval: required
+    outputs: [script-approved.json]
+  - id: render_space_25d
+    type: scene.build
+    operation: procedural_frame_sequence
+    depends_on: [review_script]
+    resource: cpu_heavy
+    executor: local_space_25d_worker
+    output_kind: image_sequence
+    output_pattern: "outputs/space-25d/frames/scene-##/frame-####.png"
+    outputs: [scene-manifest.json]
+  - id: synthesize_voice
+    type: voiceover_package
+    operation: tts
+    depends_on: [review_script]
+    resource: cpu_heavy
+    executor: vieneu_local
+    approval: required
+    outputs: [narration.wav]
+  - id: compose_video
+    type: media.compose
+    operation: image_sequence
+    depends_on: [render_space_25d, synthesize_voice]
+    resource: cpu_heavy
+    executor: ffmpeg
+    outputs: [master.mp4, captions.srt, manifest.json]
+  - id: final_review
+    type: human.review
+    depends_on: [compose_video]
+    resource: interactive
+    approval: required
+    outputs: [review.json]

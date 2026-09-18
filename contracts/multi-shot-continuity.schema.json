@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/multi-shot-continuity.schema.json",
+  "title": "Auto3Dvideo Multi-shot Continuity Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sceneId", "projectId", "runId", "fps", "shotIds", "renderedShotIds", "commonWorldHash", "sharedAssetHashes", "shotHashes", "assetHashesUnchanged", "driftFindings", "status", "reviewState"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "sceneId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,96}$"},
+    "projectId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "runId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,120}$"},
+    "fps": {"type": "number", "exclusiveMinimum": 0, "maximum": 240},
+    "shotIds": {"type": "array", "minItems": 6, "maxItems": 12, "items": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]{2,63}$"}, "uniqueItems": true},
+    "renderedShotIds": {"type": "array", "minItems": 1, "maxItems": 12, "items": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]{2,63}$"}, "uniqueItems": true},
+    "commonWorldHash": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "sharedAssetHashes": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"}},
+    "shotHashes": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"}},
+    "assetHashesUnchanged": {"type": "boolean"},
+    "rerunShotId": {"type": ["string", "null"], "pattern": "^[A-Z0-9][A-Z0-9_-]{2,63}$"},
+    "driftFindings": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["shotId", "code", "severity", "message"],
+        "properties": {
+          "shotId": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]{2,63}$"},
+          "code": {"type": "string", "maxLength": 120},
+          "severity": {"type": "string", "enum": ["warning", "error"]},
+          "message": {"type": "string", "maxLength": 1000}
+        }
+      }
+    },
+    "status": {"type": "string", "enum": ["passed_needs_review", "needs_revision", "failed"]},
+    "reviewState": {"type": "string", "enum": ["needs_review", "approved", "rejected", "blocked"]}
+  }
+}

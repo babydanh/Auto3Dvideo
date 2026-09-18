@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/nanobanana-image-report.schema.json",
+  "title": "Auto3Dvideo Nano Banana MCP Image Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "jobType", "provider", "projectId", "runId", "status", "outputs", "errors"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "jobType": {"type": "string", "const": "image.generate"},
+    "provider": {"type": "string", "const": "nano_banana_mcp"},
+    "projectId": {"type": "string", "minLength": 1},
+    "runId": {"type": "string", "minLength": 1},
+    "status": {"type": "string", "enum": ["succeeded_needs_review", "blocked", "failed"]},
+    "toolName": {"type": "string"},
+    "serverInfo": {"type": ["object", "null"]},
+    "failureCode": {"type": ["string", "null"], "maxLength": 120},
+    "failureDetail": {"type": ["string", "null"], "maxLength": 900},
+    "cdpPreflight": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["endpoint", "status", "networkProbePerformed", "sideEffectsStarted"],
+      "properties": {
+        "endpoint": {"type": "string"},
+        "status": {"type": "string", "enum": ["ready", "unavailable", "unhealthy", "blocked"]},
+        "httpStatus": {"type": ["integer", "null"], "minimum": 100, "maximum": 599},
+        "message": {"type": "string"},
+        "networkProbePerformed": {"type": "boolean"},
+        "sideEffectsStarted": {"type": "boolean"}
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assetId", "shotId", "title", "relativePath", "role", "rightsStatus", "status"],
+        "properties": {
+          "assetId": {"type": "string"},
+          "shotId": {"type": "string"},
+          "title": {"type": "string"},
+          "relativePath": {"type": ["string", "null"]},
+          "role": {"type": "string"},
+          "rightsStatus": {"type": "string"},
+          "status": {"type": "string", "enum": ["ready", "failed"]},
+          "providerJobId": {"type": ["string", "null"]},
+          "sha256": {"type": ["string", "null"]},
+          "error": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "errors": {"type": "array", "items": {"type": "string"}},
+    "createdAt": {"type": "string", "format": "date-time"}
+  }
+}

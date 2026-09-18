@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/browser-flow-agent-action.schema.json",
+  "title": "Auto3Dvideo Browser Flow planner action",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action", "ref", "textSource", "submit", "seconds", "reason"],
+  "properties": {
+    "action": { "enum": ["click", "type", "wait", "snapshot", "stop"] },
+    "ref": { "type": ["string", "null"], "maxLength": 80 },
+    "textSource": { "enum": ["provided_text", "none"] },
+    "submit": { "type": "boolean" },
+    "seconds": { "type": ["number", "null"], "minimum": 0.1, "maximum": 30 },
+    "reason": { "type": "string", "minLength": 1, "maxLength": 240 }
+  }
+}

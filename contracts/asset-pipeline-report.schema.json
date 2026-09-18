@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/asset-pipeline-report.schema.json",
+  "title": "Auto3Dvideo Asset Pipeline Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "reportId", "jobType", "projectId", "runId", "status", "assetCounts", "assets", "bindings", "qualityChecks", "quarantine", "createdAt", "updatedAt"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "reportId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+    "jobType": {"type": "string", "const": "asset.pipeline"},
+    "projectId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "runId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+    "status": {"type": "string", "enum": ["succeeded_needs_review", "blocked", "failed"]},
+    "assetCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "ready", "quarantined", "referenceImages", "models3d", "textures", "renders"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "ready": {"type": "integer", "minimum": 0},
+        "quarantined": {"type": "integer", "minimum": 0},
+        "referenceImages": {"type": "integer", "minimum": 0},
+        "models3d": {"type": "integer", "minimum": 0},
+        "textures": {"type": "integer", "minimum": 0},
+        "renders": {"type": "integer", "minimum": 0}
+      }
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assetId", "projectId", "title", "declaredKind", "kind", "sourcePath", "relativePath", "normalizedRelativePath", "sha256", "mimeType", "sizeBytes", "width", "height", "status", "rightsStatus", "reviewState", "qualityState", "normalizationState", "shotIds", "role", "provenance", "issues", "quarantineReason"],
+        "properties": {
+          "assetId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+          "projectId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+          "title": {"type": "string", "minLength": 1, "maxLength": 160},
+          "declaredKind": {"type": "string", "enum": ["reference_image", "model3d", "texture", "render"]},
+          "kind": {"type": "string", "enum": ["image", "model3d", "texture", "render"]},
+          "sourcePath": {"type": "string", "minLength": 1},
+          "relativePath": {"type": "string", "minLength": 1},
+          "normalizedRelativePath": {"type": ["string", "null"]},
+          "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+          "mimeType": {"type": ["string", "null"], "maxLength": 120},
+          "sizeBytes": {"type": "integer", "minimum": 0},
+          "width": {"type": ["integer", "null"], "minimum": 1},
+          "height": {"type": ["integer", "null"], "minimum": 1},
+          "status": {"type": "string", "enum": ["ready", "quarantined"]},
+          "rightsStatus": {"type": "string", "enum": ["unknown", "pending", "personal", "owned", "licensed", "public_domain", "restricted", "rejected"]},
+          "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "rejected", "blocked"]},
+          "qualityState": {"type": "string", "enum": ["not_run", "pass", "needs_review", "failed"]},
+          "normalizationState": {"type": "string", "enum": ["not_run", "staged", "lookdev_applied", "needs_review", "failed"]},
+          "shotIds": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]{2,63}$"}},
+          "role": {"type": "string", "enum": ["identity", "composition", "pose", "camera", "style", "texture", "start_frame", "end_frame", "environment", "model3d"]},
+          "provenance": {"type": "string", "minLength": 1, "maxLength": 2000},
+          "issues": {"type": "array", "items": {"type": "string", "maxLength": 200}},
+          "quarantineReason": {"type": ["string", "null"], "maxLength": 500}
+        }
+      }
+    },
+    "bindings": {"type": "array", "items": {"$ref": "asset-binding.schema.json"}},
+    "qualityChecks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assetId", "qualityState", "normalizationState", "reportPath", "issues"],
+        "properties": {
+          "assetId": {"type": "string"},
+          "qualityState": {"type": "string", "enum": ["not_run", "pass", "needs_review", "failed"]},
+          "normalizationState": {"type": "string", "enum": ["not_run", "staged", "lookdev_applied", "needs_review", "failed"]},
+          "reportPath": {"type": ["string", "null"]},
+          "issues": {"type": "array", "items": {"type": "string", "maxLength": 200}}
+        }
+      }
+    },
+    "quarantine": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assetId", "relativePath", "reason"],
+        "properties": {
+          "assetId": {"type": "string"},
+          "relativePath": {"type": "string"},
+          "reason": {"type": "string", "minLength": 1, "maxLength": 500}
+        }
+      }
+    },
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": "string", "format": "date-time"}
+  }
+}

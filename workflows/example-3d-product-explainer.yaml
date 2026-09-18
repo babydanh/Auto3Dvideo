@@ -1,0 +1,84 @@
+schema_version: "1.0.0"
+workflow_id: "3d-product-explainer"
+name: "3D Product Explainer"
+profile: "hybrid"
+inputs:
+  brief: "examples/minimal-3d-video/brief.md"
+  style_bible: "examples/minimal-3d-video/style-bible.yaml"
+  language: "vi-VN"
+  aspect_ratio: "9:16"
+  duration_seconds: 30
+provider_defaults:
+  llm: llm_local
+  image: image_local
+  video: video_primary
+  tts: voice_primary
+  render3d: blender_local
+  media: media_local
+policy:
+  dry_run_default: true
+  paid_generation_requires_approval: true
+  max_retries_per_shot: 2
+  max_gpu_jobs: 1
+  allow_external_publish: false
+stages:
+  - id: normalize_brief
+    type: brief.normalize
+    resource: cpu
+    outputs: [normalized-brief.json]
+  - id: draft_script
+    type: script.draft
+    operation: chat
+    depends_on: [normalize_brief]
+    resource: cpu
+    model_profile: llm_local
+    outputs: [script-v1.md]
+  - id: plan_shots
+    type: shots.plan
+    depends_on: [draft_script]
+    resource: cpu
+    approval: required
+    outputs: [shot-list-v1.yaml]
+  - id: prepare_references
+    type: references.prepare
+    depends_on: [plan_shots]
+    resource: io_heavy
+    outputs: [reference-bundle.json]
+  - id: generate_ai_shots
+    type: ai.generate
+    operation: generate_video
+    depends_on: [prepare_references]
+    resource: gpu
+    executor: provider_adapter
+    provider: mock
+    model_profile: video_primary
+    fallback_profiles: [image_local]
+    approval: required
+    outputs: [raw-shots/]
+  - id: preview_3d_scene
+    type: render.preview
+    operation: render_scene
+    depends_on: [generate_ai_shots]
+    resource: gpu
+    executor: blender
+    model_profile: blender_local
+    outputs: [preview/]
+  - id: compose_video
+    type: media.compose
+    operation: compose
+    depends_on: [preview_3d_scene]
+    resource: cpu_heavy
+    executor: ffmpeg
+    model_profile: media_local
+    outputs: [draft.mp4]
+  - id: review
+    type: human.review
+    depends_on: [compose_video]
+    resource: interactive
+    approval: required
+    outputs: [review.json]
+  - id: delivery
+    type: delivery.package
+    depends_on: [review]
+    resource: io_heavy
+    outputs: [delivery/manifest.json]

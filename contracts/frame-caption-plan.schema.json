@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/frame-caption-plan.schema.json",
+  "title": "Auto3Dvideo Frame-Locked Caption Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "planId", "sourceAudioPath", "sourceVideoPath", "language", "frameRate", "durationFrames", "alignmentSource", "alignmentState", "cues", "reviewState"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "planId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+    "sourceAudioPath": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "sourceVideoPath": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "language": {"type": "string", "pattern": "^[a-z]{2,3}(?:-[A-Z]{2})?$"},
+    "frameRate": {"type": "number", "exclusiveMinimum": 0, "maximum": 240},
+    "durationFrames": {"type": "integer", "minimum": 1},
+    "timebase": {"type": "string", "const": "integer_frames"},
+    "roundingRule": {"type": "string", "const": "frame_source_of_truth"},
+    "alignmentSource": {"type": "string", "enum": ["whisperx", "whisper", "provider", "script", "manual", "mock"]},
+    "alignmentState": {"type": "string", "enum": ["aligned", "needs_review", "blocked"]},
+    "cues": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["cueId", "startFrame", "endFrame", "text"],
+        "properties": {
+          "cueId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+          "startFrame": {"type": "integer", "minimum": 0},
+          "endFrame": {"type": "integer", "minimum": 1},
+          "text": {"type": "string", "minLength": 1, "maxLength": 500},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "sourceSegmentId": {"type": "string", "maxLength": 96},
+          "words": {
+            "type": "array",
+            "maxItems": 500,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["text", "startFrame", "endFrame"],
+              "properties": {
+                "text": {"type": "string", "minLength": 1, "maxLength": 120},
+                "startFrame": {"type": "integer", "minimum": 0},
+                "endFrame": {"type": "integer", "minimum": 1},
+                "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+              }
+            }
+          }
+        }
+      }
+    },
+    "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "blocked"]},
+    "rightsStatus": {"type": "string", "enum": ["pending", "user_owned", "licensed", "public_domain", "blocked"]},
+    "networkCallsMade": {"type": "boolean"},
+    "costStatus": {"type": "string", "enum": ["not_called", "local_only", "unknown", "estimated", "approved"]},
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["valid", "warnings", "maxCps"],
+      "properties": {
+        "valid": {"type": "boolean"},
+        "warnings": {"type": "array", "items": {"type": "string", "maxLength": 300}},
+        "maxCps": {"type": "number", "minimum": 0}
+      }
+    }
+  }
+}

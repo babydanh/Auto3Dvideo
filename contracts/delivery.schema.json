@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/delivery.schema.json",
+  "title": "Auto3Dvideo Delivery",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "deliveryId", "episodeId", "status", "profile", "files", "createdAt"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "deliveryId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "episodeId": {"type": "string"},
+    "status": {"type": "string", "enum": ["draft", "validated", "approved", "exported", "published_pending", "published", "blocked"]},
+    "profile": {"type": "string", "enum": ["master", "youtube", "tiktok", "douyin", "instagram", "custom"]},
+    "width": {"type": "integer", "minimum": 16},
+    "height": {"type": "integer", "minimum": 16},
+    "frameRate": {"type": "number", "exclusiveMinimum": 0},
+    "files": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["kind", "relativePath", "sha256", "sizeBytes"], "properties": {"kind": {"type": "string", "enum": ["video", "audio", "subtitle", "thumbnail", "metadata", "manifest"]}, "relativePath": {"type": "string", "minLength": 1}, "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"}, "sizeBytes": {"type": "integer", "minimum": 0}}}},
+    "rightsReview": {"type": "string", "enum": ["pending", "approved", "blocked"]},
+    "aiDisclosure": {"type": "string", "enum": ["not_required", "required_pending", "included", "blocked"]},
+    "createdAt": {"type": "string", "format": "date-time"}
+  }
+}

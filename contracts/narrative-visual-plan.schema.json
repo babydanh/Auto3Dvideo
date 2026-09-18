@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/narrative-visual-plan.schema.json",
+  "title": "Auto3Dvideo Narrative Visual Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "planId",
+    "projectId",
+    "episodeId",
+    "language",
+    "aspectRatio",
+    "frameRate",
+    "scriptUnitCount",
+    "sourceScriptRef",
+    "styleBibleRef",
+    "continuityPolicy",
+    "policy",
+    "beats",
+    "totalDurationFrames",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "planId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "projectId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "episodeId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "language": {"type": "string", "pattern": "^[a-z]{2,3}(-[A-Z]{2})?$"},
+    "aspectRatio": {"type": "string", "enum": ["16:9", "9:16", "1:1", "4:5", "custom"]},
+    "width": {"type": "integer", "minimum": 16, "maximum": 16384},
+    "height": {"type": "integer", "minimum": 16, "maximum": 16384},
+    "frameRate": {"type": "number", "exclusiveMinimum": 0, "maximum": 240},
+    "scriptUnitCount": {"type": "integer", "minimum": 1, "maximum": 10000},
+    "sourceScriptRef": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "styleBibleRef": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "continuityPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entityIdentityRequired", "visualEvidenceRequired", "promptGroundingRequired", "repeatedEntityAnchorsImmutable"],
+      "properties": {
+        "entityIdentityRequired": {"type": "boolean", "const": true},
+        "visualEvidenceRequired": {"type": "boolean", "const": true},
+        "promptGroundingRequired": {"type": "boolean", "const": true},
+        "repeatedEntityAnchorsImmutable": {"type": "boolean", "const": true}
+      }
+    },
+    "policy": {"$ref": "#/$defs/policy"},
+    "beats": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 512,
+      "items": {"$ref": "#/$defs/beat"}
+    },
+    "totalDurationFrames": {"type": "integer", "minimum": 1, "maximum": 864000},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "safeId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rightsRequired", "humanReviewRequired", "paidGeneration", "externalPublish", "allowNetwork"],
+      "properties": {
+        "rightsRequired": {"type": "boolean", "const": true},
+        "humanReviewRequired": {"type": "boolean", "const": true},
+        "paidGeneration": {"type": "boolean", "const": false},
+        "externalPublish": {"type": "boolean", "const": false},
+        "allowNetwork": {"type": "boolean", "const": false}
+      }
+    },
+    "beat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "beatId",
+        "sequence",
+        "narration",
+        "timing",
+        "narrativeClaim",
+        "visualIntent",
+        "setting",
+        "entities",
+        "visualEvidence",
+        "prompt",
+        "referenceAssetIds",
+        "expectedAsset",
+        "candidate",
+        "review",
+        "risk",
+        "policy"
+      ],
+      "properties": {
+        "beatId": {"type": "string", "pattern": "^beat-[0-9]{3}$"},
+        "sequence": {"type": "integer", "minimum": 1, "maximum": 512},
+        "narration": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text", "startUnit", "endUnit"],
+          "properties": {
+            "text": {"type": "string", "minLength": 1, "maxLength": 4000},
+            "startUnit": {"type": "integer", "minimum": 0, "maximum": 10000},
+            "endUnit": {"type": "integer", "minimum": 1, "maximum": 10000}
+          }
+        },
+        "timing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["startFrame", "endFrame", "durationFrames"],
+          "properties": {
+            "startFrame": {"type": "integer", "minimum": 0, "maximum": 864000},
+            "endFrame": {"type": "integer", "minimum": 1, "maximum": 864000},
+            "durationFrames": {"type": "integer", "minimum": 1, "maximum": 864000}
+          }
+        },
+        "narrativeClaim": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "visualIntent": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "setting": {"type": "string", "minLength": 1, "maxLength": 500},
+        "entities": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["entityId", "name", "role", "continuityMode", "identityAnchors", "referenceAssetIds"],
+            "properties": {
+              "entityId": {"$ref": "#/$defs/safeId"},
+              "name": {"type": "string", "minLength": 1, "maxLength": 200},
+              "role": {"type": "string", "minLength": 1, "maxLength": 200},
+              "continuityMode": {"type": "string", "enum": ["new", "persistent", "background"]},
+              "identityAnchors": {"type": "array", "minItems": 1, "maxItems": 16, "items": {"type": "string", "minLength": 1, "maxLength": 200}, "uniqueItems": true},
+              "referenceAssetIds": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/safeId"}, "uniqueItems": true}
+            }
+          }
+        },
+        "visualEvidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["proofMode", "claim", "requiredElements", "forbiddenElements"],
+          "properties": {
+            "proofMode": {"type": "string", "enum": ["illustrate", "demonstrate", "literal_reference"]},
+            "claim": {"type": "string", "minLength": 1, "maxLength": 1000},
+            "requiredElements": {"type": "array", "minItems": 1, "maxItems": 32, "items": {"type": "string", "minLength": 1, "maxLength": 200}, "uniqueItems": true},
+            "forbiddenElements": {"type": "array", "maxItems": 32, "items": {"type": "string", "minLength": 1, "maxLength": 200}, "uniqueItems": true}
+          }
+        },
+        "prompt": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["promptVersion", "positive", "negative", "groundingTokens"],
+          "properties": {
+            "promptVersion": {"type": "string", "minLength": 1, "maxLength": 120},
+            "positive": {"type": "string", "minLength": 1, "maxLength": 10000},
+            "negative": {"type": "string", "minLength": 1, "maxLength": 10000},
+            "groundingTokens": {"type": "array", "minItems": 1, "maxItems": 32, "items": {"type": "string", "minLength": 1, "maxLength": 160}, "uniqueItems": true}
+          }
+        },
+        "referenceAssetIds": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/safeId"}, "uniqueItems": true},
+        "expectedAsset": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["assetId", "mediaKind", "relativePath", "mustBeNew"],
+          "properties": {
+            "assetId": {"$ref": "#/$defs/safeId"},
+            "mediaKind": {"type": "string", "enum": ["image", "video", "image_sequence"]},
+            "relativePath": {"type": "string", "minLength": 1, "maxLength": 1024},
+            "mustBeNew": {"type": "boolean", "const": true}
+          }
+        },
+        "candidate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["selectionState", "score", "providerProfileRef", "modelProfileRef", "seed"],
+          "properties": {
+            "selectionState": {"type": "string", "enum": ["not_generated", "candidate", "accepted", "rejected"]},
+            "score": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+            "providerProfileRef": {"type": ["string", "null"], "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+            "modelProfileRef": {"type": ["string", "null"], "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+            "seed": {"type": ["integer", "null"], "minimum": 0, "maximum": 2147483647}
+          }
+        },
+        "review": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "semanticState", "continuityState", "rightsState"],
+          "properties": {
+            "decision": {"type": "string", "enum": ["not_started", "needs_review", "approved", "rejected"]},
+            "semanticState": {"type": "string", "enum": ["not_checked", "pass", "fail"]},
+            "continuityState": {"type": "string", "enum": ["not_checked", "pass", "fail"]},
+            "rightsState": {"type": "string", "enum": ["pending", "pass", "fail"]}
+          }
+        },
+        "risk": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["level", "issues", "needsHumanReview"],
+          "properties": {
+            "level": {"type": "string", "enum": ["low", "medium", "high"]},
+            "issues": {"type": "array", "maxItems": 32, "items": {"type": "string", "minLength": 1, "maxLength": 500}},
+            "needsHumanReview": {"type": "boolean", "const": true}
+          }
+        },
+        "policy": {"$ref": "#/$defs/policy"}
+      }
+    }
+  }
+}

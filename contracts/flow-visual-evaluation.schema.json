@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/flow-visual-evaluation.schema.json",
+  "title": "Auto3Dvideo Google Flow visual evaluation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status",
+    "shotId",
+    "revisionId",
+    "model",
+    "decision",
+    "overallScore",
+    "confidence",
+    "criteria",
+    "flags",
+    "revisionInstruction",
+    "summary",
+    "imagePath",
+    "imageSha256",
+    "reportPath",
+    "networkCallsMade",
+    "costStatus",
+    "humanReviewRequired",
+    "message"
+  ],
+  "properties": {
+    "status": { "type": "string", "enum": ["succeeded", "blocked", "needs_review"] },
+    "shotId": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "revisionId": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "model": { "type": "string", "enum": ["ag/gemini-3.8-flash-high", "ag/gemini-3.8-flash-medium"] },
+    "decision": { "type": "string", "enum": ["pass", "revise", "needs_review"] },
+    "overallScore": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+    "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+    "criteria": { "type": "object", "additionalProperties": false, "required": ["promptAdherence", "identity", "composition", "lighting", "continuity"], "properties": {
+      "promptAdherence": { "type": "number", "minimum": 0, "maximum": 100 },
+      "identity": { "type": "number", "minimum": 0, "maximum": 100 },
+      "composition": { "type": "number", "minimum": 0, "maximum": 100 },
+      "lighting": { "type": "number", "minimum": 0, "maximum": 100 },
+      "continuity": { "type": "number", "minimum": 0, "maximum": 100 }
+    } },
+    "flags": { "type": "array", "maxItems": 12, "items": { "type": "string", "maxLength": 240 } },
+    "revisionInstruction": { "type": "string", "maxLength": 2000 },
+    "summary": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "imagePath": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "imageSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "reportPath": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "networkCallsMade": { "type": "boolean" },
+    "costStatus": { "type": "string", "maxLength": 120 },
+    "humanReviewRequired": { "type": "boolean" },
+    "message": { "type": "string", "minLength": 1, "maxLength": 2000 }
+  }
+}

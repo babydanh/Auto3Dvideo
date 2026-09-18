@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/video-evidence.schema.json",
+  "title": "Auto3Dvideo Video Evidence",
+  "description": "Versioned local evidence artifact for shot planning. It records measurable media observations and does not claim semantic VLM understanding unless a configured adapter produced it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "evidenceId",
+    "sourceVideoPath",
+    "sourceSha256",
+    "durationSeconds",
+    "width",
+    "height",
+    "fps",
+    "videoCodec",
+    "audioPresent",
+    "audioPath",
+    "sampling",
+    "shots",
+    "capabilities",
+    "rightsStatus",
+    "reviewState",
+    "networkCallsMade",
+    "costStatus"
+  ],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "evidenceId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,96}$"},
+    "sourceVideoPath": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "sourceSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "durationSeconds": {"type": "number", "exclusiveMinimum": 0, "maximum": 604800},
+    "width": {"type": "integer", "minimum": 16, "maximum": 16384},
+    "height": {"type": "integer", "minimum": 16, "maximum": 16384},
+    "fps": {"type": "number", "exclusiveMinimum": 0, "maximum": 240},
+    "videoCodec": {"type": "string", "minLength": 1, "maxLength": 64},
+    "audioPresent": {"type": "boolean"},
+    "audioPath": {"type": ["string", "null"], "maxLength": 1024},
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestedFps", "maxFrames", "framesExtracted", "frameWidth", "frameHeight"],
+      "properties": {
+        "requestedFps": {"type": "number", "exclusiveMinimum": 0, "maximum": 2},
+        "maxFrames": {"type": "integer", "minimum": 1, "maximum": 240},
+        "framesExtracted": {"type": "integer", "minimum": 1, "maximum": 240},
+        "frameWidth": {"type": "integer", "minimum": 16, "maximum": 2048},
+        "frameHeight": {"type": "integer", "minimum": 16, "maximum": 2048}
+      }
+    },
+    "shots": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 240,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "shotId",
+          "startSeconds",
+          "endSeconds",
+          "durationSeconds",
+          "frameRefs",
+          "boundaryMethod",
+          "visualCues",
+          "semanticStatus",
+          "reviewState"
+        ],
+        "properties": {
+          "shotId": {"type": "string", "pattern": "^shot-[0-9]{4}$"},
+          "startSeconds": {"type": "number", "minimum": 0},
+          "endSeconds": {"type": "number", "exclusiveMinimum": 0},
+          "durationSeconds": {"type": "number", "exclusiveMinimum": 0},
+          "frameRefs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 32,
+            "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+          },
+          "boundaryMethod": {"type": "string", "enum": ["single_sample", "pixel_diff_heuristic", "manual_review"]},
+          "visualCues": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["brightness", "motion", "palette", "textVisibility"],
+            "properties": {
+              "brightness": {"type": "string", "enum": ["low", "medium", "high", "unknown"]},
+              "motion": {"type": "string", "enum": ["static", "low", "medium", "high", "unknown"]},
+              "palette": {"type": "array", "minItems": 1, "maxItems": 5, "items": {"type": "string", "pattern": "^#[0-9a-f]{6}$"}},
+              "textVisibility": {"type": "string", "enum": ["none_detected", "possible", "unknown"]},
+              "edgeDensity": {"type": "number", "minimum": 0, "maximum": 1}
+            }
+          },
+          "semanticStatus": {"type": "string", "enum": ["not_run", "vlm_pending", "vlm_complete", "vlm_failed"]},
+          "semanticSummary": {"type": ["string", "null"], "maxLength": 2000},
+          "ocrText": {"type": "string", "maxLength": 4000},
+          "transcriptText": {"type": "string", "maxLength": 8000},
+          "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "blocked"]}
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ffprobe", "frameSampling", "shotBoundaryHeuristic", "audioExtraction", "ocr", "transcript", "semanticVlm"],
+      "properties": {
+        "ffprobe": {"type": "boolean"},
+        "frameSampling": {"type": "boolean"},
+        "shotBoundaryHeuristic": {"type": "boolean"},
+        "audioExtraction": {"type": "boolean"},
+        "ocr": {"type": "boolean"},
+        "transcript": {"type": "boolean"},
+        "semanticVlm": {"type": "boolean"},
+        "semanticAdapter": {"type": ["string", "null"], "maxLength": 128}
+      }
+    },
+    "rightsStatus": {"type": "string", "enum": ["pending", "user_owned", "licensed", "public_domain", "blocked"]},
+    "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "blocked"]},
+    "networkCallsMade": {"type": "boolean", "const": false},
+    "costStatus": {"type": "string", "enum": ["local_only", "not_called", "unknown"]},
+    "notes": {"type": "string", "maxLength": 4000}
+  }
+}

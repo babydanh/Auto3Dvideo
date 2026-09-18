@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/browser-flow-playwright-report.schema.json",
+  "title": "Auto3Dvideo Google Flow Playwright action report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "status", "projectUrl", "mode", "reportPath", "process"],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "status": { "enum": ["ready", "blocked", "failed"] },
+    "projectUrl": { "type": "string", "pattern": "^https://flow\\.google\\.com/project/[A-Za-z0-9-]+$", "maxLength": 200 },
+    "targetUrl": { "type": ["string", "null"], "maxLength": 500 },
+    "mode": { "enum": ["observe", "type_prompt", "click_generate", "animate_image", "download_image"] },
+    "reportPath": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "screenshotPath": { "type": ["string", "null"], "maxLength": 500 },
+    "editorFound": { "type": "boolean" },
+    "promptAccepted": { "type": "boolean" },
+    "generateClicked": { "type": "boolean" },
+    "referenceAttached": { "type": "boolean" },
+    "sourceMediaId": { "type": ["string", "null"], "maxLength": 128 },
+    "downloadStarted": { "type": "boolean" },
+    "downloadName": { "type": ["string", "null"], "maxLength": 180 },
+    "downloadSizeBytes": { "type": ["integer", "null"], "minimum": 1, "maximum": 4294967296 },
+    "observed": { "type": ["object", "null"] },
+    "message": { "type": "string", "maxLength": 900 },
+    "process": {
+      "type": "object",
+      "required": ["executableId", "succeeded", "timedOut", "cancelled", "externalSideEffectUnknown", "outputEvidence"],
+      "properties": {
+        "executableId": { "const": "node" },
+        "exitCode": { "type": ["integer", "null"] },
+        "succeeded": { "type": "boolean" },
+        "timedOut": { "type": "boolean" },
+        "cancelled": { "type": "boolean" },
+        "terminationMode": { "type": "string", "maxLength": 32 },
+        "stdout": { "type": "string", "maxLength": 1048576 },
+        "stderr": { "type": "string", "maxLength": 1048576 },
+        "stdoutBytes": { "type": "integer", "minimum": 0 },
+        "stderrBytes": { "type": "integer", "minimum": 0 },
+        "stdoutTruncated": { "type": "boolean" },
+        "stderrTruncated": { "type": "boolean" },
+        "externalSideEffectUnknown": { "type": "boolean" },
+        "outputEvidence": { "type": "array", "maxItems": 8 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

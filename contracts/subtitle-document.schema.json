@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/subtitle-document.schema.json",
+  "title": "Auto3Dvideo Subtitle Document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "documentId", "sourceVideoPath", "sourceLanguage", "targetLanguage", "durationSeconds", "format", "entries", "rightsStatus", "reviewState", "networkCallsMade"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "documentId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "sourceVideoPath": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "sourceSubtitlePath": {"type": "string", "maxLength": 1024},
+    "sourceLanguage": {"type": "string", "pattern": "^[a-z]{2}(?:-[A-Z]{2})?$"},
+    "targetLanguage": {"type": "string", "pattern": "^[a-z]{2}(?:-[A-Z]{2})?$"},
+    "durationSeconds": {"type": "number", "exclusiveMinimum": 0, "maximum": 604800},
+    "format": {"type": "string", "enum": ["srt", "vtt"]},
+    "entries": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entryId", "startSeconds", "endSeconds", "text"],
+        "properties": {
+          "entryId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,95}$"},
+          "startSeconds": {"type": "number", "minimum": 0},
+          "endSeconds": {"type": "number", "exclusiveMinimum": 0},
+          "text": {"type": "string", "minLength": 1, "maxLength": 500},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "sourceSegmentId": {"type": "string", "maxLength": 96}
+        }
+      }
+    },
+    "rightsStatus": {"type": "string", "enum": ["pending", "user_owned", "licensed", "public_domain", "blocked"]},
+    "reviewState": {"type": "string", "enum": ["draft", "validated", "needs_review", "approved", "blocked"]},
+    "networkCallsMade": {"type": "boolean"},
+    "costStatus": {"type": "string", "enum": ["not_called", "local_only", "unknown", "estimated", "approved"]},
+    "notes": {"type": "string", "maxLength": 4000},
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["valid", "warnings", "maxCps"],
+      "properties": {
+        "valid": {"type": "boolean"},
+        "warnings": {"type": "array", "items": {"type": "string", "maxLength": 300}},
+        "maxCps": {"type": "number", "minimum": 0}
+      }
+    }
+  }
+}

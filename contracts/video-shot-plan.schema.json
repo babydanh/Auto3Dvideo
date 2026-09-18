@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/video-shot-plan.schema.json",
+  "title": "Auto3Dvideo Local Video Shot Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "shotPlanId", "scriptId", "width", "height", "frameRate", "shots"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "shotPlanId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "scriptId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "width": {"type": "integer", "minimum": 320, "maximum": 3840},
+    "height": {"type": "integer", "minimum": 320, "maximum": 3840},
+    "frameRate": {"type": "number", "enum": [24, 25, 30, 50, 60]},
+    "shots": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["shotId", "order", "durationFrames", "visualKind", "title", "body", "accentColor", "narrationSegmentIds", "expectedAssetPath", "reviewState"],
+        "properties": {
+          "shotId": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]{2,63}$"},
+          "order": {"type": "integer", "minimum": 0, "maximum": 100},
+          "durationFrames": {"type": "integer", "minimum": 30, "maximum": 5400},
+          "visualKind": {"type": "string", "enum": ["title_card", "text_card", "diagram", "bar_chart", "timeline", "comparison"]},
+          "title": {"type": "string", "minLength": 1, "maxLength": 160},
+          "body": {"type": "string", "maxLength": 500},
+          "accentColor": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+          "narrationSegmentIds": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
+          "expectedAssetPath": {"type": "string", "pattern": "^assets/[a-z0-9][a-z0-9._/-]*\\.svg$"},
+          "reviewState": {"type": "string", "enum": ["not_started", "in_review", "approved", "rejected"]}
+        }
+      }
+    }
+  }
+}

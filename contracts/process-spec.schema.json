@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/process-spec.schema.json",
+  "title": "Auto3Dvideo Process Specification",
+  "description": "Structured, allowlisted process request. This contract never accepts a shell command string or credential value.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "executableId", "args", "workingDirectory", "environment", "timeoutSeconds", "expectedOutputs"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "executableId": {"type": "string", "enum": ["blender", "ffmpeg", "ffprobe", "node", "obs", "python"]},
+    "args": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"type": "string", "maxLength": 4096}
+    },
+    "workingDirectory": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "description": "Relative path inside the project workspace; absolute paths and parent traversal are rejected semantically."
+    },
+    "environment": {
+      "type": "object",
+      "propertyNames": {"pattern": "^AUTO3DVIDEO_[A-Z0-9_]{0,127}$"},
+      "additionalProperties": {"type": "string", "maxLength": 4096}
+    },
+    "timeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 604800},
+    "expectedOutputs": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+    }
+  }
+}

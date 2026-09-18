@@ -1,0 +1,665 @@
+{
+  "status": "ready",
+  "operation": "flow_observe",
+  "observed": {
+    "controlCount": 119,
+    "uiRefs": [
+      {
+        "role": "link",
+        "label": "Skip to main content",
+        "reference": "e1"
+      },
+      {
+        "role": "button",
+        "label": "Home",
+        "reference": "e2"
+      },
+      {
+        "role": "textbox",
+        "label": "Editable text",
+        "reference": "e3"
+      },
+      {
+        "role": "button",
+        "label": "More options for the project",
+        "reference": "e4"
+      },
+      {
+        "role": "button",
+        "label": "Search",
+        "reference": "e5"
+      },
+      {
+        "role": "textbox",
+        "label": "Search",
+        "reference": "e6"
+      },
+      {
+        "role": "button",
+        "label": "Filtering and sorting options",
+        "reference": "e7"
+      },
+      {
+        "role": "button",
+        "label": "Add media menu",
+        "reference": "e8"
+      },
+      {
+        "role": "button",
+        "label": "Product help",
+        "reference": "e9"
+      },
+      {
+        "role": "button",
+        "label": "Tile grid settings",
+        "reference": "e10"
+      },
+      {
+        "role": "button",
+        "label": "More options",
+        "reference": "e11"
+      },
+      {
+        "role": "button",
+        "label": "Account details",
+        "reference": "e12"
+      },
+      {
+        "role": "button",
+        "label": "Google Account: sigma6969 whynot (sigmawhynot08@gmail.com), Google membership",
+        "reference": "e13"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e14"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e15"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e16"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e17"
+      },
+      {
+        "role": "link",
+        "label": "Tools",
+        "reference": "e18"
+      },
+      {
+        "role": "link",
+        "label": "Trash",
+        "reference": "e19"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e20"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e21"
+      },
+      {
+        "role": "button",
+        "label": "Download batch",
+        "reference": "e22"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e23"
+      },
+      {
+        "role": "button",
+        "label": "Trash batch",
+        "reference": "e24"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e25"
+      },
+      {
+        "role": "button",
+        "label": "Expand prompt",
+        "reference": "e26"
+      },
+      {
+        "role": "button",
+        "label": "Download batch",
+        "reference": "e27"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e28"
+      },
+      {
+        "role": "button",
+        "label": "Trash batch",
+        "reference": "e29"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e30"
+      },
+      {
+        "role": "button",
+        "label": "Expand prompt",
+        "reference": "e31"
+      },
+      {
+        "role": "button",
+        "label": "Download batch",
+        "reference": "e32"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e33"
+      },
+      {
+        "role": "button",
+        "label": "Trash batch",
+        "reference": "e34"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e35"
+      },
+      {
+        "role": "button",
+        "label": "Expand prompt",
+        "reference": "e36"
+      },
+      {
+        "role": "button",
+        "label": "Download batch",
+        "reference": "e37"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e38"
+      },
+      {
+        "role": "button",
+        "label": "Trash batch",
+        "reference": "e39"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e40"
+      },
+      {
+        "role": "button",
+        "label": "Expand prompt",
+        "reference": "e41"
+      },
+      {
+        "role": "button",
+        "label": "Ingredient",
+        "reference": "e42"
+      },
+      {
+        "role": "button",
+        "label": "Download batch",
+        "reference": "e43"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e44"
+      },
+      {
+        "role": "button",
+        "label": "Trash batch",
+        "reference": "e45"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e46"
+      },
+      {
+        "role": "button",
+        "label": "Expand prompt",
+        "reference": "e47"
+      },
+      {
+        "role": "button",
+        "label": "Download batch",
+        "reference": "e48"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e49"
+      },
+      {
+        "role": "button",
+        "label": "Trash batch",
+        "reference": "e50"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e51"
+      },
+      {
+        "role": "button",
+        "label": "Expand prompt",
+        "reference": "e52"
+      },
+      {
+        "role": "button",
+        "label": "Download batch",
+        "reference": "e53"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e54"
+      },
+      {
+        "role": "button",
+        "label": "Trash batch",
+        "reference": "e55"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e56"
+      },
+      {
+        "role": "button",
+        "label": "Expand prompt",
+        "reference": "e57"
+      },
+      {
+        "role": "button",
+        "label": "Download batch",
+        "reference": "e58"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e59"
+      },
+      {
+        "role": "button",
+        "label": "Trash batch",
+        "reference": "e60"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e61"
+      },
+      {
+        "role": "button",
+        "label": "Expand prompt",
+        "reference": "e62"
+      },
+      {
+        "role": "button",
+        "label": "Open session history",
+        "reference": "e63"
+      },
+      {
+        "role": "button",
+        "label": "Start new session",
+        "reference": "e64"
+      },
+      {
+        "role": "button",
+        "label": "Close",
+        "reference": "e65"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e66"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e67"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e68"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e69"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e70"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e71"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e72"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e73"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e74"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e75"
+      },
+      {
+        "role": "button",
+        "label": "Show thinking",
+        "reference": "e76"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e77"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e78"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e79"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e80"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e81"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e82"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e83"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e84"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e85"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e86"
+      },
+      {
+        "role": "button",
+        "label": "Show thinking",
+        "reference": "e87"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e88"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e89"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e90"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e91"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e92"
+      },
+      {
+        "role": "button",
+        "label": "Image ingredient",
+        "reference": "e93"
+      },
+      {
+        "role": "button",
+        "label": "Show thinking",
+        "reference": "e94"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e95"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e96"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e97"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e98"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e99"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e100"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e101"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e102"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e103"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e104"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e105"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e106"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e107"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e108"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e109"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e110"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e111"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e112"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e113"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e114"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e115"
+      },
+      {
+        "role": "button",
+        "label": "Add ingredients to the prompt box",
+        "reference": "e116"
+      },
+      {
+        "role": "button",
+        "label": "Agent instructions",
+        "reference": "e117"
+      },
+      {
+        "role": "button",
+        "label": "Settings",
+        "reference": "e118"
+      },
+      {
+        "role": "button",
+        "label": "Start generation",
+        "reference": "e119"
+      }
+    ],
+    "flowState": {
+      "mediaCount": 16,
+      "mediaIds": [
+        "220b862b-f02a-4721-b587-885beca9a3a1",
+        "821b7773-dbda-4d4b-82d4-4f1042909b07",
+        "2e6451d0-1e8e-497b-bcd3-42d80bd69491",
+        "46777c0b-20b2-4235-9ea0-a14ea1f209e8",
+        "16ced2e8-dd5f-428c-b3ff-29def86c4d67",
+        "9309879b-8be0-4e33-ab9f-3781e809646a",
+        "6b898dab-8c6e-4cf0-ab7f-7094b15e8bf1",
+        "67895d5d-32ee-4333-8fab-1076eef3efb0"
+      ],
+      "matchingBatchCount": 0,
+      "matchingBatchMediaCount": 0,
+      "generatedMessageCount": 66,
+      "assistantClaimsGenerated": true,
+      "generationActive": false,
+      "downloadControlFound": true,
+      "selectedModel": "",
+      "composerFound": true,
+      "promptEditorFound": true,
+      "imageModeFound": true
+    }
+  },
+  "page": 4,
+  "targetUrl": "https://flow.google.com/project/2e6bbd85-88d8-415c-8d72-0dcbf29a9658",
+  "reportPath": "D:\\Duancanhan\\Auto3Dvideo\\.auto3dvideo\\verification\\flow-live-observe-single-tab.json",
+  "serverInfo": {
+    "name": "browseros_mcp",
+    "title": "BrowserOS MCP server"
+  },
+  "protocolVersion": null,
+  "tools": [
+    "tabs",
+    "tab_groups",
+    "history",
+    "navigate",
+    "snapshot",
+    "diff",
+    "act",
+    "download",
+    "upload",
+    "read",
+    "grep",
+    "screenshot",
+    "pdf",
+    "wait",
+    "windows",
+    "evaluate",
+    "run",
+    "connector_mcp_servers",
+    "discover_server_categories_or_actions",
+    "get_category_actions",
+    "get_action_details",
+    "execute_action",
+    "search_documentation",
+    "handle_auth_failure"
+  ],
+  "browserSessionAttached": true,
+  "browserActionsPerformed": true,
+  "networkCallsMade": true,
+  "message": "BrowserOS flow_observe đã hoàn tất."
+}

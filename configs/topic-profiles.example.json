@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "1.0.0",
+  "profiles": [
+    {
+      "profileId": "science-explainer",
+      "name": "Khoa học / giải thích",
+      "description": "Giải thích một hiện tượng bằng nguồn, biểu đồ, minh họa và nhịp kể rõ ràng.",
+      "defaultRecipeKind": "html_to_video",
+      "visualMode": "editorial-data",
+      "defaultAudience": "Người xem phổ thông muốn hiểu nhanh nhưng không bỏ qua bằng chứng.",
+      "shotStrategy": "Mỗi claim cần một visual proof; ưu tiên biểu đồ, sơ đồ, timeline và mô phỏng HTML trước hình AI.",
+      "assetPolicy": { "requiresProvenance": true, "rejectIrrelevantCandidates": true, "requiresHumanReview": true, "allowedSources": ["user-owned", "wikimedia-reviewed", "generated-local", "public-domain"] },
+      "qaChecklist": ["Mỗi claim có nguồn hoặc đánh dấu giả thuyết.", "Đơn vị và số liệu được kiểm tra.", "Không dùng ảnh minh họa lệch claim.", "Phụ đề và thuật ngữ tiếng Việt được đọc lại."],
+      "promptTemplateIds": ["content-brief-v1", "research-claims-v1", "storyboard-shots-v1", "asset-candidates-v1", "narration-v1"]
+    },
+    {
+      "profileId": "history-documentary",
+      "name": "Lịch sử / tài liệu",
+      "description": "Kể một sự kiện hoặc nhân vật lịch sử bằng timeline, bản đồ, tư liệu và lời dẫn.",
+      "defaultRecipeKind": "image_slideshow",
+      "visualMode": "documentary",
+      "defaultAudience": "Người xem cần mạch thời gian và ngữ cảnh dễ theo dõi.",
+      "shotStrategy": "Chia theo mốc thời gian; mỗi hình phải có nguồn, năm, bối cảnh và chú thích không suy diễn.",
+      "assetPolicy": { "requiresProvenance": true, "rejectIrrelevantCandidates": true, "requiresHumanReview": true, "allowedSources": ["user-owned", "wikimedia-reviewed", "public-domain", "licensed-stock"] },
+      "qaChecklist": ["Ngày tháng và tên riêng được đối chiếu.", "Ảnh tư liệu có license và attribution.", "Phân biệt sự kiện xác thực với tái hiện AI.", "Không dùng khuôn mặt người thật để tái hiện nếu thiếu quyền."],
+      "promptTemplateIds": ["content-brief-v1", "research-claims-v1", "storyboard-shots-v1", "asset-candidates-v1", "narration-v1"]
+    },
+    {
+      "profileId": "story-narrative",
+      "name": "Truyện / kể chuyện",
+      "description": "Tạo video kể chuyện hư cấu với nhân vật, bối cảnh và continuity được giữ xuyên suốt.",
+      "defaultRecipeKind": "hybrid_2d_3d",
+      "visualMode": "narrative",
+      "defaultAudience": "Người xem thích câu chuyện ngắn có nhân vật và cao trào rõ.",
+      "shotStrategy": "Khóa identity anchor, trang phục, đạo cụ, palette và hướng chuyển động trước khi tạo từng beat.",
+      "assetPolicy": { "requiresProvenance": true, "rejectIrrelevantCandidates": true, "requiresHumanReview": true, "allowedSources": ["generated-local", "user-owned", "licensed-stock"] },
+      "qaChecklist": ["Nhân vật không đổi bất hợp lý giữa các beat.", "Đạo cụ và bối cảnh khớp script.", "Không dùng IP có bản quyền nếu chưa được phép.", "Kiểm tra nhịp kể và kết thúc trước render."],
+      "promptTemplateIds": ["content-brief-v1", "character-bible-v1", "storyboard-shots-v1", "asset-candidates-v1", "narration-v1"]
+    },
+    {
+      "profileId": "product-demo",
+      "name": "Sản phẩm / demo",
+      "description": "Giới thiệu sản phẩm hoặc tính năng bằng màn hình thật, motion graphic và claim có thể kiểm chứng.",
+      "defaultRecipeKind": "screen_demo",
+      "visualMode": "product-demo",
+      "defaultAudience": "Khách hàng hoặc người dùng cần hiểu giá trị và cách dùng.",
+      "shotStrategy": "Ưu tiên capture sản phẩm thật; mỗi claim gắn với màn hình, số liệu hoặc tài liệu đã duyệt.",
+      "assetPolicy": { "requiresProvenance": true, "rejectIrrelevantCandidates": true, "requiresHumanReview": true, "allowedSources": ["user-owned", "generated-local", "licensed-stock"] },
+      "qaChecklist": ["Claim marketing có người chịu trách nhiệm duyệt.", "Không lộ token, email, dữ liệu cá nhân hoặc màn hình riêng tư.", "Logo và font có quyền sử dụng.", "CTA không tự động đăng bài hoặc cam kết sai."],
+      "promptTemplateIds": ["content-brief-v1", "product-claims-v1", "storyboard-shots-v1", "asset-candidates-v1", "narration-v1"]
+    },
+    {
+      "profileId": "gameplay-demo",
+      "name": "Gameplay / hướng dẫn",
+      "description": "Dùng gameplay hoặc màn hình phần mềm do người dùng sở hữu để giải thích thao tác và kết quả.",
+      "defaultRecipeKind": "screen_demo",
+      "visualMode": "gameplay",
+      "defaultAudience": "Người xem muốn thấy thao tác thật và kết quả nhanh.",
+      "shotStrategy": "Capture theo bước; che dữ liệu riêng tư; thêm callout cố định thay vì nhờ model vẽ chữ.",
+      "assetPolicy": { "requiresProvenance": true, "rejectIrrelevantCandidates": true, "requiresHumanReview": true, "allowedSources": ["user-owned", "licensed-game-capture", "generated-local"] },
+      "qaChecklist": ["Gameplay hoặc phần mềm có quyền ghi hình.", "Không lộ tài khoản, chat, email hoặc dữ liệu riêng.", "Callout khớp thời điểm thao tác.", "Âm thanh nền và bản quyền nhạc đã được kiểm tra."],
+      "promptTemplateIds": ["content-brief-v1", "tutorial-steps-v1", "storyboard-shots-v1", "asset-candidates-v1", "narration-v1"]
+    },
+    {
+      "profileId": "programming-algorithms",
+      "name": "Lập trình / thuật toán",
+      "description": "Giải thích thuật toán và cấu trúc dữ liệu bằng code ngắn, sơ đồ, array animation và complexity có kiểm chứng.",
+      "defaultRecipeKind": "html_to_video",
+      "visualMode": "editorial-code",
+      "defaultAudience": "Người mới học lập trình muốn hiểu cách suy nghĩ trước khi ghi nhớ code.",
+      "shotStrategy": "Mỗi bài chia thành hook, problem, brute force, insight, walkthrough, complexity và takeaway; code phải ngắn và mỗi claim phải được review.",
+      "assetPolicy": { "requiresProvenance": true, "rejectIrrelevantCandidates": true, "requiresHumanReview": true, "allowedSources": ["generated-local", "user-owned", "public-domain"] },
+      "qaChecklist": ["Code phải biên dịch hoặc khớp đúng ngôn ngữ đã chọn.", "Complexity phải phân biệt expected/amortized với worst-case khi cần.", "Ví dụ input/output và index phải khớp.", "Typography code phải đọc được trên video dọc 9:16.", "Không dùng logo, footage hoặc lời giải có bản quyền ngoài phạm vi cần thiết."],
+      "promptTemplateIds": ["content-brief-v1", "research-claims-v1", "storyboard-shots-v1", "asset-candidates-v1", "narration-v1"]
+    },
+    {
+      "profileId": "cinematic-3d",
+      "name": "Cinematic 3D",
+      "description": "Tạo cảnh 3D có asset, camera, ánh sáng và chuyển động được định nghĩa để tái sử dụng.",
+      "defaultRecipeKind": "true_3d",
+      "visualMode": "cinematic-3d",
+      "defaultAudience": "Người xem cần hình ảnh điện ảnh và không gian 3D nhất quán.",
+      "shotStrategy": "Xây visual bible và asset list trước; Blender giữ geometry/camera, AI chỉ hỗ trợ concept hoặc texture được duyệt.",
+      "assetPolicy": { "requiresProvenance": true, "rejectIrrelevantCandidates": true, "requiresHumanReview": true, "allowedSources": ["generated-local", "user-owned", "licensed-3d", "public-domain"] },
+      "qaChecklist": ["Asset 3D có license và nguồn rõ.", "Scale, camera và lighting khớp shot plan.", "Không ghi nhận render thành công nếu chưa kiểm tra output.", "Kiểm tra artifact, frame rate và continuity trước delivery."],
+      "promptTemplateIds": ["content-brief-v1", "world-bible-v1", "storyboard-shots-v1", "asset-candidates-v1", "narration-v1"]
+    }
+  ]
+}

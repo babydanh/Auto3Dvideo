@@ -1,0 +1,27 @@
+{
+  "status": "blocked",
+  "operation": "snapshot",
+  "reportPath": ".auto3dvideo/reports/browsermcp-snapshot-run_1789657602754686500.json",
+  "serverInfo": null,
+  "protocolVersion": null,
+  "toolCount": 0,
+  "tools": [],
+  "toolName": "snapshot",
+  "approved": true,
+  "browserSessionAttached": false,
+  "browserActionsPerformed": false,
+  "networkCallsMade": false,
+  "operationResult": {
+    "isError": true,
+    "contentItemCount": 0,
+    "contentTypes": [],
+    "textBytes": 0,
+    "hasImage": false,
+    "uiRefCount": 0,
+    "uiRefs": [],
+    "currentUrl": null,
+    "detail": "fetch failed"
+  },
+  "message": "fetch failed",
+  "process": null
+}

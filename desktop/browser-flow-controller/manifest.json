@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Auto3Dvideo Flow Workspace Controller",
+  "version": "0.1.0",
+  "description": "Keeps the Auto3Dvideo Google Flow tabs together in one dedicated Chrome group.",
+  "permissions": ["tabs", "tabGroups", "storage"],
+  "host_permissions": [
+    "https://flow.google.com/*",
+    "https://labs.google/*",
+    "https://aistudio.google.com/*",
+    "https://gemini.google.com/*"
+  ],
+  "background": {
+    "service_worker": "service_worker.js"
+  }
+}

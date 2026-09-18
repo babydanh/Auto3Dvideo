@@ -1,0 +1,73 @@
+schema_version: "1.0.0"
+workflow_id: "screen-demo"
+name: "Screen and Browser Product Demo"
+profile: "local"
+inputs:
+  capture_target: "approved-window-or-display"
+  action_script: "examples/minimal-3d-video/brief.md"
+  language: "vi-VN"
+  aspect_ratio: "16:9"
+  duration_seconds: 60
+  fps: 30
+provider_defaults:
+  capture: obs_local
+  tts: voice_primary
+  stt: stt_local
+  media: media_local
+policy:
+  dry_run_default: true
+  rights_required: true
+  capture_privacy_review: true
+  paid_generation_requires_approval: true
+  external_publish: false
+stages:
+  - id: inspect_capture_target
+    type: capture.preflight
+    operation: health_check
+    executor: mock
+    outputs: [capture-preflight.json]
+  - id: prepare_scene
+    type: capture.scene_prepare
+    operation: configure_scene
+    depends_on: [inspect_capture_target]
+    executor: provider_adapter
+    provider: obs
+    model_profile: obs_local
+    approval: required
+    outputs: [obs-scene.json]
+  - id: capture_demo
+    type: capture.screen
+    operation: browser_capture
+    depends_on: [prepare_scene]
+    executor: provider_adapter
+    provider: obs
+    model_profile: obs_local
+    approval: required
+    outputs: [screen-capture.mkv, capture-evidence.json]
+  - id: transcribe_audio
+    type: caption.generate
+    operation: transcribe
+    depends_on: [capture_demo]
+    executor: provider_adapter
+    provider: configured-by-user
+    model_profile: stt_local
+    outputs: [captions.srt, captions.vtt]
+  - id: normalize_and_export
+    type: media.compose
+    operation: normalize
+    depends_on: [capture_demo, transcribe_audio]
+    executor: ffmpeg
+    model_profile: media_local
+    outputs: [demo.mp4]
+  - id: privacy_review
+    type: human.review
+    depends_on: [normalize_and_export]
+    executor: interactive
+    approval: required
+    outputs: [privacy-review.json]
+  - id: delivery
+    type: delivery.package
+    depends_on: [privacy_review]
+    executor: ffmpeg
+    model_profile: media_local
+    outputs: [delivery/manifest.json]

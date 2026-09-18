@@ -1,0 +1,30 @@
+schema_version: "1.0.0"
+# Copy to a user-local configuration file; do not commit personal paths or secrets.
+tools:
+  blender:
+    executable: "C:/Program Files/Blender Foundation/Blender/blender.exe"
+    required: false
+  ffmpeg:
+    executable: "C:/Tools/ffmpeg/bin/ffmpeg.exe"
+    required: true
+  ffprobe:
+    executable: "C:/Tools/ffmpeg/bin/ffprobe.exe"
+    required: true
+  python:
+    executable: "python.exe"
+    required: true
+  kdenlive:
+    executable: "C:/Program Files/kdenlive/bin/kdenlive.exe"
+    required: false
+  davinci_resolve:
+    executable: "C:/Program Files/Blackmagic Design/DaVinci Resolve/Resolve.exe"
+    required: false
+comfyui:
+  endpoint: "http://127.0.0.1:8188"
+  required: false
+  allow_remote: false
+policy:
+  verify_versions: true
+  allow_shell_wrapper: false
+  reject_paths_outside_project: true
+  download_installers_automatically: false

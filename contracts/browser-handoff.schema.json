@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/browser-handoff.schema.json",
+  "title": "Auto3Dvideo BrowserMCP Web Handoff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "handoffId",
+    "projectId",
+    "provider",
+    "operation",
+    "targetUrl",
+    "allowedHosts",
+    "inputAssets",
+    "prompt",
+    "outputDirectory",
+    "state",
+    "approval",
+    "policy"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "handoffId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+    "projectId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+    "provider": { "const": "browsermcp" },
+    "operation": { "enum": ["prepare_web_handoff", "upload_reference", "generate_candidate", "import_candidate"] },
+    "targetUrl": { "type": "string", "format": "uri", "maxLength": 500 },
+    "allowedHosts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "enum": ["ai.google.dev", "aistudio.google.com", "gemini.google.com", "labs.google", "flow.google"] }
+    },
+    "inputAssets": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["relativePath", "mediaKind", "sha256", "sizeBytes"],
+        "properties": {
+          "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*://)(?!.*\\.\\.)(?![A-Za-z]:).+" },
+          "mediaKind": { "enum": ["video", "image", "audio", "metadata"] },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "sizeBytes": { "type": "integer", "minimum": 1, "maximum": 4294967296 }
+        }
+      }
+    },
+    "prompt": { "type": "string", "minLength": 1, "maxLength": 4000 },
+    "outputDirectory": { "type": "string", "pattern": "^(?!/)(?!.*\\.\\.)(?![A-Za-z]:).+" },
+    "state": { "enum": ["prepared", "awaiting_login", "awaiting_upload_approval", "awaiting_generate_approval", "awaiting_import", "completed", "blocked", "cancelled"] },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["upload", "generate", "import"],
+      "properties": {
+        "upload": { "type": "boolean" },
+        "generate": { "type": "boolean" },
+        "import": { "type": "boolean" }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["networkRequired", "paidGeneration", "humanReviewRequired", "externalPublish", "rightsStatus", "termsReviewed"],
+      "properties": {
+        "networkRequired": { "const": true },
+        "paidGeneration": { "type": "boolean" },
+        "humanReviewRequired": { "const": true },
+        "externalPublish": { "const": false },
+        "rightsStatus": { "enum": ["pending", "user_owned", "licensed", "generated_local", "blocked"] },
+        "termsReviewed": { "type": "boolean" }
+      }
+    },
+    "notes": { "type": "string", "maxLength": 2000 }
+  }
+}

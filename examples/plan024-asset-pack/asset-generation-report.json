@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "reportId": "asset-run-report-v1",
+  "jobType": "asset.pack.generate",
+  "projectId": "dinosaur-tiger",
+  "packId": "dinosaur-tiger-assets-v1",
+  "runId": "asset-run-v1",
+  "status": "succeeded_needs_review",
+  "itemCounts": {"total": 3, "succeeded": 0, "failed": 0, "blocked": 0, "needsReview": 3},
+  "items": [
+    {"assetItemId": "tiger-identity-hero", "status": "needs_review", "requestHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "provider": {"adapter": "nano_banana_mcp", "serverVersion": null, "targetModel": null}, "attempts": [{"attempt": 1, "status": "succeeded", "retryable": false, "failureCode": null, "message": null}], "outputs": [{"assetId": "asset-001-identity", "relativePath": "assets/asset-001-identity.png", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "width": 1536, "height": 864, "status": "ingested", "providerJobId": null, "error": null}], "rightsStatus": "pending", "reviewState": "in_review", "costObservation": {"mode": "unknown", "creditsUsed": null, "amountUsd": null, "note": "Provider UI credit state must be reviewed by the user."}, "failureCode": null, "message": null},
+    {"assetItemId": "cretaceous-world-establishing", "status": "needs_review", "requestHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "provider": {"adapter": "nano_banana_mcp", "serverVersion": null, "targetModel": null}, "attempts": [{"attempt": 1, "status": "succeeded", "retryable": false, "failureCode": null, "message": null}], "outputs": [{"assetId": "asset-002-environment", "relativePath": "assets/asset-002-environment.png", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "width": 1536, "height": 864, "status": "ingested", "providerJobId": null, "error": null}], "rightsStatus": "pending", "reviewState": "in_review", "costObservation": {"mode": "unknown", "creditsUsed": null, "amountUsd": null, "note": "Provider UI credit state must be reviewed by the user."}, "failureCode": null, "message": null},
+    {"assetItemId": "tiger-scale-reference", "status": "needs_review", "requestHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "provider": {"adapter": "nano_banana_mcp", "serverVersion": null, "targetModel": null}, "attempts": [{"attempt": 1, "status": "succeeded", "retryable": false, "failureCode": null, "message": null}], "outputs": [{"assetId": "asset-003-scale-reference", "relativePath": "assets/asset-003-scale-reference.png", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "width": 1536, "height": 864, "status": "ingested", "providerJobId": null, "error": null}], "rightsStatus": "pending", "reviewState": "in_review", "costObservation": {"mode": "unknown", "creditsUsed": null, "amountUsd": null, "note": "Provider UI credit state must be reviewed by the user."}, "failureCode": null, "message": null}
+  ],
+  "errors": [],
+  "createdAt": "2026-09-11T10:00:00Z",
+  "updatedAt": "2026-09-11T10:00:00Z"
+}

@@ -1,0 +1,458 @@
+{
+  "status": "ready",
+  "operation": "snapshot",
+  "reportPath": ".auto3dvideo/reports/browsermcp-snapshot-run_1789665634412280200.json",
+  "serverInfo": {
+    "name": "browseros_mcp",
+    "title": "BrowserOS MCP server"
+  },
+  "protocolVersion": "2025-03-26",
+  "toolCount": 24,
+  "tools": [
+    "tabs",
+    "tab_groups",
+    "history",
+    "navigate",
+    "snapshot",
+    "diff",
+    "act",
+    "download",
+    "upload",
+    "read",
+    "grep",
+    "screenshot",
+    "pdf",
+    "wait",
+    "windows",
+    "evaluate",
+    "run",
+    "connector_mcp_servers",
+    "discover_server_categories_or_actions",
+    "get_category_actions",
+    "get_action_details",
+    "execute_action",
+    "search_documentation",
+    "handle_auth_failure"
+  ],
+  "toolName": "snapshot",
+  "approved": true,
+  "browserSessionAttached": true,
+  "browserActionsPerformed": true,
+  "networkCallsMade": true,
+  "operationResult": {
+    "isError": false,
+    "contentItemCount": 1,
+    "contentTypes": [
+      "text"
+    ],
+    "textBytes": 15054,
+    "hasImage": false,
+    "uiRefCount": 80,
+    "uiRefs": [
+      {
+        "role": "link",
+        "label": "Skip to main content",
+        "reference": "e1"
+      },
+      {
+        "role": "button",
+        "label": "Home",
+        "reference": "e2"
+      },
+      {
+        "role": "textbox",
+        "label": "Editable text",
+        "reference": "e3"
+      },
+      {
+        "role": "button",
+        "label": "More options for the project",
+        "reference": "e4"
+      },
+      {
+        "role": "button",
+        "label": "Search",
+        "reference": "e5"
+      },
+      {
+        "role": "textbox",
+        "label": "Search",
+        "reference": "e6"
+      },
+      {
+        "role": "button",
+        "label": "Filtering and sorting options",
+        "reference": "e7"
+      },
+      {
+        "role": "button",
+        "label": "Add media menu",
+        "reference": "e8"
+      },
+      {
+        "role": "button",
+        "label": "Product help",
+        "reference": "e9"
+      },
+      {
+        "role": "button",
+        "label": "Tile grid settings",
+        "reference": "e10"
+      },
+      {
+        "role": "button",
+        "label": "More options",
+        "reference": "e11"
+      },
+      {
+        "role": "button",
+        "label": "Account details",
+        "reference": "e12"
+      },
+      {
+        "role": "button",
+        "label": "Google Account: sigma6969 whynot (sigmawhynot08@gmail.com), Google membership",
+        "reference": "e13"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e14"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e15"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e16"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e17"
+      },
+      {
+        "role": "link",
+        "label": "Tools",
+        "reference": "e18"
+      },
+      {
+        "role": "link",
+        "label": "Trash",
+        "reference": "e19"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e20"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e21"
+      },
+      {
+        "role": "button",
+        "label": "Retry",
+        "reference": "e318"
+      },
+      {
+        "role": "button",
+        "label": "Reuse prompt",
+        "reference": "e319"
+      },
+      {
+        "role": "button",
+        "label": "Delete",
+        "reference": "e320"
+      },
+      {
+        "role": "button",
+        "label": "Open session history",
+        "reference": "e195"
+      },
+      {
+        "role": "button",
+        "label": "Start new session",
+        "reference": "e196"
+      },
+      {
+        "role": "button",
+        "label": "Close",
+        "reference": "e37"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e197"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e198"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e199"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e200"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e201"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e202"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e203"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e204"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e205"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e206"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e207"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e208"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e209"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e210"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e211"
+      },
+      {
+        "role": "button",
+        "label": "Show thinking",
+        "reference": "e212"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e213"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e214"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e215"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e216"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e217"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e218"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e219"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e220"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e221"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e222"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e223"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e224"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e225"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e226"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e227"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e228"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e229"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e230"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e231"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e232"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e233"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e234"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e235"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e236"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e237"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e238"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e239"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e240"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e241"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e242"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e243"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e244"
+      },
+      {
+        "role": "button",
+        "label": "Bad response",
+        "reference": "e245"
+      },
+      {
+        "role": "button",
+        "label": "Copy",
+        "reference": "e246"
+      },
+      {
+        "role": "button",
+        "label": "Flag output",
+        "reference": "e247"
+      },
+      {
+        "role": "button",
+        "label": "Open image in editor",
+        "reference": "e248"
+      },
+      {
+        "role": "button",
+        "label": "Good response",
+        "reference": "e249"
+      }
+    ],
+    "currentUrl": "https://flow.google.com/project/2d478b58-f5fa-4606-baef-71425ab7476c",
+    "detail": ""
+  },
+  "message": "BrowserOS snapshot đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+  "process": null
+}

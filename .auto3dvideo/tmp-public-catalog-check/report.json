@@ -1,0 +1,146 @@
+{
+  "status": "success",
+  "worker": "Bilibili · public popular catalog",
+  "engine": "bilibili_public_catalog",
+  "scanMode": "discovery_all",
+  "previewOnly": true,
+  "platforms": [
+    "bilibili"
+  ],
+  "maxResults": 5,
+  "sortMode": "popular_feed_topic_interleave_remix_potential",
+  "platformResults": [
+    {
+      "platform": "bilibili",
+      "status": "success",
+      "scannedCount": 5,
+      "discoveryUrl": "https://www.bilibili.com/v/popular/all",
+      "message": "Đã đọc 5 card từ public popular feed Bilibili; chưa tải video."
+    }
+  ],
+  "cards": [
+    {
+      "previewId": "preview-bilibili-bv1csec6teux",
+      "platform": "bilibili",
+      "title": "折叠还是直板？iPhone 18 Pro&Duo深度视频",
+      "author": "影视飓风",
+      "shareUrl": "https://www.bilibili.com/video/BV1cSec6tEux",
+      "embedUrl": "https://player.bilibili.com/player.html?bvid=BV1cSec6tEux&page=1",
+      "thumbnailUrl": "https://i1.hdslb.com/bfs/archive/aec12235afcae7c12ed1eb3684c103ed407434bf.jpg",
+      "scannedAt": "2026-09-16T15:38:26.631Z",
+      "addedToPlan": false,
+      "radarBuckets": [
+        "potential",
+        "hot_new",
+        "fresh"
+      ],
+      "rankingEvidence": "Bilibili public popular feed; có chủ đề rõ để viết voice/subtitle; title có đủ ngữ cảnh để phát triển hook; có thumbnail để kiểm tra nhanh; có tín hiệu tương tác (view=781406, like=102791); mới đăng trong 14 ngày; xếp theo popular feed trong lượt quét này, không phải giấy phép reup.",
+      "topic": "technology",
+      "topicEvidence": "Tín hiệu chủ đề: 手机",
+      "potentialScore": 88,
+      "potentialEvidence": "Bilibili public popular feed; có chủ đề rõ để viết voice/subtitle; title có đủ ngữ cảnh để phát triển hook; có thumbnail để kiểm tra nhanh; có tín hiệu tương tác (view=781406, like=102791); mới đăng trong 14 ngày; đây là điểm shortlist biên tập, không kết luận quyền sử dụng.",
+      "reuseStatus": "permission_required",
+      "reuseEvidence": "URL public không chứng minh quyền sao chép hoặc đăng lại; cần giấy phép hoặc quyền sở hữu.",
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "previewId": "preview-bilibili-bv1ptew6aebt",
+      "platform": "bilibili",
+      "title": "让路人决定我的旅行，上来就让我徒步168km？？",
+      "author": "拉宏桑",
+      "shareUrl": "https://www.bilibili.com/video/BV1ptew6aEBt",
+      "embedUrl": "https://player.bilibili.com/player.html?bvid=BV1ptew6aEBt&page=1",
+      "thumbnailUrl": "https://i2.hdslb.com/bfs/archive/851359f19dbd55fb68a6665d22f0e0070e664937.jpg",
+      "scannedAt": "2026-09-16T15:38:26.631Z",
+      "addedToPlan": false,
+      "radarBuckets": [
+        "potential",
+        "hot_new",
+        "fresh"
+      ],
+      "rankingEvidence": "Bilibili public popular feed; có chủ đề rõ để viết voice/subtitle; title có đủ ngữ cảnh để phát triển hook; có thumbnail để kiểm tra nhanh; có tín hiệu tương tác (view=888243, like=9095); mới đăng trong 14 ngày; xếp theo popular feed trong lượt quét này, không phải giấy phép reup.",
+      "topic": "story",
+      "topicEvidence": "Tín hiệu chủ đề: 旅行",
+      "potentialScore": 88,
+      "potentialEvidence": "Bilibili public popular feed; có chủ đề rõ để viết voice/subtitle; title có đủ ngữ cảnh để phát triển hook; có thumbnail để kiểm tra nhanh; có tín hiệu tương tác (view=888243, like=9095); mới đăng trong 14 ngày; đây là điểm shortlist biên tập, không kết luận quyền sử dụng.",
+      "reuseStatus": "permission_required",
+      "reuseEvidence": "URL public không chứng minh quyền sao chép hoặc đăng lại; cần giấy phép hoặc quyền sở hữu.",
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "previewId": "preview-bilibili-bv1ozea6ferd",
+      "platform": "bilibili",
+      "title": "iPhone18 Pro性能分析：五年来最强的芯片升级！",
+      "author": "极客湾Geekerwan",
+      "shareUrl": "https://www.bilibili.com/video/BV1oZeA6fERD",
+      "embedUrl": "https://player.bilibili.com/player.html?bvid=BV1oZeA6fERD&page=1",
+      "thumbnailUrl": "https://i2.hdslb.com/bfs/archive/9e4d6b111a030888fc36a2b874f1b1bb0d4a0966.jpg",
+      "scannedAt": "2026-09-16T15:38:26.631Z",
+      "addedToPlan": false,
+      "radarBuckets": [
+        "potential",
+        "hot_new",
+        "fresh"
+      ],
+      "rankingEvidence": "Bilibili public popular feed; có chủ đề rõ để viết voice/subtitle; title có đủ ngữ cảnh để phát triển hook; có thumbnail để kiểm tra nhanh; có tín hiệu tương tác (view=442566, like=52283); mới đăng trong 14 ngày; xếp theo popular feed trong lượt quét này, không phải giấy phép reup.",
+      "topic": "technology",
+      "topicEvidence": "Tín hiệu chủ đề: 手机",
+      "potentialScore": 88,
+      "potentialEvidence": "Bilibili public popular feed; có chủ đề rõ để viết voice/subtitle; title có đủ ngữ cảnh để phát triển hook; có thumbnail để kiểm tra nhanh; có tín hiệu tương tác (view=442566, like=52283); mới đăng trong 14 ngày; đây là điểm shortlist biên tập, không kết luận quyền sử dụng.",
+      "reuseStatus": "permission_required",
+      "reuseEvidence": "URL public không chứng minh quyền sao chép hoặc đăng lại; cần giấy phép hoặc quyền sở hữu.",
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "previewId": "preview-bilibili-bv1fyes6xemq",
+      "platform": "bilibili",
+      "title": "大禹看了沉默，愚公看了流泪",
+      "author": "星球研究所",
+      "shareUrl": "https://www.bilibili.com/video/BV1fYes6xEmq",
+      "embedUrl": "https://player.bilibili.com/player.html?bvid=BV1fYes6xEmq&page=1",
+      "thumbnailUrl": "https://i2.hdslb.com/bfs/archive/97de2c245b622baa1d0392779b9dacc670d29ef4.jpg",
+      "scannedAt": "2026-09-16T15:38:26.631Z",
+      "addedToPlan": false,
+      "radarBuckets": [
+        "potential",
+        "hot_new",
+        "fresh"
+      ],
+      "rankingEvidence": "Bilibili public popular feed; có chủ đề rõ để viết voice/subtitle; có thumbnail để kiểm tra nhanh; có tín hiệu tương tác (view=1053755, like=68676); mới đăng trong 14 ngày; xếp theo popular feed trong lượt quét này, không phải giấy phép reup.",
+      "topic": "knowledge",
+      "topicEvidence": "Tín hiệu chủ đề: 科普",
+      "potentialScore": 80,
+      "potentialEvidence": "Bilibili public popular feed; có chủ đề rõ để viết voice/subtitle; có thumbnail để kiểm tra nhanh; có tín hiệu tương tác (view=1053755, like=68676); mới đăng trong 14 ngày; đây là điểm shortlist biên tập, không kết luận quyền sử dụng.",
+      "reuseStatus": "permission_required",
+      "reuseEvidence": "URL public không chứng minh quyền sao chép hoặc đăng lại; cần giấy phép hoặc quyền sở hữu.",
+      "reviewStatus": "unreviewed"
+    },
+    {
+      "previewId": "preview-bilibili-bv1t6ex66eks",
+      "platform": "bilibili",
+      "title": "烂烂烂烂烂烂活",
+      "author": "小潮院长",
+      "shareUrl": "https://www.bilibili.com/video/BV1t6ex66EKs",
+      "embedUrl": "https://player.bilibili.com/player.html?bvid=BV1t6ex66EKs&page=1",
+      "thumbnailUrl": "https://i1.hdslb.com/bfs/archive/3e5b86d5bf82ed83a4df931bd1b543c44806f53a.jpg",
+      "scannedAt": "2026-09-16T15:38:26.631Z",
+      "addedToPlan": false,
+      "radarBuckets": [
+        "potential",
+        "hot_new",
+        "fresh"
+      ],
+      "rankingEvidence": "Bilibili public popular feed; có thumbnail để kiểm tra nhanh; có tín hiệu tương tác (view=1497166, like=138145); mới đăng trong 14 ngày; xếp theo popular feed trong lượt quét này, không phải giấy phép reup.",
+      "topic": "other",
+      "topicEvidence": "Chưa đủ tín hiệu để gán chủ đề cụ thể",
+      "potentialScore": 66,
+      "potentialEvidence": "Bilibili public popular feed; có thumbnail để kiểm tra nhanh; có tín hiệu tương tác (view=1497166, like=138145); mới đăng trong 14 ngày; đây là điểm shortlist biên tập, không kết luận quyền sử dụng.",
+      "reuseStatus": "permission_required",
+      "reuseEvidence": "URL public không chứng minh quyền sao chép hoặc đăng lại; cần giấy phép hoặc quyền sở hữu.",
+      "reviewStatus": "unreviewed"
+    }
+  ],
+  "browserSessionAttached": false,
+  "networkCallsMade": true,
+  "message": "Bilibili đã trả 5 card từ catalog public; hãy xem preview và review quyền trước khi tải."
+}

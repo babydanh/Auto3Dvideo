@@ -1,0 +1,88 @@
+{
+  "items": [
+    {
+      "schemaVersion": "1.0.0",
+      "assetItemId": "tiger-identity-hero",
+      "packId": "dinosaur-tiger-assets-v1",
+      "title": "Giant Bengal tiger identity hero",
+      "identityAnchorId": "tiger-giant-v1",
+      "role": "identity",
+      "prompt": "Create a cinematic 3D reference image for the giant Bengal tiger identity hero. Preserve approved identity, scale and continuity anchors.",
+      "negativePrompt": "No text, logo, watermark, contact sheet, split screen, duplicate subject or identity drift.",
+      "promptVersion": "asset-pack-compiler-v1",
+      "referenceAssetIds": [],
+      "shotIds": ["SHOT-001", "SHOT-004"],
+      "requiredViews": ["hero"],
+      "width": 1536,
+      "height": 864,
+      "scaleMeters": null,
+      "continuityAnchors": ["same palette", "same world scale"],
+      "provider": {"adapter": "nano_banana_mcp", "model": null, "transport": "cdp"},
+      "status": "needs_review",
+      "reviewState": "in_review",
+      "rightsStatus": "pending",
+      "acceptanceChecks": [
+        {"checkId": "identity-stable", "description": "Identity and silhouette are stable", "required": true, "status": "pending", "evidence": null},
+        {"checkId": "output-readable", "description": "Output can be opened and hashed", "required": true, "status": "pending", "evidence": null}
+      ],
+      "generationAttempts": [{"attempt": 1, "provider": "nano_banana_mcp", "promptHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "status": "succeeded", "createdAt": "2026-09-11T10:00:00Z"}],
+      "outputAssetIds": ["asset-001-identity"]
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "assetItemId": "cretaceous-world-establishing",
+      "packId": "dinosaur-tiger-assets-v1",
+      "title": "Cretaceous valley environment anchor",
+      "identityAnchorId": null,
+      "role": "environment",
+      "prompt": "Create a cinematic 3D reference image for the Cretaceous valley environment anchor. Preserve approved identity, scale and continuity anchors.",
+      "negativePrompt": "No text, logo, watermark, contact sheet, split screen, duplicate subject or identity drift.",
+      "promptVersion": "asset-pack-compiler-v1",
+      "referenceAssetIds": [],
+      "shotIds": ["SHOT-001", "SHOT-004"],
+      "requiredViews": ["establishing"],
+      "width": 1536,
+      "height": 864,
+      "scaleMeters": null,
+      "continuityAnchors": ["same palette", "same world scale"],
+      "provider": {"adapter": "nano_banana_mcp", "model": null, "transport": "cdp"},
+      "status": "needs_review",
+      "reviewState": "in_review",
+      "rightsStatus": "pending",
+      "acceptanceChecks": [
+        {"checkId": "identity-stable", "description": "Identity and silhouette are stable", "required": true, "status": "pending", "evidence": null},
+        {"checkId": "output-readable", "description": "Output can be opened and hashed", "required": true, "status": "pending", "evidence": null}
+      ],
+      "generationAttempts": [{"attempt": 1, "provider": "nano_banana_mcp", "promptHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "status": "succeeded", "createdAt": "2026-09-11T10:00:00Z"}],
+      "outputAssetIds": ["asset-002-environment"]
+    },
+    {
+      "schemaVersion": "1.0.0",
+      "assetItemId": "tiger-scale-reference",
+      "packId": "dinosaur-tiger-assets-v1",
+      "title": "Eight meter tiger scale reference",
+      "identityAnchorId": "tiger-giant-v1",
+      "role": "scale_reference",
+      "prompt": "Create a cinematic 3D reference image for the eight meter tiger scale reference. Preserve approved identity, scale and continuity anchors.",
+      "negativePrompt": "No text, logo, watermark, contact sheet, split screen, duplicate subject or identity drift.",
+      "promptVersion": "asset-pack-compiler-v1",
+      "referenceAssetIds": [],
+      "shotIds": ["SHOT-001", "SHOT-004"],
+      "requiredViews": ["establishing"],
+      "width": 1536,
+      "height": 864,
+      "scaleMeters": 8,
+      "continuityAnchors": ["same palette", "same world scale"],
+      "provider": {"adapter": "nano_banana_mcp", "model": null, "transport": "cdp"},
+      "status": "needs_review",
+      "reviewState": "in_review",
+      "rightsStatus": "pending",
+      "acceptanceChecks": [
+        {"checkId": "identity-stable", "description": "Identity and silhouette are stable", "required": true, "status": "pending", "evidence": null},
+        {"checkId": "output-readable", "description": "Output can be opened and hashed", "required": true, "status": "pending", "evidence": null}
+      ],
+      "generationAttempts": [{"attempt": 1, "provider": "nano_banana_mcp", "promptHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "status": "succeeded", "createdAt": "2026-09-11T10:00:00Z"}],
+      "outputAssetIds": ["asset-003-scale-reference"]
+    }
+  ]
+}

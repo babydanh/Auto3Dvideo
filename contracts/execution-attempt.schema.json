@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/execution-attempt.schema.json",
+  "title": "Auto3Dvideo Execution Attempt",
+  "description": "Durable evidence for one bounded worker attempt. Secret values and raw shell commands are excluded.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "attemptId", "jobId", "attemptNumber", "state", "timeoutSeconds", "maxLogBytes", "processStarted", "externalSideEffectUnknown", "createdAt", "updatedAt"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "attemptId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "jobId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "attemptNumber": {"type": "integer", "minimum": 1, "maximum": 10},
+    "state": {"type": "string", "enum": ["pending", "running", "succeeded", "failed", "cancel_requested", "cancelled", "expired", "blocked", "reconciliation_required"]},
+    "workerId": {"type": ["string", "null"], "minLength": 1, "maxLength": 128},
+    "executionMode": {"type": "string", "enum": ["external_process", "in_process_mock"]},
+    "executableId": {"type": ["string", "null"], "enum": ["blender", "ffmpeg", "ffprobe", "node", "obs", "python", "mock", null]},
+    "leaseOwner": {"type": ["string", "null"], "minLength": 1, "maxLength": 128},
+    "leaseExpiresAt": {"type": ["string", "null"], "format": "date-time"},
+    "heartbeatAt": {"type": ["string", "null"], "format": "date-time"},
+    "startedAt": {"type": ["string", "null"], "format": "date-time"},
+    "finishedAt": {"type": ["string", "null"], "format": "date-time"},
+    "cancellationRequestedAt": {"type": ["string", "null"], "format": "date-time"},
+    "terminationMode": {"type": "string", "enum": ["none", "cooperative", "tree_soft", "tree_force"]},
+    "timeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 604800},
+    "maxLogBytes": {"type": "integer", "minimum": 1024, "maximum": 104857600},
+    "stdoutBytes": {"type": "integer", "minimum": 0, "maximum": 1073741824},
+    "stderrBytes": {"type": "integer", "minimum": 0, "maximum": 1073741824},
+    "processStarted": {"type": "boolean"},
+    "externalSideEffectUnknown": {"type": "boolean"},
+    "retryable": {"type": "boolean"},
+    "errorCode": {"type": ["string", "null"], "maxLength": 128},
+    "redactedMessage": {"type": ["string", "null"], "maxLength": 4096},
+    "outputs": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["relativePath", "mediaKind", "validationState"],
+        "properties": {
+          "relativePath": {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"},
+          "mediaKind": {"type": "string", "enum": ["video", "audio", "image", "subtitle", "thumbnail", "metadata", "image_sequence"]},
+          "contentHash": {"type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$"},
+          "sizeBytes": {"type": ["integer", "null"], "minimum": 0, "maximum": 10737418240},
+          "validationState": {"type": "string", "enum": ["pending", "valid", "invalid", "missing", "not_checked"]},
+          "validationMessage": {"type": ["string", "null"], "maxLength": 2048}
+        }
+      }
+    },
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": "string", "format": "date-time"}
+  }
+}

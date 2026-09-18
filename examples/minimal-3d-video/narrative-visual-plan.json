@@ -1,0 +1,257 @@
+{
+  "schemaVersion": "1.0.0",
+  "planId": "minimal-narrative-visual-plan",
+  "projectId": "minimal-3d-video",
+  "episodeId": "episode-01",
+  "language": "vi-VN",
+  "aspectRatio": "9:16",
+  "width": 1080,
+  "height": 1920,
+  "frameRate": 30,
+  "scriptUnitCount": 3,
+  "sourceScriptRef": "examples/minimal-3d-video/script.md",
+  "styleBibleRef": "examples/minimal-3d-video/style-bible.yaml",
+  "continuityPolicy": {
+    "entityIdentityRequired": true,
+    "visualEvidenceRequired": true,
+    "promptGroundingRequired": true,
+    "repeatedEntityAnchorsImmutable": true
+  },
+  "policy": {
+    "rightsRequired": true,
+    "humanReviewRequired": true,
+    "paidGeneration": false,
+    "externalPublish": false,
+    "allowNetwork": false
+  },
+  "beats": [
+    {
+      "beatId": "beat-001",
+      "sequence": 1,
+      "narration": {
+        "text": "Một dashboard thể thao hư cấu gom dữ liệu trận đấu vào một màn hình rõ ràng.",
+        "startUnit": 0,
+        "endUnit": 1
+      },
+      "timing": {"startFrame": 0, "endFrame": 300, "durationFrames": 300},
+      "narrativeClaim": "Dashboard thể thao hư cấu gom dữ liệu trận đấu vào một màn hình rõ ràng.",
+      "visualIntent": "Establish the fictional sports dashboard and show the data overview.",
+      "setting": "Stylized 3D studio with a floating sports dashboard, deep navy background.",
+      "entities": [
+        {
+          "entityId": "sports-dashboard",
+          "name": "sports dashboard",
+          "role": "primary interface object",
+          "continuityMode": "persistent",
+          "identityAnchors": ["matte glass rectangular panel", "electric blue frame", "warm orange accent chip"],
+          "referenceAssetIds": []
+        }
+      ],
+      "visualEvidence": {
+        "proofMode": "demonstrate",
+        "claim": "The scene must visibly show one fictional sports dashboard containing organized match data.",
+        "requiredElements": ["sports dashboard", "organized sports match data", "clear readable layout"],
+        "forbiddenElements": ["real team logo", "real person likeness", "unreadable generated paragraph text"]
+      },
+      "prompt": {
+        "promptVersion": "nvp-1.0-beat-001",
+        "positive": "Fictional stylized 3D sports dashboard, one matte glass rectangular panel with electric blue frame and warm orange accent chip, organized sports match data overview with a clear readable layout, deep navy background, polished product animation, soft studio lighting, moderate perspective, mobile-safe composition, no real person likeness, no third-party logo.",
+        "negative": "photorealistic person, real team logo, brand mark, watermark, unrelated landscape, unrelated vehicle, random collage, tiny unreadable UI text, extra dashboards",
+        "groundingTokens": ["sports dashboard", "organized sports match data", "electric blue frame", "warm orange accent chip"]
+      },
+      "referenceAssetIds": [],
+      "expectedAsset": {
+        "assetId": "beat-001-visual",
+        "mediaKind": "image",
+        "relativePath": "outputs/visual-plan/beat-001.png",
+        "mustBeNew": true
+      },
+      "candidate": {
+        "selectionState": "not_generated",
+        "score": null,
+        "providerProfileRef": null,
+        "modelProfileRef": null,
+        "seed": 101
+      },
+      "review": {
+        "decision": "needs_review",
+        "semanticState": "not_checked",
+        "continuityState": "not_checked",
+        "rightsState": "pending"
+      },
+      "risk": {
+        "level": "medium",
+        "issues": ["Visual candidate has not been generated or semantically scored."],
+        "needsHumanReview": true
+      },
+      "policy": {
+        "rightsRequired": true,
+        "humanReviewRequired": true,
+        "paidGeneration": false,
+        "externalPublish": false,
+        "allowNetwork": false
+      }
+    },
+    {
+      "beatId": "beat-002",
+      "sequence": 2,
+      "narration": {
+        "text": "Avatar hình khối chọn một trận đấu và xem trạng thái trực tiếp trong không gian sân vận động stylized.",
+        "startUnit": 1,
+        "endUnit": 2
+      },
+      "timing": {"startFrame": 300, "endFrame": 600, "durationFrames": 300},
+      "narrativeClaim": "Avatar hình khối chọn một trận đấu và xem trạng thái trực tiếp trong không gian sân vận động stylized.",
+      "visualIntent": "Show the same dashboard and avatar moving into the stylized stadium context.",
+      "setting": "The same deep navy stylized stadium with a floating sports dashboard in the foreground.",
+      "entities": [
+        {
+          "entityId": "sports-dashboard",
+          "name": "sports dashboard",
+          "role": "persistent interface object",
+          "continuityMode": "persistent",
+          "identityAnchors": ["matte glass rectangular panel", "electric blue frame", "warm orange accent chip"],
+          "referenceAssetIds": []
+        },
+        {
+          "entityId": "block-avatar",
+          "name": "block avatar",
+          "role": "fictional user guide",
+          "continuityMode": "persistent",
+          "identityAnchors": ["small geometric silhouette", "soft gray body", "electric blue shoulder accent"],
+          "referenceAssetIds": []
+        }
+      ],
+      "visualEvidence": {
+        "proofMode": "demonstrate",
+        "claim": "The scene must visibly show the fictional avatar selecting one match while the same dashboard remains identifiable.",
+        "requiredElements": ["same sports dashboard", "small geometric avatar", "selected match state", "stylized stadium"],
+        "forbiddenElements": ["new character design", "real athlete likeness", "different dashboard style", "third-party logo"]
+      },
+      "prompt": {
+        "promptVersion": "nvp-1.0-beat-002",
+        "positive": "Same fictional stylized 3D sports dashboard with matte glass rectangular panel, electric blue frame and warm orange accent chip, small geometric block avatar with soft gray body and electric blue shoulder accent selecting one match, selected match state, deep navy stylized stadium, same palette proportions and wardrobe, controlled orbit camera, soft studio lighting, mobile-safe composition.",
+        "negative": "photorealistic athlete, new character design, different dashboard, real team logo, watermark, unrelated office, unrelated nature scene, random collage, unreadable text",
+        "groundingTokens": ["same fictional stylized 3D sports dashboard", "block avatar", "selected match state", "deep navy stylized stadium"]
+      },
+      "referenceAssetIds": [],
+      "expectedAsset": {
+        "assetId": "beat-002-visual",
+        "mediaKind": "image",
+        "relativePath": "outputs/visual-plan/beat-002.png",
+        "mustBeNew": true
+      },
+      "candidate": {
+        "selectionState": "not_generated",
+        "score": null,
+        "providerProfileRef": null,
+        "modelProfileRef": null,
+        "seed": 102
+      },
+      "review": {
+        "decision": "needs_review",
+        "semanticState": "not_checked",
+        "continuityState": "not_checked",
+        "rightsState": "pending"
+      },
+      "risk": {
+        "level": "medium",
+        "issues": ["Repeated dashboard and avatar require continuity review before generation acceptance."],
+        "needsHumanReview": true
+      },
+      "policy": {
+        "rightsRequired": true,
+        "humanReviewRequired": true,
+        "paidGeneration": false,
+        "externalPublish": false,
+        "allowNetwork": false
+      }
+    },
+    {
+      "beatId": "beat-003",
+      "sequence": 3,
+      "narration": {
+        "text": "Luồng kết thúc bằng một thẻ hành động màu cam, giúp người xem hiểu bước tiếp theo.",
+        "startUnit": 2,
+        "endUnit": 3
+      },
+      "timing": {"startFrame": 600, "endFrame": 900, "durationFrames": 300},
+      "narrativeClaim": "Một thẻ hành động màu cam giải thích bước tiếp theo.",
+      "visualIntent": "Resolve the sequence with the same entities and one clear orange action card.",
+      "setting": "The same stylized stadium-dashboard scene, slightly wider camera framing for the closing card.",
+      "entities": [
+        {
+          "entityId": "sports-dashboard",
+          "name": "sports dashboard",
+          "role": "persistent interface object",
+          "continuityMode": "persistent",
+          "identityAnchors": ["matte glass rectangular panel", "electric blue frame", "warm orange accent chip"],
+          "referenceAssetIds": []
+        },
+        {
+          "entityId": "block-avatar",
+          "name": "block avatar",
+          "role": "fictional user guide",
+          "continuityMode": "persistent",
+          "identityAnchors": ["small geometric silhouette", "soft gray body", "electric blue shoulder accent"],
+          "referenceAssetIds": []
+        },
+        {
+          "entityId": "orange-action-card",
+          "name": "orange action card",
+          "role": "closing call-to-action object",
+          "continuityMode": "new",
+          "identityAnchors": ["warm orange rounded card", "single bold action area"],
+          "referenceAssetIds": []
+        }
+      ],
+      "visualEvidence": {
+        "proofMode": "demonstrate",
+        "claim": "The scene must visibly show one warm orange action card as the next-step cue while the dashboard and avatar remain consistent.",
+        "requiredElements": ["same sports dashboard", "same block avatar", "one warm orange action card", "clear next-step cue"],
+        "forbiddenElements": ["multiple competing buttons", "new character design", "real brand call-to-action", "watermark"]
+      },
+      "prompt": {
+        "promptVersion": "nvp-1.0-beat-003",
+        "positive": "Same fictional stylized 3D sports dashboard, same small geometric block avatar with soft gray body and electric blue shoulder accent, one warm orange rounded action card with a clear next-step cue, matte glass and clean PBR plastic, deep navy stadium background, same palette proportions and wardrobe, soft readable shadows, controlled orbit camera, mobile-safe composition.",
+        "negative": "multiple competing buttons, real brand call-to-action, photorealistic person, new character design, different dashboard, real logo, watermark, unrelated scene, random collage, tiny unreadable text",
+        "groundingTokens": ["same fictional stylized 3D sports dashboard", "same block avatar", "warm orange rounded action card", "clear next-step cue"]
+      },
+      "referenceAssetIds": [],
+      "expectedAsset": {
+        "assetId": "beat-003-visual",
+        "mediaKind": "image",
+        "relativePath": "outputs/visual-plan/beat-003.png",
+        "mustBeNew": true
+      },
+      "candidate": {
+        "selectionState": "not_generated",
+        "score": null,
+        "providerProfileRef": null,
+        "modelProfileRef": null,
+        "seed": 103
+      },
+      "review": {
+        "decision": "needs_review",
+        "semanticState": "not_checked",
+        "continuityState": "not_checked",
+        "rightsState": "pending"
+      },
+      "risk": {
+        "level": "medium",
+        "issues": ["Exact action-card text must be added deterministically after visual generation."],
+        "needsHumanReview": true
+      },
+      "policy": {
+        "rightsRequired": true,
+        "humanReviewRequired": true,
+        "paidGeneration": false,
+        "externalPublish": false,
+        "allowNetwork": false
+      }
+    }
+  ],
+  "totalDurationFrames": 900,
+  "createdAt": "2026-08-23T00:00:00Z",
+  "updatedAt": "2026-08-23T00:00:00Z"
+}

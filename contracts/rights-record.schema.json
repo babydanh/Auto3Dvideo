@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/rights-record.schema.json",
+  "title": "Auto3Dvideo Rights Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "rightsId", "assetId", "ownerType", "commercialUse", "derivativeUse", "platforms", "territories", "status", "reviewedAt"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "rightsId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "assetId": {"type": "string"},
+    "ownerType": {"type": "string", "enum": ["self_created", "licensed", "public_domain", "provider_output", "third_party_permission", "unknown"]},
+    "ownerName": {"type": ["string", "null"], "maxLength": 300},
+    "sourceUri": {"type": ["string", "null"], "maxLength": 2000},
+    "licenseName": {"type": ["string", "null"], "maxLength": 300},
+    "proofPath": {"type": ["string", "null"], "maxLength": 1000},
+    "commercialUse": {"type": "string", "enum": ["allowed", "restricted", "unknown", "not_allowed"]},
+    "derivativeUse": {"type": "string", "enum": ["allowed", "restricted", "unknown", "not_allowed"]},
+    "voiceOrLikenessConsent": {"type": "string", "enum": ["not_applicable", "pending", "approved", "rejected", "unknown"]},
+    "platforms": {"type": "array", "items": {"type": "string", "enum": ["youtube", "tiktok", "douyin", "instagram", "client_delivery", "internal"]}, "uniqueItems": true},
+    "territories": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+    "expiry": {"type": ["string", "null"], "format": "date-time"},
+    "status": {"type": "string", "enum": ["pending", "approved", "blocked", "expired", "not_applicable"]},
+    "reviewedBy": {"type": ["string", "null"]},
+    "reviewedAt": {"type": "string", "format": "date-time"},
+    "notes": {"type": "string", "maxLength": 5000}
+  }
+}

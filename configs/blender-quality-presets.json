@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0.0",
+  "presets": {
+    "space_editorial_cinematic": {
+      "engine": "BLENDER_EEVEE",
+      "resolution": [1080, 1920],
+      "fps": 30,
+      "look": "AgX - Medium High Contrast",
+      "world": {"color": [0.002, 0.004, 0.012, 1.0], "strength": 0.12},
+      "lights": [
+        {"name": "LGT-key-cyan", "type": "AREA", "energy": 900, "color": [0.18, 0.62, 1.0], "size": 4.0},
+        {"name": "LGT-fill-blue", "type": "AREA", "energy": 350, "color": [0.12, 0.22, 1.0], "size": 5.0},
+        {"name": "LGT-rim-red", "type": "AREA", "energy": 700, "color": [1.0, 0.06, 0.025], "size": 3.0}
+      ],
+      "camera": {"lens": 52, "sensorWidth": 36, "dof": true, "safeArea": {"top": 0.12, "bottom": 0.16, "left": 0.08, "right": 0.08}},
+      "materialDefaults": {"roughness": 0.34, "metallic": 0.08, "emissionStrength": 1.5},
+      "negativeConstraints": ["no unapproved logos", "no random text", "no missing materials", "no off-frame hero subject", "no arbitrary external downloads"]
+    },
+    "studio_asset_validation": {
+      "engine": "BLENDER_EEVEE",
+      "resolution": [720, 720],
+      "fps": 24,
+      "look": "AgX - Medium High Contrast",
+      "world": {"color": [0.03, 0.03, 0.03, 1.0], "strength": 0.3},
+      "lights": [
+        {"name": "LGT-key-neutral", "type": "AREA", "energy": 800, "color": [1.0, 0.92, 0.82], "size": 5.0},
+        {"name": "LGT-fill-neutral", "type": "AREA", "energy": 300, "color": [0.55, 0.7, 1.0], "size": 6.0},
+        {"name": "LGT-rim-neutral", "type": "AREA", "energy": 500, "color": [1.0, 1.0, 1.0], "size": 3.0}
+      ],
+      "camera": {"lens": 70, "sensorWidth": 36, "dof": false, "safeArea": {"top": 0.05, "bottom": 0.05, "left": 0.05, "right": 0.05}},
+      "materialDefaults": {"roughness": 0.42, "metallic": 0.0, "emissionStrength": 0.0},
+      "negativeConstraints": ["no missing materials", "no non-uniform unapplied scale", "no zero-dimension mesh", "no external network access"]
+    }
+  }
+}

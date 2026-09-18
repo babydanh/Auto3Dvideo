@@ -1,0 +1,9 @@
+{
+  "text": "Speak Vietnamese with a clear, confident documentary tone, slightly energetic and cinematic, with short intentional pauses: Bạn nghĩ vũ trụ đứng yên? Không. Mỗi tín hiệu đi qua bóng tối đều để lại một nhịp chuyển động. Ánh sáng kéo dài khoảng cách thành câu chuyện. Chỉ cần đổi góc nhìn, một điểm sáng cũng có thể mở ra cả bản đồ của vũ trụ. Hãy nhìn kỹ: thứ đang chuyển động không chỉ là vật thể, mà còn là thông tin.",
+  "voice": "Adam",
+  "backend": "onnx",
+  "precision": "int8",
+  "temperature": 0.8,
+  "cloneConsent": false,
+  "outputPath": ".auto3dvideo/tts/editorial-space-pulse-narration.wav"
+}

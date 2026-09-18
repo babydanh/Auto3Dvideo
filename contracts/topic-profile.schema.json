@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/topic-profile.schema.json",
+  "title": "Auto3Dvideo Topic Profile Registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "profiles"],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["profileId", "name", "description", "defaultRecipeKind", "visualMode", "defaultAudience", "shotStrategy", "assetPolicy", "qaChecklist", "promptTemplateIds"],
+        "properties": {
+          "profileId": { "type": "string", "pattern": "^[a-z][a-z0-9-]{2,63}$" },
+          "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+          "description": { "type": "string", "minLength": 10, "maxLength": 500 },
+          "defaultRecipeKind": { "enum": ["image_slideshow", "html_to_video", "voiceover_package", "screen_demo", "hybrid_2d_3d", "true_3d"] },
+          "visualMode": { "enum": ["documentary", "editorial-data", "narrative", "product-demo", "gameplay", "cinematic-3d"] },
+          "defaultAudience": { "type": "string", "minLength": 2, "maxLength": 160 },
+          "shotStrategy": { "type": "string", "minLength": 10, "maxLength": 500 },
+          "assetPolicy": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["requiresProvenance", "rejectIrrelevantCandidates", "requiresHumanReview", "allowedSources"],
+            "properties": {
+              "requiresProvenance": { "const": true },
+              "rejectIrrelevantCandidates": { "const": true },
+              "requiresHumanReview": { "const": true },
+              "allowedSources": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 2 } }
+            }
+          },
+          "qaChecklist": { "type": "array", "minItems": 3, "items": { "type": "string", "minLength": 5 } },
+          "promptTemplateIds": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{2,63}$" } }
+        }
+      }
+    }
+  }
+}

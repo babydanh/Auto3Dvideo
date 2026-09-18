@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0.0",
+  "packId": "dinosaur-tiger-assets-v1",
+  "projectId": "dinosaur-tiger",
+  "title": "Giant tiger in the Cretaceous asset pack",
+  "status": "needs_review",
+  "bibleVersions": {
+    "character": "character-bible-v1",
+    "world": "world-bible-v1",
+    "style": "style-bible-v1"
+  },
+  "identityAnchors": ["tiger-giant-v1"],
+  "assetItems": [
+    {
+      "assetItemId": "tiger-identity-hero",
+      "identityAnchorId": "tiger-giant-v1",
+      "role": "identity",
+      "status": "needs_review",
+      "reviewState": "in_review",
+      "rightsStatus": "pending",
+      "outputAssetIds": ["asset-001-identity"]
+    },
+    {
+      "assetItemId": "cretaceous-world-establishing",
+      "identityAnchorId": null,
+      "role": "environment",
+      "status": "needs_review",
+      "reviewState": "in_review",
+      "rightsStatus": "pending",
+      "outputAssetIds": ["asset-002-environment"]
+    },
+    {
+      "assetItemId": "tiger-scale-reference",
+      "identityAnchorId": "tiger-giant-v1",
+      "role": "scale_reference",
+      "status": "needs_review",
+      "reviewState": "in_review",
+      "rightsStatus": "pending",
+      "outputAssetIds": ["asset-003-scale-reference"]
+    }
+  ],
+  "acceptancePolicy": {
+    "requiresHumanReview": true,
+    "requiresApprovedIdentityAnchor": true,
+    "requiresApprovedRights": true,
+    "requiresScaleReference": true,
+    "requiredRoles": ["identity", "environment", "scale_reference"]
+  },
+  "promptCompilerVersion": "asset-pack-compiler-v1",
+  "createdAt": "2026-09-11T10:00:00Z",
+  "updatedAt": "2026-09-11T10:00:00Z"
+}

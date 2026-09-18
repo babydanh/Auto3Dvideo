@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/scene-manifest.schema.json",
+  "title": "Auto3Dvideo Blender Scene Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "sceneId", "scenePath", "blenderVersion", "engine", "fps", "frameStart", "frameEnd", "cameraObject", "objectInventory", "materialInventory", "assertions", "reviewState"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "sceneId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,96}$"},
+    "scenePath": {"type": "string", "minLength": 1},
+    "blenderVersion": {"type": "string", "minLength": 1, "maxLength": 120},
+    "engine": {"type": "string", "enum": ["BLENDER_EEVEE_NEXT", "BLENDER_EEVEE", "BLENDER_CYCLES", "BLENDER_WORKBENCH"]},
+    "fps": {"type": "number", "exclusiveMinimum": 0, "maximum": 240},
+    "frameStart": {"type": "integer", "minimum": 1},
+    "frameEnd": {"type": "integer", "minimum": 1},
+    "cameraObject": {"type": "string", "minLength": 1, "maxLength": 160},
+    "objectInventory": {"type": "array", "minItems": 1, "items": {"type": "string", "maxLength": 160}, "maxItems": 5000},
+    "materialInventory": {"type": "array", "items": {"type": "string", "maxLength": 160}, "maxItems": 5000},
+    "assetHashes": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"}},
+    "assertions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "passed", "message"],
+        "properties": {
+          "name": {"type": "string", "maxLength": 160},
+          "passed": {"type": "boolean"},
+          "message": {"type": "string", "maxLength": 1000}
+        }
+      },
+      "maxItems": 64
+    },
+    "previewOutputs": {"type": "array", "items": {"type": "string"}, "maxItems": 32},
+    "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "blocked"]}
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0.0",
+  "jobType": "multishot.continuity",
+  "projectId": "plan023-fixture-project",
+  "runId": "plan023-multishot-fixture-run",
+  "profile": "cinematic-3d",
+  "fps": 30,
+  "width": 512,
+  "height": 288,
+  "engine": "BLENDER_EEVEE_NEXT",
+  "renderVideo": false,
+  "worldBible": {
+    "era": "prehistoric Cretaceous forest",
+    "scaleSystem": "meters",
+    "environment": "misty fern valley with volcanic rocks",
+    "palette": ["deep jungle green", "orange tiger", "red-brown trex", "blue rim light"],
+    "cameraGrammar": "cinematic 48mm spherical lens, controlled push-in and lateral tracking",
+    "continuityAnchors": ["screen_direction_left_to_right", "jungle_blue_rim", "same_time_of_day", "scale_locked_meters"]
+  },
+  "characterBibles": [
+    {"characterId": "tiger-giant", "heightMeters": 8.0, "identityAnchor": "orange-black stripes, broad shoulders, white muzzle, amber eyes"},
+    {"characterId": "trex", "heightMeters": 12.0, "identityAnchor": "dark red-brown scales, massive head, two-finger arms, heavy tail"}
+  ],
+  "shots": [
+    {"shotId": "SHOT-001", "durationFrames": 30, "storyBeat": "A giant tiger is revealed in a dark museum display before the time shift.", "lens": 48, "cameraStart": [17.0, -28.0, 11.5], "cameraEnd": [13.5, -23.0, 9.0], "targetStart": [0.0, 0.0, 4.0], "targetEnd": [1.0, 0.0, 4.2], "tigerStart": [-4.0, 0.0, 0.0], "tigerEnd": [-2.0, 0.0, 0.0], "trexStart": [10.0, 2.0, 0.0], "trexEnd": [10.0, 2.0, 0.0], "continuityAnchors": ["tiger-giant", "trex", "screen_direction_left_to_right", "jungle_blue_rim", "same_time_of_day", "scale_locked_meters"]},
+    {"shotId": "SHOT-002", "durationFrames": 30, "storyBeat": "The tiger grows to its full eight-meter scale as the room light bends around it.", "lens": 50, "cameraStart": [16.0, -27.0, 10.5], "cameraEnd": [12.0, -22.0, 8.7], "targetStart": [0.0, 0.0, 4.0], "targetEnd": [1.0, 0.0, 4.4], "tigerStart": [-2.0, 0.0, 0.0], "tigerEnd": [0.0, 0.0, 0.0], "trexStart": [10.0, 2.0, 0.0], "trexEnd": [10.0, 2.0, 0.0], "continuityAnchors": ["tiger-giant", "trex", "screen_direction_left_to_right", "jungle_blue_rim", "same_time_of_day", "scale_locked_meters"]},
+    {"shotId": "SHOT-003", "durationFrames": 30, "storyBeat": "A blue temporal fracture carries the tiger into the Cretaceous forest.", "lens": 46, "cameraStart": [15.0, -26.0, 10.0], "cameraEnd": [11.0, -21.0, 8.0], "targetStart": [0.0, 0.0, 4.2], "targetEnd": [1.2, 0.0, 4.5], "tigerStart": [0.0, 0.0, 0.0], "tigerEnd": [1.0, 0.0, 0.0], "trexStart": [10.0, 2.0, 0.0], "trexEnd": [10.0, 2.0, 0.0], "continuityAnchors": ["tiger-giant", "trex", "screen_direction_left_to_right", "jungle_blue_rim", "same_time_of_day", "scale_locked_meters"]},
+    {"shotId": "SHOT-004", "durationFrames": 30, "storyBeat": "The tiger tracks a lonely nest trail through ferns and volcanic rocks.", "lens": 52, "cameraStart": [13.0, -24.0, 8.5], "cameraEnd": [9.5, -19.0, 7.2], "targetStart": [1.5, 0.0, 4.0], "targetEnd": [2.0, 0.0, 4.1], "tigerStart": [1.0, 0.0, 0.0], "tigerEnd": [3.0, 0.0, 0.0], "trexStart": [10.0, 2.0, 0.0], "trexEnd": [10.0, 2.0, 0.0], "continuityAnchors": ["tiger-giant", "trex", "screen_direction_left_to_right", "jungle_blue_rim", "same_time_of_day", "scale_locked_meters"]},
+    {"shotId": "SHOT-005", "durationFrames": 30, "storyBeat": "A distant T-Rex steps into the valley, establishing the twelve-meter scale difference.", "lens": 58, "cameraStart": [12.0, -23.0, 9.5], "cameraEnd": [8.0, -18.0, 7.5], "targetStart": [2.5, 0.0, 5.0], "targetEnd": [3.0, 0.0, 5.2], "tigerStart": [3.0, 0.0, 0.0], "tigerEnd": [3.2, 0.0, 0.0], "trexStart": [10.0, 2.0, 0.0], "trexEnd": [8.5, 2.0, 0.0], "continuityAnchors": ["tiger-giant", "trex", "screen_direction_left_to_right", "jungle_blue_rim", "same_time_of_day", "scale_locked_meters"]},
+    {"shotId": "SHOT-006", "durationFrames": 30, "storyBeat": "Tiger and T-Rex face each other across the valley without gore.", "lens": 55, "cameraStart": [11.0, -22.0, 8.2], "cameraEnd": [7.0, -17.0, 6.8], "targetStart": [3.5, 0.0, 5.0], "targetEnd": [4.0, 0.0, 5.1], "tigerStart": [3.2, 0.0, 0.0], "tigerEnd": [3.0, 0.0, 0.0], "trexStart": [8.5, 2.0, 0.0], "trexEnd": [7.5, 2.0, 0.0], "continuityAnchors": ["tiger-giant", "trex", "screen_direction_left_to_right", "jungle_blue_rim", "same_time_of_day", "scale_locked_meters"]},
+    {"shotId": "SHOT-007", "durationFrames": 30, "storyBeat": "The tiger dodges a heavy step and keeps the left-to-right screen direction.", "lens": 45, "cameraStart": [10.0, -21.0, 7.5], "cameraEnd": [6.0, -16.0, 6.2], "targetStart": [3.0, 0.0, 4.5], "targetEnd": [4.5, 0.0, 4.8], "tigerStart": [3.0, 0.0, 0.0], "tigerEnd": [5.0, 0.0, 0.0], "trexStart": [7.5, 2.0, 0.0], "trexEnd": [6.5, 2.0, 0.0], "continuityAnchors": ["tiger-giant", "trex", "screen_direction_left_to_right", "jungle_blue_rim", "same_time_of_day", "scale_locked_meters"]},
+    {"shotId": "SHOT-008", "durationFrames": 30, "storyBeat": "The tiger guards the nest trail as the T-Rex disappears into the mist.", "lens": 50, "cameraStart": [9.0, -20.0, 7.0], "cameraEnd": [5.5, -15.0, 5.8], "targetStart": [4.5, 0.0, 4.2], "targetEnd": [5.5, 0.0, 4.4], "tigerStart": [5.0, 0.0, 0.0], "tigerEnd": [5.5, 0.0, 0.0], "trexStart": [6.5, 2.0, 0.0], "trexEnd": [10.0, 2.0, 0.0], "continuityAnchors": ["tiger-giant", "trex", "screen_direction_left_to_right", "jungle_blue_rim", "same_time_of_day", "scale_locked_meters"]}
+  ]
+}

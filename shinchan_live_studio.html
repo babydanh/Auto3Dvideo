@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shin-chan 3D Live Studio</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    body {
+      background-color: var(--background, #0f172a);
+      color: var(--foreground, #f8fafc);
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+  </style>
+</head>
+<body class="p-6">
+  <div class="max-w-5xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-[var(--border,#334155)] pb-4">
+      <div>
+        <h1 class="text-2xl font-bold text-amber-400 flex items-center gap-2">
+          🎬 Shin-chan 3D Live Studio
+        </h1>
+        <p class="text-sm text-[var(--muted-foreground,#94a3b8)]">
+          Khu vực dựng video tương tác: Chọn nhân vật, ghép giọng tiếng Việt, hòa âm nhạc nền và căn chỉnh timeline.
+        </p>
+      </div>
+      <div class="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-semibold">
+        Auto3Dvideo Live Engine
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- Cột 1: Chọn Nhân vật & Giọng Voice -->
+      <div class="bg-[var(--card,#1e293b)] p-5 rounded-2xl border border-[var(--border,#334155)] space-y-4">
+        <h2 class="text-base font-bold text-sky-400 flex items-center gap-2">
+          👤 1. Chọn Nhân Vật & Voice
+        </h2>
+
+        <!-- Chọn nhân vật -->
+        <div>
+          <label class="text-xs font-medium text-[var(--muted-foreground,#94a3b8)] block mb-1.5">Nhân vật biểu diễn:</label>
+          <div class="grid grid-cols-3 gap-2" id="characterGrid">
+            <button onclick="selectChar('shin')" class="char-btn p-2 rounded-xl border border-amber-500 bg-amber-500/20 text-center transition" data-char="shin">
+              <div class="text-2xl">🖍️</div>
+              <div class="text-xs font-bold mt-1 text-amber-300">Shin-chan</div>
+            </button>
+            <button onclick="selectChar('kazama')" class="char-btn p-2 rounded-xl border border-[var(--border,#334155)] bg-[var(--background,#0f172a)] text-center transition" data-char="kazama">
+              <div class="text-2xl">📘</div>
+              <div class="text-xs font-bold mt-1 text-slate-300">Kazama</div>
+            </button>
+            <button onclick="selectChar('nene')" class="char-btn p-2 rounded-xl border border-[var(--border,#334155)] bg-[var(--background,#0f172a)] text-center transition" data-char="nene">
+              <div class="text-2xl">🎀</div>
+              <div class="text-xs font-bold mt-1 text-slate-300">Nene</div>
+            </button>
+            <button onclick="selectChar('masao')" class="char-btn p-2 rounded-xl border border-[var(--border,#334155)] bg-[var(--background,#0f172a)] text-center transition" data-char="masao">
+              <div class="text-2xl">🍙</div>
+              <div class="text-xs font-bold mt-1 text-slate-300">Masao</div>
+            </button>
+            <button onclick="selectChar('bochan')" class="char-btn p-2 rounded-xl border border-[var(--border,#334155)] bg-[var(--background,#0f172a)] text-center transition" data-char="bochan">
+              <div class="text-2xl">💧</div>
+              <div class="text-xs font-bold mt-1 text-slate-300">Bo-chan</div>
+            </button>
+            <button onclick="selectChar('shiro')" class="char-btn p-2 rounded-xl border border-[var(--border,#334155)] bg-[var(--background,#0f172a)] text-center transition" data-char="shiro">
+              <div class="text-2xl">🐶</div>
+              <div class="text-xs font-bold mt-1 text-slate-300">Shiro</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chọn mẫu câu thoại tiếng Việt -->
+        <div>
+          <label class="text-xs font-medium text-[var(--muted-foreground,#94a3b8)] block mb-1.5">Mẫu câu thoại / Voice tiếng Việt:</label>
+          <select id="voiceSelect" onchange="updateVoicePreview()" class="w-full bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] rounded-xl px-3 py-2 text-sm text-[var(--foreground,#f8fafc)] focus:outline-none focus:border-amber-400">
+            <option value="cam_on">Shin: "Cảm ơn anh chị đã tặng quà cho Shin nha!"</option>
+            <option value="hat_mung">Shin: "La la la~ Bánh mì thơm giòn ngon quá đi thôi!"</option>
+            <option value="chao_hoi">Shin: "Xin chào cả nhà, Shin-chan 5 tuổi đây nè!"</option>
+            <option value="custom">File tự tải lên (Custom .mp3)...</option>
+          </select>
+        </div>
+
+        <!-- Tải file voice riêng -->
+        <div class="p-3 bg-[var(--background,#0f172a)] rounded-xl border border-dashed border-[var(--border,#334155)] text-center">
+          <input type="file" id="voiceUpload" accept="audio/*" class="hidden" onchange="handleVoiceUpload(event)">
+          <button onclick="document.getElementById('voiceUpload').click()" class="text-xs text-amber-400 font-semibold hover:underline flex items-center justify-center gap-1 mx-auto">
+            📁 Tải file Voice Tiếng Việt (.mp3)
+          </button>
+          <div id="voiceName" class="text-[10px] text-[var(--muted-foreground,#94a3b8)] mt-1">Chưa chọn file ngoài</div>
+        </div>
+
+      </div>
+
+      <!-- Cột 2: Video 3D & Nhạc nền (BGM) -->
+      <div class="bg-[var(--card,#1e293b)] p-5 rounded-2xl border border-[var(--border,#334155)] space-y-4">
+        <h2 class="text-base font-bold text-emerald-400 flex items-center gap-2">
+          🎵 2. Video 3D & Nhạc Nền (BGM)
+        </h2>
+
+        <!-- Tải video 3D -->
+        <div>
+          <label class="text-xs font-medium text-[var(--muted-foreground,#94a3b8)] block mb-1.5">Video gốc 3D:</label>
+          <div class="p-3 bg-[var(--background,#0f172a)] rounded-xl border border-dashed border-[var(--border,#334155)] text-center">
+            <input type="file" id="videoUpload" accept="video/*" class="hidden" onchange="handleVideoUpload(event)">
+            <button onclick="document.getElementById('videoUpload').click()" class="text-xs text-emerald-400 font-semibold hover:underline flex items-center justify-center gap-1 mx-auto">
+              🎥 Tải video 3D từ Google Flow (.mp4)
+            </button>
+            <div id="videoName" class="text-[10px] text-[var(--muted-foreground,#94a3b8)] mt-1">Mặc định: shinchan_live_stepped_back.mp4</div>
+          </div>
+        </div>
+
+        <!-- Chọn nhạc nền -->
+        <div>
+          <label class="text-xs font-medium text-[var(--muted-foreground,#94a3b8)] block mb-1.5">Nhạc nền Livestream (BGM):</label>
+          <select id="bgmSelect" class="w-full bg-[var(--background,#0f172a)] border border-[var(--border,#334155)] rounded-xl px-3 py-2 text-sm text-[var(--foreground,#f8fafc)] focus:outline-none focus:border-emerald-400">
+            <option value="nhac_vui">Nhạc hoạt hình vui nhộn (Upbeat Anime)</option>
+            <option value="lofi_chill">Lofi Acoustic phố cổ Hội An</option>
+            <option value="tiktok_dance">TikTok Dance Trend Remix</option>
+            <option value="none">Tắt nhạc nền (Chỉ giữ tiếng nói)</option>
+          </select>
+        </div>
+
+        <!-- Thanh gạt chỉnh âm lượng Ducking -->
+        <div>
+          <div class="flex justify-between text-xs text-[var(--muted-foreground,#94a3b8)] mb-1">
+            <span>Âm lượng nhạc nền khi nhân vật nói:</span>
+            <span id="bgmVolText" class="text-emerald-300 font-bold">18%</span>
+          </div>
+          <input type="range" min="0" max="100" value="18" id="bgmVolSlider" oninput="updateVol(this.value)" class="w-full accent-emerald-400 cursor-pointer">
+          <p class="text-[10px] text-slate-400 mt-1">💡 Tự động nén nhỏ nhạc khi nhân vật cất tiếng nói (Auto-Ducking).</p>
+        </div>
+      </div>
+
+      <!-- Cột 3: Căn chỉnh Timeline & Xuất lệnh -->
+      <div class="bg-[var(--card,#1e293b)] p-5 rounded-2xl border border-[var(--border,#334155)] space-y-4 flex flex-col justify-between">
+        <div>
+          <h2 class="text-base font-bold text-purple-400 flex items-center gap-2 mb-3">
+            ⚙️ 3. Căn Chỉnh & Xuất Bản
+          </h2>
+
+          <!-- Tùy chọn căn chỉnh -->
+          <div class="space-y-2.5">
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
+              <input type="checkbox" id="chkLoop" checked class="accent-purple-400 rounded">
+              <span>Khóa vòng lặp vô hạn (Seamless Loop Replay)</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
+              <input type="checkbox" id="chkBoost" checked class="accent-purple-400 rounded">
+              <span>Khuếch đại giọng lồng tiếng (+180% Clarity)</span>
+            </label>
+            <label class="flex items-center gap-2 text-xs cursor-pointer">
+              <input type="checkbox" id="chkLipSync" checked class="accent-purple-400 rounded">
+              <span>Bật bộ lọc mấp máy môi (Lip-sync Filter)</span>
+            </label>
+          </div>
+
+          <!-- Trạng thái chuẩn bị -->
+          <div class="mt-4 p-3 bg-[var(--background,#0f172a)] rounded-xl border border-[var(--border,#334155)] space-y-1 text-xs">
+            <div class="text-[var(--muted-foreground,#94a3b8)]">Trạng thái: <span class="text-emerald-400 font-semibold">Sẵn sàng xuất lệnh</span></div>
+            <div class="text-[var(--muted-foreground,#94a3b8)]">Nhân vật: <span id="lblChar" class="text-amber-300 font-semibold">Shin-chan</span></div>
+          </div>
+        </div>
+
+        <!-- Nút Tạo & Xuất lệnh -->
+        <div class="space-y-2">
+          <button onclick="generateScriptCommand()" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-emerald-500 text-slate-900 font-bold rounded-xl shadow-lg hover:opacity-90 transition text-sm flex items-center justify-center gap-1.5">
+            ⚡ Xuất Lệnh Chạy Tự Động (Auto-Render)
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Hộp hiển thị Lệnh Terminal sinh ra -->
+    <div class="bg-[var(--card,#1e293b)] p-5 rounded-2xl border border-[var(--border,#334155)] space-y-2">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">💻 Lệnh Terminal Auto3Dvideo thực thi:</span>
+        <button onclick="copyCommand()" class="text-xs text-amber-400 hover:underline flex items-center gap-1">
+          📋 Sao chép lệnh
+        </button>
+      </div>
+      <div class="p-3 bg-[var(--background,#0f172a)] rounded-xl font-mono text-xs text-amber-300 break-all border border-[var(--border,#334155)]" id="commandOutput">
+        python scripts/shin_live_mixer.py --video assets/videos/shin_dance.mp4 --voice assets/voices/shin_camon.mp3 --bgm assets/music/live_bgm.mp3 --output outputs/livestream/shin_live_ready.mp4
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentChar = 'shin';
+
+    function selectChar(charKey) {
+      currentChar = charKey;
+      document.querySelectorAll('.char-btn').forEach(btn => {
+        if (btn.getAttribute('data-char') === charKey) {
+          btn.className = "char-btn p-2 rounded-xl border border-amber-500 bg-amber-500/20 text-center transition";
+          btn.querySelector('div:last-child').className = "text-xs font-bold mt-1 text-amber-300";
+        } else {
+          btn.className = "char-btn p-2 rounded-xl border border-[var(--border,#334155)] bg-[var(--background,#0f172a)] text-center transition";
+          btn.querySelector('div:last-child').className = "text-xs font-bold mt-1 text-slate-300";
+        }
+      });
+      document.getElementById('lblChar').innerText = charKey.charAt(0).toUpperCase() + charKey.slice(1);
+      generateScriptCommand();
+    }
+
+    function updateVol(val) {
+      document.getElementById('bgmVolText').innerText = val + '%';
+      generateScriptCommand();
+    }
+
+    function handleVoiceUpload(e) {
+      if (e.target.files.length > 0) {
+        document.getElementById('voiceName').innerText = e.target.files[0].name;
+        generateScriptCommand();
+      }
+    }
+
+    function handleVideoUpload(e) {
+      if (e.target.files.length > 0) {
+        document.getElementById('videoName').innerText = e.target.files[0].name;
+        generateScriptCommand();
+      }
+    }
+
+    function generateScriptCommand() {
+      const charName = currentChar;
+      const vol = (parseInt(document.getElementById('bgmVolSlider').value) / 100).toFixed(2);
+      const bgm = document.getElementById('bgmSelect').value;
+      
+      let cmd = `python scripts/shin_live_mixer.py --video assets/videos/${charName}_step.mp4 --voice assets/voices/${charName}_voice.mp3`;
+      if (bgm !== 'none') {
+        cmd += ` --bgm assets/music/${bgm}.mp3`;
+      }
+      cmd += ` --output outputs/livestream/${charName}_live_ready.mp4`;
+      
+      document.getElementById('commandOutput').innerText = cmd;
+    }
+
+    function copyCommand() {
+      const text = document.getElementById('commandOutput').innerText;
+      navigator.clipboard.writeText(text);
+      alert('Đã sao chép lệnh thực thi vào bộ nhớ tạm!');
+    }
+  </script>
+</body>
+</html>

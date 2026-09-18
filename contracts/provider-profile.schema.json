@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/provider-profile.schema.json",
+  "title": "Auto3Dvideo Provider Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profileId", "capability", "adapter", "enabled", "model", "pricingMode", "credentialRef"],
+  "properties": {
+    "profileId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"},
+    "capability": {"type": "string", "enum": ["llm", "image", "video", "tts", "stt", "audio", "asset3d", "render3d", "media"]},
+    "adapter": {"type": "string", "minLength": 1, "maxLength": 100},
+    "enabled": {"type": "boolean"},
+    "baseUrl": {"type": ["string", "null"], "format": "uri"},
+    "model": {"type": "string", "minLength": 1, "maxLength": 200},
+    "voiceId": {"type": ["string", "null"], "maxLength": 200},
+    "credentialRef": {"type": ["string", "null"], "pattern": "^(none|env:[A-Z][A-Z0-9_]{0,127}|os:[A-Za-z0-9_.\\/-]{1,128})$", "maxLength": 200},
+    "pricingMode": {"type": "string", "enum": ["free_local", "free_tier", "subscription", "paid_api", "unknown"]},
+    "pricingSource": {"type": ["string", "null"], "format": "uri"},
+    "termsSource": {"type": ["string", "null"], "format": "uri"},
+    "reviewedAt": {"type": ["string", "null"], "format": "date"},
+    "region": {"type": ["string", "null"], "maxLength": 100},
+    "timeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 86400},
+    "maxAttempts": {"type": "integer", "minimum": 1, "maximum": 10},
+    "fallbackProfiles": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+  }
+}

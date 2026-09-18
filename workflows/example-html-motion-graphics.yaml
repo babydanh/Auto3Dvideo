@@ -1,0 +1,80 @@
+schema_version: "1.0.0"
+workflow_id: "html-motion-graphics"
+name: "HTML and React Motion Graphics Video"
+profile: "local"
+inputs:
+  composition_id: "ProductExplainer"
+  data_file: "examples/minimal-3d-video/brief.md"
+  language: "vi-VN"
+  aspect_ratio: "9:16"
+  duration_seconds: 30
+  fps: 30
+provider_defaults:
+  llm: llm_local
+  tts: voice_primary
+  stt: stt_local
+  html_renderer: remotion_local
+  media: media_local
+policy:
+  dry_run_default: true
+  rights_required: true
+  paid_generation_requires_approval: true
+  external_publish: false
+stages:
+  - id: draft_copy
+    type: script.draft
+    operation: chat
+    executor: mock
+    model_profile: llm_local
+    outputs: [copy.json]
+  - id: build_data_payload
+    type: html.data_prepare
+    operation: structured_output
+    depends_on: [draft_copy]
+    executor: mock
+    outputs: [composition-data.json]
+  - id: render_preview
+    type: html.render
+    operation: render_html_video
+    depends_on: [build_data_payload]
+    executor: provider_adapter
+    provider: remotion
+    model_profile: remotion_local
+    approval: required
+    outputs: [preview.mp4]
+  - id: synthesize_voice
+    type: audio.voiceover
+    operation: synthesize_speech
+    depends_on: [draft_copy]
+    executor: provider_adapter
+    provider: configured-by-user
+    model_profile: voice_primary
+    approval: required
+    outputs: [voiceover.wav]
+  - id: captions
+    type: caption.generate
+    operation: transcribe
+    depends_on: [synthesize_voice]
+    executor: provider_adapter
+    provider: configured-by-user
+    model_profile: stt_local
+    outputs: [captions.srt, captions.vtt]
+  - id: compose
+    type: media.compose
+    operation: mux
+    depends_on: [render_preview, synthesize_voice, captions]
+    executor: ffmpeg
+    model_profile: media_local
+    outputs: [draft.mp4]
+  - id: review
+    type: human.review
+    depends_on: [compose]
+    executor: interactive
+    approval: required
+    outputs: [review.json]
+  - id: delivery
+    type: delivery.package
+    depends_on: [review]
+    executor: ffmpeg
+    model_profile: media_local
+    outputs: [delivery/manifest.json]

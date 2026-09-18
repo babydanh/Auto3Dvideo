@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/true-3d-run.schema.json",
+  "title": "Auto3Dvideo True 3D Run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "runId", "projectId", "sessionId", "profile", "fps", "width", "height", "engine", "runState", "stages", "reviewState"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "runId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,96}$"},
+    "projectId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "sessionId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,96}$"},
+    "profile": {"type": "string", "enum": ["cinematic-3d"]},
+    "fps": {"type": "number", "exclusiveMinimum": 0, "maximum": 240},
+    "width": {"type": "integer", "minimum": 16, "maximum": 16384},
+    "height": {"type": "integer", "minimum": 16, "maximum": 16384},
+    "engine": {"type": "string", "enum": ["BLENDER_EEVEE_NEXT", "BLENDER_EEVEE", "BLENDER_CYCLES", "BLENDER_WORKBENCH"]},
+    "runState": {"type": "string", "enum": ["draft", "validated", "queued", "running", "succeeded", "needs_review", "blocked", "failed", "cancelled"]},
+    "reviewState": {"type": "string", "enum": ["not_started", "needs_review", "approved", "rejected"]},
+    "stages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stageId", "kind", "state", "dependsOn"],
+        "properties": {
+          "stageId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,96}$"},
+          "kind": {"type": "string", "enum": ["scene.build", "render.preview", "render.final", "metadata.extract", "quality.gate"]},
+          "state": {"type": "string", "enum": ["draft", "queued", "running", "succeeded", "needs_review", "blocked", "failed", "cancelled"]},
+          "dependsOn": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "attemptCount": {"type": "integer", "minimum": 0, "maximum": 3},
+          "outputPaths": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+          "errorCode": {"type": ["string", "null"], "maxLength": 120}
+        }
+      }
+    },
+    "costEstimate": {"type": "number", "minimum": 0},
+    "rightsState": {"type": "string", "enum": ["not_applicable", "pending", "approved", "blocked"]},
+    "idempotencyKey": {"type": "string", "maxLength": 240},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": "string", "format": "date-time"}
+  }
+}

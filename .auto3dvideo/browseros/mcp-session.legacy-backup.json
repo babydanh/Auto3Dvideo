@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0.0",
+  "sessionId": "c15429e6-560e-466a-ba59-b80e5b308403",
+  "pageId": 67,
+  "automationPageId": null,
+  "pageUrl": "https://flow.google.com/about",
+  "serverInfo": null,
+  "protocolVersion": null,
+  "tools": [
+    "tabs",
+    "tab_groups",
+    "history",
+    "navigate",
+    "snapshot",
+    "diff",
+    "act",
+    "download",
+    "upload",
+    "read",
+    "grep",
+    "screenshot",
+    "pdf",
+    "wait",
+    "windows",
+    "evaluate",
+    "run",
+    "name_session",
+    "save_skill",
+    "mark_skill_run"
+  ],
+  "updatedAt": "2026-09-15T09:17:49.334Z"
+}

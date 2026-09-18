@@ -1,0 +1,72 @@
+schema_version: "1.0.0"
+app:
+  environment: "local"
+  log_level: "info"
+  telemetry: false
+  auto_publish: false
+workspace:
+  project_relative_paths: true
+  reject_path_escape: true
+  lock_enabled: true
+  cache_policy: "rebuildable"
+execution:
+  mode: "mock"
+  max_gpu_jobs: 1
+  max_cpu_heavy_jobs: 2
+  max_network_jobs: 2
+  default_timeout_seconds: 1800
+  default_max_attempts: 3
+  dry_run_default: true
+budget:
+  currency: "USD"
+  monthly_limit: 0
+  per_episode_limit: 0
+  require_approval_for_paid: true
+  unknown_cost_policy: "block"
+security:
+  local_endpoint_only: true
+  allowlisted_executables: ["blender", "ffmpeg", "python"]
+  allowlisted_provider_hosts: []
+  max_download_bytes: 1073741824
+  install_custom_nodes_requires_approval: true
+  secrets_backend: "os_credential_store"
+media:
+  default_fps: 30
+  preview:
+    width: 720
+    height: 1280
+    container: "mp4"
+  social_vertical:
+    width: 1080
+    height: 1920
+    container: "mp4"
+  master:
+    width: 3840
+    height: 2160
+    container: "mp4"
+providers:
+  catalog_file: "configs/provider-profiles.yaml"
+  env_file: ".env"
+  load_env_file: true
+  secret_backend: "os_credential_store"
+  selection:
+    llm: "llm_local"
+    image: "image_local"
+    video: "mock_video"
+    tts: "mock_tts"
+    stt: "stt_local"
+    audio: "media_local"
+    render3d: "blender_local"
+    media: "media_local"
+  local_comfyui:
+    enabled: false
+    endpoint: "http://127.0.0.1:8188"
+  cloud:
+    enabled: false
+    require_terms_metadata: true
+    require_cost_estimate: true
+    require_explicit_profile: true
+  routing:
+    allow_implicit_fallback: false
+    reconcile_before_fallback: true
+    preserve_provider_receipts: true

@@ -1,0 +1,21 @@
+{
+  "voiceProfileId": "voice-en-documentary",
+  "projectId": "project-default",
+  "name": "English Documentary",
+  "mode": "design",
+  "modelId": "k2-fsa/OmniVoice",
+  "language": "en",
+  "instruct": "male, middle-aged, low pitch, british accent",
+  "referenceAudioPath": null,
+  "referenceAudioSha256": null,
+  "referenceAudioDurationSeconds": null,
+  "referenceAudioSampleRate": null,
+  "referenceTranscript": null,
+  "rightsStatus": "restricted",
+  "commercialUse": "restricted",
+  "cloneConsent": false,
+  "status": "ready",
+  "lastPreviewPath": null,
+  "createdAt": "1789646252",
+  "updatedAt": "1789664992"
+}

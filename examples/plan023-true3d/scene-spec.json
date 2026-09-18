@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0.0",
+  "jobType": "scene.build",
+  "projectId": "plan023-fixture-project",
+  "runId": "plan023-fixture-run",
+  "shotId": "SHOT-001",
+  "profile": "cinematic-3d",
+  "fps": 30,
+  "width": 512,
+  "height": 288,
+  "engine": "BLENDER_EEVEE_NEXT",
+  "renderVideo": false,
+  "worldBible": {
+    "era": "prehistoric Cretaceous forest",
+    "scaleSystem": "meters",
+    "environment": "misty fern valley with volcanic rocks",
+    "palette": ["deep jungle green", "orange tiger", "red-brown trex", "blue rim light"]
+  },
+  "characterBibles": [
+    {"characterId": "tiger-giant", "heightMeters": 8.0},
+    {"characterId": "trex", "heightMeters": 12.0}
+  ]
+}

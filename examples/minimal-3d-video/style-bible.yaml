@@ -1,0 +1,29 @@
+schema_version: "1.0.0"
+style_id: "stylized-3d-sports-saas"
+visual_style: "polished stylized 3D product animation"
+palette:
+  background: "deep navy"
+  primary: "electric blue"
+  accent: "warm orange"
+  neutral: "soft gray"
+lighting:
+  key: "large soft studio light"
+  rim: "subtle warm rim light"
+  shadows: "soft, readable, not crushed"
+materials:
+  dashboard: "matte glass and clean PBR plastic"
+  stadium: "low-detail stylized architectural material"
+camera:
+  movement: "slow dolly, controlled orbit, no handheld shake"
+  lens: "moderate perspective"
+characters:
+  policy: "fictional silhouettes only"
+  continuity: "same palette, proportions and wardrobe across shots"
+composition:
+  safe_area: "mobile safe area with no critical text near edges"
+  text: "add exact text in deterministic post-processing"
+negative_constraints:
+  - "no real-person likeness"
+  - "no third-party logo"
+  - "no watermark"
+  - "no tiny unreadable generated UI text"

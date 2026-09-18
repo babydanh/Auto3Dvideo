@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/mechanism-explainer.schema.json",
+  "title": "Auto3Dvideo Mechanism Explainer Event Graph",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "planId", "language", "title", "topic", "format", "style", "events", "policy", "reviewState"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "planId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "language": {"type": "string", "pattern": "^[a-z]{2,3}(?:-[A-Z]{2})?$"},
+    "title": {"type": "string", "minLength": 3, "maxLength": 160},
+    "topic": {"type": "string", "minLength": 3, "maxLength": 500},
+    "format": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["aspectRatio", "width", "height", "frameRate"],
+      "properties": {
+        "aspectRatio": {"type": "string", "const": "9:16"},
+        "width": {"type": "integer", "const": 720},
+        "height": {"type": "integer", "const": 1280},
+        "frameRate": {"type": "integer", "const": 30}
+      }
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visualLanguage", "palette", "captionStyle", "referenceUse"],
+      "properties": {
+        "visualLanguage": {"type": "string", "enum": ["mechanism_explainer", "educational_3d", "technical_cutaway"]},
+        "palette": {"type": "array", "minItems": 3, "maxItems": 8, "items": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"}, "uniqueItems": true},
+        "captionStyle": {"type": "string", "enum": ["sidecar", "burned_in", "both"]},
+        "referenceUse": {"type": "string", "const": "moodboard_only"}
+      }
+    },
+    "events": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["eventId", "sequence", "dependsOn", "startFrame", "endFrame", "durationFrames", "narration", "caption", "claim", "sourceNotes", "visualMode", "visualSpec", "transitionIn", "transitionOut", "reviewState"],
+        "properties": {
+          "eventId": {"type": "string", "pattern": "^event-[0-9]{3}$"},
+          "sequence": {"type": "integer", "minimum": 1, "maximum": 64},
+          "dependsOn": {"type": "array", "maxItems": 8, "items": {"type": "string", "pattern": "^event-[0-9]{3}$"}, "uniqueItems": true},
+          "startFrame": {"type": "integer", "minimum": 0},
+          "endFrame": {"type": "integer", "minimum": 1},
+          "durationFrames": {"type": "integer", "minimum": 1},
+          "narration": {"type": "string", "minLength": 3, "maxLength": 1200},
+          "caption": {"type": "string", "minLength": 1, "maxLength": 180},
+          "claim": {"type": "string", "minLength": 1, "maxLength": 1000},
+          "sourceNotes": {"type": "array", "maxItems": 8, "items": {"type": "string", "maxLength": 500}},
+          "visualMode": {"type": "string", "enum": ["2d_motion", "2_5d_parallax", "pseudo_3d", "true_3d"]},
+          "visualSpec": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sceneKind", "subject", "visibleAction", "camera", "continuityAnchors", "negativeConstraints"],
+            "properties": {
+              "sceneKind": {"type": "string", "enum": ["hook", "powder_contact", "water_infiltration", "hydration_reaction", "network_growth", "hardening", "takeaway"]},
+              "subject": {"type": "array", "minItems": 1, "maxItems": 12, "items": {"type": "string", "minLength": 1, "maxLength": 120}, "uniqueItems": true},
+              "visibleAction": {"type": "string", "minLength": 3, "maxLength": 500},
+              "camera": {"type": "string", "minLength": 3, "maxLength": 300},
+              "continuityAnchors": {"type": "array", "minItems": 1, "maxItems": 12, "items": {"type": "string", "minLength": 1, "maxLength": 160}, "uniqueItems": true},
+              "negativeConstraints": {"type": "array", "minItems": 1, "maxItems": 16, "items": {"type": "string", "minLength": 1, "maxLength": 160}, "uniqueItems": true}
+            }
+          },
+          "transitionIn": {"type": "string", "enum": ["cut", "push", "dissolve"]},
+          "transitionOut": {"type": "string", "enum": ["cut", "push", "dissolve"]},
+          "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "rejected"]}
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rightsRequired", "humanReviewRequired", "allowNetwork", "externalAssetsAllowed", "paidGeneration"],
+      "properties": {
+        "rightsRequired": {"type": "boolean", "const": true},
+        "humanReviewRequired": {"type": "boolean", "const": true},
+        "allowNetwork": {"type": "boolean", "const": false},
+        "externalAssetsAllowed": {"type": "boolean", "const": false},
+        "paidGeneration": {"type": "boolean", "const": false}
+      }
+    },
+    "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "rejected"]}
+  }
+}

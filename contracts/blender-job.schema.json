@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/blender-job.schema.json",
+  "title": "Blender Job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "jobType", "scenePath", "outputDirectory", "timeoutSeconds", "executionMode"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "jobType": {"type": "string", "enum": ["scene.inspect", "asset.normalize", "scene.build", "render.preview", "render.final", "thumbnail.render", "metadata.extract"]},
+    "scenePath": {"type": "string", "minLength": 1},
+    "scriptPath": {"type": ["string", "null"]},
+    "sceneName": {"type": ["string", "null"]},
+    "frameStart": {"type": ["integer", "null"], "minimum": 1},
+    "frameEnd": {"type": ["integer", "null"], "minimum": 1},
+    "outputDirectory": {"type": "string", "minLength": 1},
+    "outputPattern": {"type": ["string", "null"]},
+    "engine": {"type": ["string", "null"], "enum": ["BLENDER_EEVEE", "BLENDER_CYCLES", "BLENDER_WORKBENCH", null]},
+    "executionMode": {"type": "string", "enum": ["preview", "final", "inspect"]},
+    "timeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 604800},
+    "allowNetwork": {"type": "boolean"},
+    "expectedOutputKind": {"type": "string", "enum": ["none", "image", "image_sequence", "video", "metadata"]}
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/asset.schema.json",
+  "title": "Auto3Dvideo Asset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "assetId", "projectId", "kind", "relativePath", "sha256", "status", "rightsStatus", "createdAt", "updatedAt"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "assetId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "projectId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 160},
+    "kind": {"type": "string", "enum": ["image", "video", "audio", "voice", "model3d", "scene", "texture", "sketch", "render", "subtitle", "proxy", "thumbnail", "workflow", "document"]},
+    "relativePath": {"type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*\\.\\.).+"},
+    "sha256": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"},
+    "mimeType": {"type": ["string", "null"], "maxLength": 120},
+    "sizeBytes": {"type": "integer", "minimum": 0},
+    "width": {"type": ["integer", "null"], "minimum": 1},
+    "height": {"type": ["integer", "null"], "minimum": 1},
+    "durationSeconds": {"type": ["number", "null"], "minimum": 0},
+    "status": {"type": "string", "enum": ["ready", "quarantined", "missing", "archived"]},
+    "rightsStatus": {"type": "string", "enum": ["unknown", "pending", "personal", "owned", "licensed", "public_domain", "restricted", "rejected"]},
+    "sourceUri": {"type": ["string", "null"], "maxLength": 2000},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": "string", "format": "date-time"},
+    "tags": {"type": "array", "items": {"type": "string", "maxLength": 64}, "maxItems": 24},
+    "note": {"type": "string", "maxLength": 4000},
+    "archivedAt": {"type": ["string", "null"]}
+  }
+}

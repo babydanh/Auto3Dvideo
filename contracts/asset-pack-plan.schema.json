@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/asset-pack-plan.schema.json",
+  "title": "Auto3Dvideo Muse Asset Pack Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "packId", "projectId", "title", "bibleVersions", "identityAnchors", "items", "policy"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "packId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+    "projectId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 200},
+    "bibleVersions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["character", "world", "style"],
+      "properties": {
+        "character": {"type": "string", "minLength": 1, "maxLength": 160},
+        "world": {"type": "string", "minLength": 1, "maxLength": 160},
+        "style": {"type": "string", "minLength": 1, "maxLength": 160}
+      }
+    },
+    "identityAnchors": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["anchorId", "name", "description", "prohibitedChanges"],
+        "properties": {
+          "anchorId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+          "name": {"type": "string", "minLength": 1, "maxLength": 160},
+          "description": {"type": "string", "minLength": 1, "maxLength": 2000},
+          "scaleMeters": {"type": ["number", "null"], "exclusiveMinimum": 0, "maximum": 1000},
+          "prohibitedChanges": {"type": "array", "minItems": 1, "maxItems": 32, "items": {"type": "string", "minLength": 1, "maxLength": 300}}
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assetItemId", "title", "role", "storyPurpose", "shotIds", "requiredViews", "world", "camera", "lighting", "continuity", "negativePrompt"],
+        "properties": {
+          "assetItemId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+          "title": {"type": "string", "minLength": 1, "maxLength": 200},
+          "role": {"type": "string", "enum": ["identity", "composition", "pose", "camera", "style", "environment", "prop", "scale_reference", "start_frame", "end_frame"]},
+          "identityAnchorId": {"type": ["string", "null"], "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+          "storyPurpose": {"type": "string", "minLength": 1, "maxLength": 2000},
+          "shotIds": {"type": "array", "minItems": 1, "uniqueItems": true, "maxItems": 128, "items": {"type": "string", "pattern": "^[A-Z0-9][A-Z0-9_-]{2,63}$"}},
+          "requiredViews": {"type": "array", "minItems": 1, "uniqueItems": true, "maxItems": 16, "items": {"type": "string", "pattern": "^[a-z][a-z0-9_-]{2,63}$"}},
+          "referenceAssetIds": {"type": "array", "uniqueItems": true, "maxItems": 32, "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"}},
+          "scaleMeters": {"type": ["number", "null"], "exclusiveMinimum": 0, "maximum": 1000},
+          "world": {"type": "string", "minLength": 1, "maxLength": 3000},
+          "action": {"type": "string", "maxLength": 2000},
+          "camera": {"type": "string", "minLength": 1, "maxLength": 1200},
+          "lighting": {"type": "string", "minLength": 1, "maxLength": 1200},
+          "continuity": {"type": "array", "minItems": 1, "maxItems": 32, "items": {"type": "string", "minLength": 1, "maxLength": 300}},
+          "negativePrompt": {"type": "string", "minLength": 10, "maxLength": 8000},
+          "width": {"type": "integer", "minimum": 256, "maximum": 8192},
+          "height": {"type": "integer", "minimum": 256, "maximum": 8192}
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requiresHumanReview", "requiresScaleReference", "requiredRoles"],
+      "properties": {
+        "requiresHumanReview": {"type": "boolean", "const": true},
+        "requiresScaleReference": {"type": "boolean"},
+        "requiredRoles": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "enum": ["identity", "composition", "pose", "camera", "style", "environment", "prop", "scale_reference", "start_frame", "end_frame"]}}
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/voice-synthesis-result.schema.json",
+  "title": "Auto3Dvideo Voice Synthesis Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "outputPath", "modelId", "voiceProfileId", "language", "sizeBytes", "outputValidated", "networkCallsMade", "humanReviewRequired"],
+  "properties": {
+    "status": {"type": "string", "enum": ["succeeded", "failed", "blocked"]},
+    "outputPath": {"type": "string"},
+    "modelId": {"type": "string"},
+    "voiceProfileId": {"type": "string"},
+    "language": {"type": "string"},
+    "sizeBytes": {"type": "integer", "minimum": 0},
+    "durationSeconds": {"type": ["number", "null"], "minimum": 0},
+    "sampleRate": {"type": ["integer", "null"], "minimum": 1},
+    "mode": {"type": "string", "enum": ["clone", "design"]},
+    "networkCallsMade": {"type": "boolean"},
+    "modelDownloadRequested": {"type": "boolean"},
+    "outputValidated": {"type": "boolean"},
+    "humanReviewRequired": {"type": "boolean"},
+    "message": {"type": "string", "maxLength": 4096}
+  }
+}

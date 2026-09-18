@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "1.0.0",
+  "templates": [
+    {
+      "templateId": "content-brief-v1",
+      "version": "v1.0.0",
+      "name": "Brief nội dung theo chủ đề",
+      "purpose": "Biến ý tưởng người dùng thành brief có audience, promise, scope và câu hỏi cần kiểm chứng.",
+      "locale": "vi-VN",
+      "body": "Bạn là biên tập viên video. Chủ đề: {{topic}}. Profile: {{topic_profile}}. Đối tượng: {{audience}}. Mục tiêu: {{content_goal}}. Hãy tạo brief gồm: một câu promise không giật tít, phạm vi nội dung, 3–7 claim cần kiểm chứng, danh sách entity/thuật ngữ, format đề xuất, và điều không được suy diễn. Không bịa nguồn, không dùng nội dung riêng tư, không đề xuất tái đăng video người khác.",
+      "inputKeys": ["topic", "topic_profile", "audience", "content_goal"],
+      "outputContract": ["promise", "scope", "claims_to_verify", "entities", "format", "exclusions"],
+      "guardrails": ["Không coi claim chưa có nguồn là sự thật.", "Không đưa API key, cookie, mật khẩu hoặc dữ liệu cá nhân vào prompt.", "Không yêu cầu scrape, xóa watermark hoặc tự đăng bài.", "Mọi kết quả phải qua người dùng review trước khi render." ]
+    },
+    {
+      "templateId": "research-claims-v1",
+      "version": "v1.0.0",
+      "name": "Kiểm chứng claim",
+      "purpose": "Tách claim, nguồn, độ chắc chắn và giới hạn để video không biến nội dung chưa xác thực thành sự thật.",
+      "locale": "multi",
+      "body": "Với brief sau: {{brief}} và danh sách nguồn: {{sources}}, hãy lập bảng claim. Mỗi dòng gồm claim, source_url, evidence_excerpt, confidence, date_scope, caveat và visual_proof. Nếu không đủ bằng chứng, ghi UNKNOWN thay vì đoán. Phân biệt dữ kiện, diễn giải, ý kiến và giả thuyết.",
+      "inputKeys": ["brief", "sources"],
+      "outputContract": ["claims", "sources_used", "unknowns", "caveats"],
+      "guardrails": ["Không tạo citation giả.", "Không dùng một nguồn duy nhất cho claim nhạy cảm nếu có thể đối chiếu.", "Không suy diễn người thật, sức khỏe, pháp lý hoặc tài chính.", "Claim UNKNOWN không được đưa vào visual proof như dữ kiện." ]
+    },
+    {
+      "templateId": "storyboard-shots-v1",
+      "version": "v1.0.0",
+      "name": "Storyboard và shot plan",
+      "purpose": "Biến script thành beat/shot có timing, entity anchor, visual intent và prompt hình ảnh có căn cứ.",
+      "locale": "multi",
+      "body": "Script: {{script}}. Visual mode: {{visual_mode}}. Entity bible: {{entity_bible}}. Hãy tạo shot plan theo beat liên tục. Mỗi shot phải có narration_span, claim_id, visual_intent, setting, entities, required_visual_elements, positive_prompt, negative_prompt, expected_asset_path và continuity_anchor. Chữ, số và logo chính xác phải được tạo bằng lớp phủ cố định, không phụ thuộc ảnh AI.",
+      "inputKeys": ["script", "visual_mode", "entity_bible"],
+      "outputContract": ["beats", "shots", "continuity_anchors", "visual_proof", "expected_assets"],
+      "guardrails": ["Mỗi claim phải có visual proof hoặc được đánh dấu không trực quan.", "Entity lặp lại phải giữ anchor bất biến trừ khi script nói rõ thay đổi.", "Không chèn tên người thật/IP vào prompt nếu chưa có quyền.", "Không đưa raw command, upload, publish hoặc credential field vào output." ]
+    },
+    {
+      "templateId": "asset-candidates-v1",
+      "version": "v1.0.0",
+      "name": "Đánh giá asset theo chủ đề",
+      "purpose": "Chấm candidate theo relevance, visual proof, continuity và provenance trước khi nhập vào project.",
+      "locale": "multi",
+      "body": "Shot cần asset: {{shot}}. Candidate metadata: {{candidates}}. Chấm từng candidate theo relevance_to_claim, entity_match, action_match, style_match, continuity_match, provenance_completeness và rights_risk. Từ chối candidate lệch chủ đề, không rõ nguồn hoặc không chứng minh được claim. Trả về decision=accept/reject/needs_review và lý do ngắn.",
+      "inputKeys": ["shot", "candidates"],
+      "outputContract": ["candidate_scores", "accepted_ids", "rejected_ids", "review_reasons"],
+      "guardrails": ["Không chấm asset chỉ vì đẹp hoặc nhiều lượt dùng.", "Không dùng ảnh stock không rõ license.", "Không coi candidate score là quyết định quyền cuối cùng.", "Asset được accept vẫn phải giữ source URL, license, hash và reviewer decision." ]
+    },
+    {
+      "templateId": "narration-v1",
+      "version": "v1.0.0",
+      "name": "Script lồng tiếng",
+      "purpose": "Tạo lời dẫn rõ, đúng nhịp và phù hợp voice TTS đã được người dùng duyệt.",
+      "locale": "vi-VN",
+      "body": "Brief: {{brief}}. Claims đã duyệt: {{approved_claims}}. Thời lượng mục tiêu: {{duration_seconds}} giây. Viết lời dẫn tiếng Việt tự nhiên, câu ngắn, có dấu câu cho nhịp nghỉ, giữ nguyên số liệu/tên riêng đã được duyệt, không thêm claim mới. Xuất theo segment và chọn đúng một emotionCode cho mỗi segment trong enum: neutral, calm, warm, friendly, happy, excited, joyful, triumphant, sad, melancholic, tender, concerned, fearful, angry, shouting, urgent, serious, surprised, mysterious, curious, sarcastic, whisper. Nếu một segment cần đổi cảm xúc giữa câu, chỉ dùng inline tag viết hoa dạng [EXCITED] hoặc [SHOUTING] trước phần lời tương ứng; không tự bịa tag. Tag không được xuất hiện trong onScreenText/subtitle/visualPrompt. Giữ narration sạch sau khi parser bỏ tag để alignment dùng lại; không giả giọng hoặc bắt chước người thật.",
+      "inputKeys": ["brief", "approved_claims", "duration_seconds"],
+      "outputContract": ["segments", "narration_text", "emotionCode", "pronunciation_notes", "estimated_duration", "disclosure_note"],
+      "guardrails": ["Mỗi segment phải có emotionCode hợp lệ; mặc định neutral nếu không có lý do đổi giọng.", "Không đưa claim chưa review vào lời dẫn cuối.", "Không dùng emotion tag lạ hoặc đưa tag vào subtitle/onScreenText/visualPrompt.", "Không clone voice/likeness nếu chưa có consent record.", "Không dùng giọng để mạo danh hoặc gây hiểu nhầm.", "Nếu provider chỉ có fallback cue thì phải ghi capability thật vào manifest.", "Audio phải được nghe và duyệt trước delivery." ]
+    },
+    {
+      "templateId": "character-bible-v1",
+      "version": "v1.0.0",
+      "name": "Character bible cho truyện",
+      "purpose": "Khóa nhận diện nhân vật và đạo cụ để giữ continuity giữa các cảnh.",
+      "locale": "vi-VN",
+      "body": "Ý tưởng truyện: {{topic}}. Tạo character bible gồm character_id, role, age_band, silhouette, hair, wardrobe, palette, props, expression_range, prohibited_changes và reference_notes. Chỉ dùng nhân vật hư cấu hoặc asset có quyền; mọi thay đổi phải được ghi thành continuity event.",
+      "inputKeys": ["topic"],
+      "outputContract": ["characters", "props", "palette", "continuity_events"],
+      "guardrails": ["Không mô phỏng người thật khi thiếu consent.", "Không dùng nhân vật/IP có bản quyền như thể được phép.", "Không thay đổi identity anchor âm thầm giữa các shot.", "Character bible là kế hoạch, chưa chứng minh output hình ảnh đã giữ continuity." ]
+    },
+    {
+      "templateId": "product-claims-v1",
+      "version": "v1.0.0",
+      "name": "Claim sản phẩm và demo",
+      "purpose": "Đưa claim sản phẩm về dạng có bằng chứng, người chịu trách nhiệm và cảnh demo tương ứng.",
+      "locale": "multi",
+      "body": "Sản phẩm: {{product}}. Tài liệu được phép dùng: {{approved_docs}}. Hãy lập claim matrix gồm claim_text, evidence_ref, demo_shot, limitation, reviewer_role và disclosure. Nếu không có bằng chứng thì đánh dấu NEEDS_REVIEW và không viết như cam kết chắc chắn.",
+      "inputKeys": ["product", "approved_docs"],
+      "outputContract": ["claim_matrix", "missing_evidence", "review_roles", "disclosure"],
+      "guardrails": ["Không bịa benchmark hoặc chứng nhận.", "Không lộ secret, dữ liệu khách hàng hoặc màn hình riêng tư.", "Không dùng testimonial/likeness khi thiếu quyền.", "Không tự đăng quảng cáo hoặc tạo tương tác giả." ]
+    },
+    {
+      "templateId": "tutorial-steps-v1",
+      "version": "v1.0.0",
+      "name": "Tutorial và gameplay steps",
+      "purpose": "Tạo shot list theo thao tác thật, phù hợp video hướng dẫn hoặc gameplay do người dùng sở hữu.",
+      "locale": "multi",
+      "body": "Mục tiêu hướng dẫn: {{topic}}. Tài liệu/thao tác được phép dùng: {{source_material}}. Tách thành các bước có precondition, action, expected_result, capture_region, callout_text và accessibility_note. Không yêu cầu thao tác trên tài khoản, tin nhắn hoặc dữ liệu riêng tư.",
+      "inputKeys": ["topic", "source_material"],
+      "outputContract": ["steps", "capture_plan", "callouts", "accessibility_notes"],
+      "guardrails": ["Chỉ dùng capture do người dùng sở hữu hoặc được phép.", "Che token, email, chat và dữ liệu cá nhân.", "Callout phải khớp frame và thao tác thực tế.", "Không tự động đăng hoặc gửi hành động nhạy cảm." ]
+    },
+    {
+      "templateId": "world-bible-v1",
+      "version": "v1.0.0",
+      "name": "World bible cho cinematic 3D",
+      "purpose": "Định nghĩa thế giới, asset, camera và lighting trước khi giao việc cho Blender/3D engine.",
+      "locale": "multi",
+      "body": "Concept: {{topic}}. Tạo world bible gồm environment, scale_rules, asset_list, materials, camera_language, lighting, color_script, motion_rules và render_acceptance. Tách rõ asset cần dựng thật khỏi concept art; ghi provenance cho mọi asset bên ngoài.",
+      "inputKeys": ["topic"],
+      "outputContract": ["environment", "asset_list", "camera_language", "lighting", "render_acceptance"],
+      "guardrails": ["Không xem concept art là asset 3D reusable.", "Asset bên ngoài phải có license và attribution.", "Không chạy Blender script tùy ý qua prompt; executor phải dùng allowlist.", "Render thành công vẫn cần kiểm tra frame, geometry, continuity và rights." ]
+    }
+  ]
+}

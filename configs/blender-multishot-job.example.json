@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "jobType": "scene.build",
+  "scenePath": "outputs/pilot-space-10shot-previs/multishot-previs.blend",
+  "scriptPath": "scripts/multishot_scene_builder.py",
+  "sceneName": "space-editorial-pilot-001",
+  "frameStart": 1,
+  "frameEnd": 450,
+  "outputDirectory": "outputs/pilot-space-10shot-previs",
+  "outputPattern": null,
+  "engine": "BLENDER_EEVEE",
+  "executionMode": "preview",
+  "timeoutSeconds": 600,
+  "allowNetwork": false,
+  "expectedOutputKind": "metadata"
+}

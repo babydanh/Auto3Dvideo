@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/provider-request.schema.json",
+  "title": "Auto3Dvideo Normalized Provider Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "requestId", "profileId", "capability", "operation", "projectId", "idempotencyKey", "output", "rightsStatus", "budgetStatus", "approvalStatus"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "requestId": {"type": "string", "minLength": 1, "maxLength": 100},
+    "profileId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{2,63}$"},
+    "capability": {"type": "string", "enum": ["llm", "image", "video", "tts", "stt", "audio", "asset3d", "render3d", "media"]},
+    "operation": {"type": "string", "minLength": 1, "maxLength": 100},
+    "projectId": {"type": "string", "minLength": 1, "maxLength": 100},
+    "episodeId": {"type": ["string", "null"]},
+    "shotId": {"type": ["string", "null"]},
+    "promptVersion": {"type": ["string", "null"]},
+    "prompt": {"type": ["string", "null"], "maxLength": 200000},
+    "inputAssetIds": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "inputHashes": {"type": "array", "items": {"type": "string", "pattern": "^[a-fA-F0-9]{64}$"}, "uniqueItems": true},
+    "language": {"type": ["string", "null"], "maxLength": 20},
+    "aspectRatio": {"type": ["string", "null"], "pattern": "^[0-9]+:[0-9]+$"},
+    "durationSeconds": {"type": ["number", "null"], "minimum": 0},
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mediaKind"],
+      "properties": {
+        "mediaKind": {"type": "string", "enum": ["text", "image", "video", "audio", "subtitle", "3d_asset", "metadata"]},
+        "width": {"type": ["integer", "null"], "minimum": 1},
+        "height": {"type": ["integer", "null"], "minimum": 1},
+        "fps": {"type": ["number", "null"], "minimum": 0},
+        "format": {"type": ["string", "null"]}
+      }
+    },
+    "idempotencyKey": {"type": "string", "minLength": 8, "maxLength": 200},
+    "rightsStatus": {"type": "string", "enum": ["unknown", "pending", "approved", "rejected"]},
+    "budgetStatus": {"type": "string", "enum": ["unknown", "estimated", "approved", "blocked", "reserved"]},
+    "approvalStatus": {"type": "string", "enum": ["not_required", "pending", "approved", "rejected"]}
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0.0",
+  "handoffId": "handoff-moon-test-001",
+  "projectId": "space-editorial-pilot-001",
+  "provider": "browsermcp",
+  "operation": "prepare_web_handoff",
+  "targetUrl": "https://labs.google/fx/tools/flow",
+  "allowedHosts": ["labs.google"],
+  "inputPaths": [
+    {
+      "relativePath": "outputs/pilot-space-10shot-previs/contact-sheet/contact-sheet.png",
+      "mediaKind": "image"
+    }
+  ],
+  "prompt": "Preserve the moon identity and key visual grammar from the Blender previs. Create a premium cinematic vertical science-editorial video with realistic crater detail, slow rotation, cyan rim light, subtle red edge light, drifting stars, and a slow push-in. No text, no subtitles, no logos, no watermark, no people, no voiceover.",
+  "outputDirectory": "outputs/browser-handoff/moon-test-001",
+  "approval": {"upload": false, "generate": false, "import": false},
+  "policy": {
+    "networkRequired": true,
+    "paidGeneration": false,
+    "humanReviewRequired": true,
+    "externalPublish": false,
+    "rightsStatus": "generated_local",
+    "termsReviewed": false
+  }
+}

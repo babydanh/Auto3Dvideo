@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/timeline-composition.schema.json",
+  "title": "Auto3Dvideo Timeline Composition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "timelineId", "episodeId", "frameRate", "width", "height", "tracks", "transitions", "markers", "output", "policy", "reviewState"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "timelineId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "episodeId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "frameRate": {"type": "number", "exclusiveMinimum": 0, "maximum": 240},
+    "width": {"type": "integer", "minimum": 16, "maximum": 16384},
+    "height": {"type": "integer", "minimum": 16, "maximum": 16384},
+    "tracks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trackId", "kind", "order", "clips"],
+        "properties": {
+          "trackId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+          "kind": {"type": "string", "enum": ["video", "overlay", "caption", "voice", "music", "sfx", "marker"]},
+          "order": {"type": "integer", "minimum": 0, "maximum": 63},
+          "clips": {
+            "type": "array",
+            "maxItems": 512,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["clipId", "assetId", "timelineStartFrame", "timelineEndFrame", "sourceStartFrame", "sourceEndFrame", "speed", "reviewState"],
+              "properties": {
+                "clipId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+                "assetId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+                "timelineStartFrame": {"type": "integer", "minimum": 0, "maximum": 864000},
+                "timelineEndFrame": {"type": "integer", "minimum": 1, "maximum": 864000},
+                "sourceStartFrame": {"type": "integer", "minimum": 0, "maximum": 864000},
+                "sourceEndFrame": {"type": "integer", "minimum": 1, "maximum": 864000},
+                "speed": {"type": "number", "exclusiveMinimum": 0, "maximum": 16},
+                "transform": {"type": ["object", "null"], "additionalProperties": false, "properties": {"x": {"type": "number"}, "y": {"type": "number"}, "scale": {"type": "number", "exclusiveMinimum": 0}, "rotation": {"type": "number"}, "opacity": {"type": "number", "minimum": 0, "maximum": 1}}},
+                "text": {"type": ["string", "null"], "maxLength": 2000},
+                "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "rejected"]}
+              }
+            }
+          }
+        }
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "maxItems": 512,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["transitionId", "fromClipId", "toClipId", "kind", "durationFrames"],
+        "properties": {
+          "transitionId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+          "fromClipId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+          "toClipId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+          "kind": {"type": "string", "enum": ["cut", "fade", "dissolve", "wipe", "match_move", "custom"]},
+          "durationFrames": {"type": "integer", "minimum": 0, "maximum": 240}
+        }
+      }
+    },
+    "markers": {"type": "array", "maxItems": 512, "items": {"type": "object", "additionalProperties": false, "required": ["markerId", "frame", "label"], "properties": {"markerId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"}, "frame": {"type": "integer", "minimum": 0, "maximum": 864000}, "label": {"type": "string", "minLength": 1, "maxLength": 300}}}},
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["container", "videoCodec", "audioCodec", "captionMode", "relativePath"],
+      "properties": {
+        "container": {"type": "string", "enum": ["mp4", "mov", "webm"]},
+        "videoCodec": {"type": "string", "enum": ["h264", "hevc", "vp9", "prores"]},
+        "audioCodec": {"type": "string", "enum": ["aac", "opus", "pcm"]},
+        "captionMode": {"type": "string", "enum": ["burned_in", "sidecar_srt", "sidecar_vtt", "none"]},
+        "relativePath": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    },
+    "policy": {"type": "object", "additionalProperties": false, "required": ["externalPublish", "paidGeneration", "humanReviewRequired"], "properties": {"externalPublish": {"type": "boolean", "const": false}, "paidGeneration": {"type": "boolean", "const": false}, "humanReviewRequired": {"type": "boolean", "const": true}}},
+    "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "rejected"]}
+  }
+}

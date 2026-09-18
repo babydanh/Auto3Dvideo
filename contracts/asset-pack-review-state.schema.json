@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/asset-pack-review-state.schema.json",
+  "title": "Auto3Dvideo Asset Pack Review State",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "projectId", "packId", "assetItemId", "reviewState", "rightsStatus", "acceptanceChecks", "updatedAt"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "projectId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "packId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+    "assetItemId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+    "reviewState": {"type": "string", "enum": ["not_started", "in_review", "approved", "rejected", "needs_revision"]},
+    "rightsStatus": {"type": "string", "enum": ["unknown", "pending", "personal", "owned", "licensed", "public_domain", "restricted", "rejected"]},
+    "acceptanceChecks": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["checkId", "status"],
+        "properties": {
+          "checkId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+          "status": {"type": "string", "enum": ["pending", "pass", "fail", "not_applicable"]},
+          "evidence": {"type": ["string", "null"], "maxLength": 1000}
+        }
+      }
+    },
+    "note": {"type": "string", "maxLength": 4000},
+    "updatedAt": {"type": "string", "format": "date-time"}
+  }
+}

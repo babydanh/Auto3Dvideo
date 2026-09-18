@@ -1,0 +1,47 @@
+# Secrets and local credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets/
+
+# Local app/build output
+node_modules/
+target/
+dist/
+build/
+.vscode/
+.idea/
+
+# Media and model data that should be explicitly selected
+*.blend1
+*.tmp
+cache/
+models/
+outputs/
+previews/
+tools/vieneu/
+
+# Local databases and logs
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+.cargo-target*
+*.exe
+*.dll
+*.lib
+*.rlib
+*.pdb
+*.rmeta
+.artifacts/
+

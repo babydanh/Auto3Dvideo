@@ -1,0 +1,5 @@
+file 'D:/Duancanhan/Auto3Dvideo/.auto3dvideo/render/cuc-quang-01/assets/scene-01.png'
+duration 7.516
+file 'D:/Duancanhan/Auto3Dvideo/.auto3dvideo/render/cuc-quang-01/assets/scene-02.png'
+duration 7.516
+file 'D:/Duancanhan/Auto3Dvideo/.auto3dvideo/render/cuc-quang-01/assets/scene-02.png'

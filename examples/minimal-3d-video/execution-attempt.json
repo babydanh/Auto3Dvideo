@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0.0",
+  "attemptId": "attempt-minimal-001",
+  "jobId": "job-minimal-preview",
+  "attemptNumber": 1,
+  "state": "pending",
+  "workerId": null,
+  "executionMode": "external_process",
+  "executableId": "ffmpeg",
+  "leaseOwner": null,
+  "leaseExpiresAt": null,
+  "heartbeatAt": null,
+  "startedAt": null,
+  "finishedAt": null,
+  "cancellationRequestedAt": null,
+  "terminationMode": "none",
+  "timeoutSeconds": 1800,
+  "maxLogBytes": 1048576,
+  "stdoutBytes": 0,
+  "stderrBytes": 0,
+  "processStarted": false,
+  "externalSideEffectUnknown": false,
+  "retryable": false,
+  "errorCode": null,
+  "redactedMessage": null,
+  "outputs": [
+    {
+      "relativePath": "preview/mock-preview.mp4",
+      "mediaKind": "video",
+      "contentHash": null,
+      "sizeBytes": null,
+      "validationState": "pending",
+      "validationMessage": null
+    }
+  ],
+  "createdAt": "2026-08-23T00:00:00Z",
+  "updatedAt": "2026-08-23T00:00:00Z"
+}

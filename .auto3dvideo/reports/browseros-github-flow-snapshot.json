@@ -1,0 +1,52 @@
+{
+  "status": "blocked",
+  "operation": "snapshot",
+  "reportPath": ".auto3dvideo\\reports\\browseros-github-flow-snapshot.json",
+  "serverInfo": {
+    "name": "browseros-neo"
+  },
+  "protocolVersion": "2025-03-26",
+  "toolCount": 20,
+  "tools": [
+    "tabs",
+    "tab_groups",
+    "history",
+    "navigate",
+    "snapshot",
+    "diff",
+    "act",
+    "download",
+    "upload",
+    "read",
+    "grep",
+    "screenshot",
+    "pdf",
+    "wait",
+    "windows",
+    "evaluate",
+    "run",
+    "name_session",
+    "save_skill",
+    "mark_skill_run"
+  ],
+  "toolName": "snapshot",
+  "approved": true,
+  "browserSessionAttached": false,
+  "browserActionsPerformed": false,
+  "networkCallsMade": false,
+  "operationResult": {
+    "isError": true,
+    "contentItemCount": 1,
+    "contentTypes": [
+      "text"
+    ],
+    "textBytes": 78,
+    "hasImage": false,
+    "uiRefCount": 0,
+    "uiRefs": [],
+    "currentUrl": null,
+    "detail": "- Page URL: \nsnapshot failed: Unknown page 67. List pages to see what is open."
+  },
+  "message": "BrowserOS snapshot bị từ chối: - Page URL: \nsnapshot failed: Unknown page 67. List pages to see what is open.",
+  "process": null
+}

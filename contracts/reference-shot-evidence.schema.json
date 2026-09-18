@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/reference-shot-evidence.schema.json",
+  "title": "Auto3Dvideo Reference Shot Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "evidenceId", "intakeId", "sourceSha256", "shots", "reusePolicy", "reviewState"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "evidenceId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "intakeId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "sourceSha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "shots": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2048,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["shotId", "sequence", "startFrame", "endFrame", "keyframePaths", "cutConfidence", "visualDescription", "cameraGrammar", "motionGrammar", "textAndGraphicLayers", "audioSpan", "inferredAssetMode", "reuseAllowed", "reviewState"],
+        "properties": {
+          "shotId": {"type": "string", "pattern": "^ref-shot-[0-9]{4}$"},
+          "sequence": {"type": "integer", "minimum": 1, "maximum": 2048},
+          "startFrame": {"type": "integer", "minimum": 0, "maximum": 864000},
+          "endFrame": {"type": "integer", "minimum": 1, "maximum": 864000},
+          "keyframePaths": {"type": "array", "minItems": 1, "maxItems": 64, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 1024}},
+          "cutConfidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "visualDescription": {"type": "string", "minLength": 1, "maxLength": 4000},
+          "cameraGrammar": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"type": "string", "enum": ["static", "push_in", "pull_out", "orbit", "pan", "tilt", "dolly", "reveal", "macro", "handheld", "unknown"]}},
+          "motionGrammar": {"type": "string", "minLength": 1, "maxLength": 1000},
+          "textAndGraphicLayers": {"type": "array", "maxItems": 32, "items": {"type": "string", "minLength": 1, "maxLength": 500}},
+          "audioSpan": {"type": "object", "additionalProperties": false, "required": ["startSeconds", "endSeconds", "transcript", "speakerReuseAllowed"], "properties": {"startSeconds": {"type": "number", "minimum": 0}, "endSeconds": {"type": "number", "exclusiveMinimum": 0}, "transcript": {"type": ["string", "null"], "maxLength": 4000}, "speakerReuseAllowed": {"type": "boolean", "const": false}}},
+          "inferredAssetMode": {"type": "string", "enum": ["live_footage", "licensed_3d", "procedural_3d", "motion_graphics", "ai_generated", "hybrid", "unknown"]},
+          "reuseAllowed": {"type": "boolean", "const": false},
+          "learningNotes": {"type": "array", "maxItems": 32, "items": {"type": "string", "minLength": 1, "maxLength": 500}},
+          "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "rejected"]}
+        }
+      }
+    },
+    "reusePolicy": {"type": "string", "enum": ["analysis_only", "no_media_reuse", "licensed_rebuild_only"]},
+    "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "rejected"]}
+  }
+}

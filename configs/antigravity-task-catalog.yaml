@@ -1,0 +1,61 @@
+schema_version: "1.0.0"
+catalog_id: "auto3dvideo-antigravity-tasks"
+locale: "vi-VN"
+project_root: "."
+execution_policy:
+  default_mode: "preview"
+  allow_network: false
+  allow_publish: false
+  allow_paid_generation: false
+  allow_external_processes: false
+  secret_policy: "never-read-or-print"
+tasks:
+  - id: "workspace.check"
+    name: "Kiểm tra workspace agent"
+    description: "Xác nhận project root, manifest, AGENTS và các boundary bắt buộc."
+    commands:
+      - ["python", "scripts/check_agent_workspace.py", "--project", "."]
+    side_effects: "none"
+    requires_native: false
+  - id: "contracts.validate"
+    name: "Validate project contracts"
+    description: "Kiểm tra manifest, JSON/YAML, env template và file inventory."
+    commands:
+      - ["python", "scripts/validate_project.py", "--project", "."]
+      - ["python", "scripts/validate_markdown_links.py", "--project", "."]
+    side_effects: "none"
+    requires_native: false
+  - id: "worker-plan.preview"
+    name: "Preview worker plan"
+    description: "Compile workflow thành pending-only stage/attempt evidence."
+    commands:
+      - ["python", "scripts/compile_worker_plan.py", "--workflow", "workflows/example-local-free-pipeline.yaml", "--output", "outputs/worker-plan.json"]
+      - ["python", "scripts/validate_worker_plan.py", "--plan", "outputs/worker-plan.json"]
+    side_effects: "metadata-only-under-outputs"
+    requires_native: false
+  - id: "delivery.mock"
+    name: "Build mock delivery evidence"
+    description: "Tạo metadata, review checklist và checksummed manifest; không tạo media."
+    commands:
+      - ["python", "scripts/build_mock_delivery.py", "--recipe", "examples/minimal-3d-video/recipe.json", "--output-dir", "outputs/mock-delivery"]
+      - ["python", "scripts/validate_delivery.py", "--manifest", "outputs/mock-delivery/manifest.json"]
+    side_effects: "metadata-only-under-outputs"
+    requires_native: false
+  - id: "frontend.build"
+    name: "Build frontend"
+    description: "Typecheck và bundle React/Vite trong desktop/."
+    working_directory: "desktop"
+    commands:
+      - ["pnpm", "build"]
+    side_effects: "build-artifacts-under-desktop-dist"
+    requires_native: false
+  - id: "native.dev"
+    name: "Chạy Tauri desktop"
+    description: "Chỉ chạy sau khi người dùng cài MSVC Build Tools, Windows SDK và xác nhận native build."
+    working_directory: "desktop"
+    commands:
+      - ["pnpm", "tauri", "info"]
+      - ["pnpm", "tauri", "dev"]
+    side_effects: "native-processes-and-window"
+    requires_native: true
+    human_confirmation_required: true

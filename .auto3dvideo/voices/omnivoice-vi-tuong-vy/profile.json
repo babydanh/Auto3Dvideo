@@ -1,0 +1,21 @@
+{
+  "voiceProfileId": "omnivoice-vi-tuong-vy",
+  "projectId": "project_default",
+  "name": "Tuong Vy — OmniVoice VI",
+  "mode": "clone",
+  "modelId": "k2-fsa/OmniVoice",
+  "language": "vi",
+  "instruct": null,
+  "referenceAudioPath": ".auto3dvideo/voices/omnivoice-vi-tuong-vy/reference.wav",
+  "referenceAudioSha256": "4f4c2d8e0fadb33d3dce0e46bbaa58303676cb56b83b1c3761b8d41fd053ad7f",
+  "referenceAudioDurationSeconds": null,
+  "referenceAudioSampleRate": null,
+  "referenceTranscript": "Mau mau xem mau. Nghe nói Thất công chúa đến đây để hủy hôn với thế tử, Trấn Bắc Vương. Không phải chứ? Cha hắn, Trấn Bắc Vương chẳng phải mới tử trận nơi biên cương sao? Nghe nói tên đó ngoài việc lêu lổng thanh lâu thì chẳng biết làm gì. Nếu là ta thì ta cũng hủy hôn",
+  "rightsStatus": "pending",
+  "commercialUse": "restricted",
+  "cloneConsent": false,
+  "status": "needs_consent",
+  "lastPreviewPath": null,
+  "createdAt": "1789646252",
+  "updatedAt": "1789646252"
+}

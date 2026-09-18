@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/browser-flow-workflow.schema.json",
+  "title": "Auto3Dvideo BrowserMCP Adaptive Google Flow Workflow",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "workflowId",
+    "projectId",
+    "name",
+    "provider",
+    "targetUrl",
+    "phase",
+    "discoveryStatus",
+    "currentStep",
+    "route",
+    "roadmap",
+    "availableTools",
+    "assets",
+    "processes",
+    "uiRefs",
+    "humanReviewRequired"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "workflowId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+    "projectId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "provider": { "const": "browsermcp-google-flow" },
+    "targetUrl": { "type": "string", "format": "uri", "maxLength": 500 },
+    "phase": { "enum": ["discovery_running", "ready", "running", "waiting_user", "failed", "cancelled"] },
+    "discoveryStatus": { "enum": ["not_started", "running", "ready", "failed"] },
+    "discoveryPath": { "type": ["string", "null"], "maxLength": 500 },
+    "handoffId": { "type": ["string", "null"], "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+    "sessionId": { "type": ["string", "null"], "pattern": "^[a-z0-9][a-z0-9-]{2,79}$" },
+    "providerProjectIdentity": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["providerProjectKey", "providerProjectLabel", "currentUrl", "evidenceHash", "observedAt"],
+      "properties": {
+        "providerProjectKey": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{7,159}$" },
+        "providerProjectLabel": { "type": "string", "minLength": 1, "maxLength": 180 },
+        "currentUrl": { "type": "string", "format": "uri", "maxLength": 500 },
+        "evidenceHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "observedAt": { "type": "string", "maxLength": 64 }
+      }
+    },
+    "currentStep": { "type": "integer", "minimum": 0 },
+    "route": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stepId", "name", "operation", "capability", "state", "requiresUser", "note"],
+        "properties": {
+          "stepId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "operation": { "type": "string", "maxLength": 32 },
+          "capability": { "type": "string", "maxLength": 64 },
+          "state": { "enum": ["pending", "succeeded", "waiting_user", "failed"] },
+          "requiresUser": { "type": "boolean" },
+          "toolName": { "type": ["string", "null"], "maxLength": 80 },
+          "note": { "type": "string", "maxLength": 500 }
+        }
+      }
+    },
+    "pinnedBrowserTarget": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["providerProjectKey", "providerProjectLabel", "pinnedUrl", "evidenceHash", "pinnedAt"],
+      "properties": {
+        "providerProjectKey": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{7,159}$" },
+        "providerProjectLabel": { "type": "string", "minLength": 1, "maxLength": 180 },
+        "pinnedUrl": { "type": "string", "format": "uri", "maxLength": 500 },
+        "evidenceHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "pinnedAt": { "type": "string", "maxLength": 64 }
+      }
+    },
+    "roadmap": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["milestoneId", "name", "status", "dependsOn", "nextAction"],
+        "properties": {
+          "milestoneId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "status": { "enum": ["pending", "running", "succeeded", "waiting_user", "failed"] },
+          "dependsOn": { "type": "array", "maxItems": 12, "items": { "type": "string" } },
+          "processId": { "type": ["string", "null"], "maxLength": 80 },
+          "evidence": { "type": ["string", "null"], "maxLength": 500 },
+          "nextAction": { "type": "string", "minLength": 1, "maxLength": 500 }
+        }
+      }
+    },
+    "availableTools": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "type": "string", "maxLength": 80 }
+    },
+    "assets": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assetId", "name", "relativePath", "mediaKind", "role", "processId"],
+        "properties": {
+          "assetId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 180 },
+          "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*://)(?!.*\\.\\.)(?![A-Za-z]:).+" },
+          "mediaKind": { "type": "string", "maxLength": 32 },
+          "role": { "type": "string", "maxLength": 64 },
+          "processId": { "type": "string", "maxLength": 80 }
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fileId", "name", "relativePath", "kind", "processId"],
+        "properties": {
+          "fileId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 180 },
+          "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*://)(?!.*\\.\\.)(?![A-Za-z]:).+" },
+          "kind": { "type": "string", "maxLength": 64 },
+          "processId": { "type": "string", "maxLength": 80 }
+        }
+      }
+    },
+    "downloadedFiles": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["downloadId", "name", "sourceRelativePath", "relativePath", "mediaKind", "sha256", "sizeBytes", "importedAt", "processId"],
+        "properties": {
+          "downloadId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,79}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 180 },
+          "sourceRelativePath": { "type": "string", "maxLength": 180 },
+          "relativePath": { "type": "string", "pattern": "^(?!/)(?!.*://)(?!.*\\.\\.)(?![A-Za-z]:).+" },
+          "mediaKind": { "enum": ["video", "image"] },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+          "sizeBytes": { "type": "integer", "minimum": 1, "maximum": 4294967296 },
+          "importedAt": { "type": "string", "maxLength": 64 },
+          "processId": { "type": "string", "maxLength": 80 },
+          "runId": { "type": ["string", "null"], "pattern": "^[a-z0-9][a-z0-9-]{2,64}$" },
+          "shotId": { "type": ["string", "null"], "maxLength": 64 },
+          "revisionId": { "type": ["string", "null"], "pattern": "^[a-z0-9][a-z0-9-]{2,96}$" },
+          "inputHash": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" }
+        }
+      }
+    },
+    "processes": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["processId", "name", "operation", "state", "stepIndex", "startedAt", "updatedAt", "message"],
+        "properties": {
+          "processId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,79}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "operation": { "type": "string", "maxLength": 32 },
+          "state": { "enum": ["running", "succeeded", "waiting_user", "failed"] },
+          "stepIndex": { "type": "integer", "minimum": 0 },
+          "startedAt": { "type": "string", "maxLength": 64 },
+          "updatedAt": { "type": "string", "maxLength": 64 },
+          "output": { "type": ["string", "null"], "maxLength": 500 },
+          "message": { "type": "string", "maxLength": 900 },
+          "nextAction": { "type": ["string", "null"], "maxLength": 500 }
+        }
+      }
+    },
+    "uiRefCount": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "uiRefs": {
+      "type": "array",
+      "maxItems": 80,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "label", "reference"],
+        "properties": {
+          "role": { "type": "string", "maxLength": 32 },
+          "label": { "type": "string", "maxLength": 120 },
+          "reference": { "type": "string", "maxLength": 80 }
+        }
+      }
+    },
+    "browserSessionAttached": { "type": "boolean" },
+    "networkCallsMade": { "type": "boolean" },
+    "humanReviewRequired": { "const": true },
+    "lastMessage": { "type": "string", "maxLength": 900 },
+    "updatedAt": { "type": "string", "maxLength": 64 }
+  }
+}

@@ -1,0 +1,168 @@
+schema_version: "1.0.0"
+# Non-secret model/provider registry. Secrets are resolved from credential_ref.
+# This file is a catalog example; real development overrides live in an ignored .env.
+# Role routing is sequential: one stage hands its validated artifact to the next
+# stage. These are model names only; provider access and quota are still checked
+# before a network call.
+routing:
+  strategy: sequential_role
+  director:
+    model_env: AUTO3DVIDEO_LLM_DIRECTOR_MODEL
+    model: ag/gemini-3.8-flash-medium
+    responsibility: topic analysis, style bible, shot plan, prompt and Blender job JSON
+  vision_browser:
+    model_env: AUTO3DVIDEO_LLM_VISION_MODEL
+    model: ag/gemini-3.8-flash-low
+    responsibility: render/viewport review and Google Flow browser decisions
+  polling:
+    model_env: AUTO3DVIDEO_LLM_POLLING_MODEL
+    model: ag/gemini-3.8-flash-low
+    responsibility: lightweight status snapshots only
+  recovery:
+    model_env: AUTO3DVIDEO_LLM_RECOVERY_MODEL
+    model: ag/gemini-3.8-flash-high
+    responsibility: only after two failures or severe visual mismatch
+
+profiles:
+  - profile_id: llm_primary
+    capability: llm
+    adapter: openai_compatible
+    enabled: false
+    base_url_env: AUTO3DVIDEO_LLM_BASE_URL
+    model_env: AUTO3DVIDEO_LLM_MODEL
+    model: replace-with-your-model
+    credential_ref: env:AUTO3DVIDEO_LLM_API_KEY
+    pricing_mode: unknown
+    timeout_seconds: 300
+    max_attempts: 1
+    terms_source: null
+    pricing_source: null
+    fallback_profiles: [llm_local]
+
+  - profile_id: llm_local
+    capability: llm
+    adapter: ollama_compatible
+    enabled: false
+    base_url: http://127.0.0.1:11434/v1
+    model: replace-with-local-model
+    credential_ref: none
+    pricing_mode: free_local
+    timeout_seconds: 300
+    max_attempts: 1
+    fallback_profiles: []
+
+  - profile_id: image_local
+    capability: image
+    provider: nano_banana
+    adapter: nano_banana_mcp
+    enabled: false
+    base_url: http://127.0.0.1:9222
+    model: gemini-3.1-flash-image-preview
+    credential_ref: none
+    pricing_mode: subscription
+    timeout_seconds: 900
+    max_attempts: 1
+    fallback_profiles: []
+
+  - profile_id: video_primary
+    capability: video
+    adapter: official_video_api
+    enabled: false
+    base_url_env: AUTO3DVIDEO_VIDEO_BASE_URL
+    model_env: AUTO3DVIDEO_VIDEO_MODEL
+    model: replace-with-approved-video-model
+    credential_ref: env:AUTO3DVIDEO_VIDEO_API_KEY
+    pricing_mode: unknown
+    timeout_seconds: 900
+    max_attempts: 1
+    terms_source: null
+    pricing_source: null
+    fallback_profiles: [image_local]
+
+  - profile_id: voice_primary
+    capability: tts
+    provider: vieneu
+    adapter: vieneu_local_onnx
+    enabled: false
+    base_url: null
+    model_env: AUTO3DVIDEO_TTS_MODEL
+    model: pnnbao-ump/VieNeu-TTS-v3-Turbo
+    voice_id_env: AUTO3DVIDEO_TTS_VOICE_ID
+    voice_id: Adam
+    credential_ref: none
+    pricing_mode: free_local
+    timeout_seconds: 1800
+    max_attempts: 1
+    terms_source: https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo
+    pricing_source: null
+    fallback_profiles: []
+
+  - profile_id: stt_local
+    capability: stt
+    adapter: whisper_local
+    enabled: false
+    base_url: null
+    model: replace-with-local-whisper-model
+    credential_ref: none
+    pricing_mode: free_local
+    timeout_seconds: 600
+    max_attempts: 1
+    fallback_profiles: []
+
+  - profile_id: audio_primary
+    capability: audio
+    adapter: official_audio_api
+    enabled: false
+    base_url_env: AUTO3DVIDEO_AUDIO_BASE_URL
+    model_env: AUTO3DVIDEO_AUDIO_MODEL
+    model: replace-with-approved-audio-model
+    credential_ref: env:AUTO3DVIDEO_AUDIO_API_KEY
+    pricing_mode: unknown
+    timeout_seconds: 600
+    max_attempts: 1
+    terms_source: null
+    pricing_source: null
+    fallback_profiles: []
+
+  - profile_id: asset3d_local
+    capability: asset3d
+    adapter: local_asset_adapter
+    enabled: false
+    base_url: null
+    model: installed-local-asset-tool
+    credential_ref: none
+    pricing_mode: free_local
+    timeout_seconds: 600
+    max_attempts: 1
+    fallback_profiles: []
+
+  - profile_id: blender_local
+    capability: render3d
+    adapter: blender
+    enabled: false
+    base_url: null
+    model: installed-blender
+    credential_ref: none
+    pricing_mode: free_local
+    timeout_seconds: 1800
+    max_attempts: 1
+    fallback_profiles: []
+
+  - profile_id: media_local
+    capability: media
+    adapter: ffmpeg
+    enabled: true
+    base_url: null
+    model: installed-ffmpeg
+    credential_ref: none
+    pricing_mode: free_local
+    timeout_seconds: 600
+    max_attempts: 1
+    fallback_profiles: []
+
+policy:
+  allow_implicit_fallback: false
+  require_cost_estimate_for_paid: true
+  require_terms_metadata_for_cloud: true
+  require_human_approval_for_voice_or_likeness: true
+  allow_remote_hosts_only_from_allowlist: true

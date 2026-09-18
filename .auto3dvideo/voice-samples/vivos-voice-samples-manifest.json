@@ -1,0 +1,33 @@
+{
+  "sourceDataset": "christian-hoang-04/vivos-processed",
+  "datasetUrl": "https://huggingface.co/datasets/christian-hoang-04/vivos-processed",
+  "license": "CC BY-NC-SA 4.0",
+  "rightsStatus": "restricted_noncommercial",
+  "purpose": "Local OmniVoice reference testing only; not cleared for commercial publishing or impersonation.",
+  "samples": [
+    {
+      "fileName": "vivos-vi-vivosdev01.wav",
+      "speakerId": "VIVOSDEV01",
+      "gender": "m",
+      "sampleRate": 16000,
+      "durationSeconds": 5.893,
+      "transcript": "VIỆC QUY TỘI ĐỂ BÙNG NỔ LOẠI SÁCH NÀY LÀ DO THẰNG ĐÓ CÓ CÁI MIỆNG NHƯ ĐÀN BÀ"
+    },
+    {
+      "fileName": "vivos-vi-vivosdev02.wav",
+      "speakerId": "VIVOSDEV02",
+      "gender": "m",
+      "sampleRate": 16000,
+      "durationSeconds": 5.736,
+      "transcript": "CÓ THỂ LÀNH LẶN MÀ KHÔNG ĐỂ LẠI VẾT SẸO CHO EM GÓP MỘT VIÊN GẠCH"
+    },
+    {
+      "fileName": "vivos-vi-vivosdev03.wav",
+      "speakerId": "VIVOSDEV03",
+      "gender": "m",
+      "sampleRate": 16000,
+      "durationSeconds": 6.379,
+      "transcript": "ĐÂY LÀ MỨC LÃI SUẤT THẤP NHẤT QUA CÁC PHIÊN ĐẤU THẦU VAI TRÒ CỦA CHẾ ĐỘ DINH DƯỠNG BÀ CON CHÒM XÓM"
+    }
+  ]
+}

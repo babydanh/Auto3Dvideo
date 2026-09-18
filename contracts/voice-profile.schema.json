@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/voice-profile.schema.json",
+  "title": "Auto3Dvideo Voice Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "voiceProfileId", "projectId", "name", "mode", "modelId", "language", "status", "rightsStatus", "cloneConsent", "createdAt", "updatedAt"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "voiceProfileId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,95}$"},
+    "projectId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "name": {"type": "string", "minLength": 2, "maxLength": 160},
+    "mode": {"type": "string", "enum": ["clone", "design"]},
+    "modelId": {"type": "string", "const": "k2-fsa/OmniVoice"},
+    "language": {"type": "string", "pattern": "^[a-z]{2,3}(?:-[A-Z]{2})?$", "maxLength": 16},
+    "instruct": {"type": ["string", "null"], "maxLength": 1000},
+    "referenceAudioPath": {"type": ["string", "null"], "pattern": "^(?!.*(?:^|/)(?:\\.\\.?)(?:/|$))[A-Za-z0-9_./\\-]+\\.(?:wav|mp3|flac|m4a|ogg)$", "maxLength": 320},
+    "referenceAudioSha256": {"type": ["string", "null"], "pattern": "^[a-fA-F0-9]{64}$"},
+    "referenceAudioDurationSeconds": {"type": ["number", "null"], "minimum": 0},
+    "referenceAudioSampleRate": {"type": ["integer", "null"], "minimum": 1},
+    "referenceTranscript": {"type": ["string", "null"], "maxLength": 2000},
+    "rightsStatus": {"type": "string", "enum": ["pending", "personal", "owned", "licensed", "restricted", "blocked"]},
+    "cloneConsent": {"type": "boolean"},
+    "commercialUse": {"type": "string", "enum": ["allowed", "restricted", "unknown", "not_allowed"]},
+    "status": {"type": "string", "enum": ["draft", "needs_consent", "ready", "failed", "rights_blocked", "deleted"]},
+    "lastPreviewPath": {"type": ["string", "null"], "maxLength": 320},
+    "createdAt": {"type": "string", "format": "date-time"},
+    "updatedAt": {"type": "string", "format": "date-time"}
+  }
+}

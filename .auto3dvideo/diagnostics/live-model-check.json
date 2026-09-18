@@ -1,0 +1,33 @@
+{
+  "status": "blocked",
+  "operation": "flow_select_model",
+  "reportPath": "D:\\Duancanhan\\Auto3Dvideo\\.auto3dvideo\\diagnostics\\live-model-check.json",
+  "serverInfo": null,
+  "protocolVersion": null,
+  "tools": [
+    "tabs",
+    "tab_groups",
+    "history",
+    "navigate",
+    "snapshot",
+    "diff",
+    "act",
+    "download",
+    "upload",
+    "read",
+    "grep",
+    "screenshot",
+    "pdf",
+    "wait",
+    "windows",
+    "evaluate",
+    "run",
+    "name_session",
+    "save_skill",
+    "mark_skill_run"
+  ],
+  "browserSessionAttached": false,
+  "browserActionsPerformed": false,
+  "networkCallsMade": false,
+  "message": "Không tìm thấy image model picker trong snapshot BrowserOS"
+}

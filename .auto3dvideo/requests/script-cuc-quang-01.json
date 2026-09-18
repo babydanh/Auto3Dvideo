@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "scriptId": "script-brief-cuc-quang-01",
+  "briefId": "brief-cuc-quang-01",
+  "language": "vi-VN",
+  "title": "Nguyên nhân gây ra hiện tượng ánh sáng cực đoan",
+  "hook": "Cực quang là hiện tượng ánh sáng kỳ lạ khiến bề mặt bạn như đang thấy thế giới qua lăng kính thần tiên—bí ẩn vừng sợ, đến từ đâu?",
+  "segments": [
+    {
+      "segmentId": "segment-01",
+      "narration": "Cực quang xuất hiện khi điện trường hoặc từ trường mạnh tương tác với bề mặt kim loại, làm chuyển dời năng lượng quang học của các electron, tạo ra hiệu ứng quang điện tử và tín hiệu sóng cực kiểu cho các ứng dụng quang học và viễn thám.",
+      "onScreenText": "Hiện tượng cực quang: ánh sáng chiếu qua vật cản kẽ hở tạo mẫu sáng tắt nhanh.",
+      "durationSeconds": 15.0,
+      "claimStatus": "needs_review",
+      "sourceNote": null
+    },
+    {
+      "segmentId": "segment-02",
+      "narration": "Cực quang là ánh sáng mỏng như sợi nhựa gãy khi ánh sáng đi qua hai vật cản, tạo ra những đường sáng rực rỡ và biến màu xanh thành nhiều màu rực rỡ.",
+      "onScreenText": "Hiện tượng ánh sáng khi ánh sáng va vào vật cản và bị uốn lại.",
+      "durationSeconds": 15.0,
+      "claimStatus": "needs_review",
+      "sourceNote": null
+    }
+  ],
+  "totalDurationSeconds": 30.0,
+  "promptVersion": "brief-to-script-v1",
+  "approvalStatus": "pending",
+  "generatedAt": "2026-08-24T13:52:09.620268+00:00"
+}

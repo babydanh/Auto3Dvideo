@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/style-bible.schema.json",
+  "title": "Auto3Dvideo Style Bible",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "styleId", "version", "visualMode", "palette", "camera", "lighting", "materials", "typography", "audio", "negativeConstraints", "reviewState"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "styleId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"},
+    "version": {"type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "visualMode": {"type": "string", "enum": ["blender_true_3d", "motion_graphics", "hybrid"]},
+    "palette": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["background", "primary", "secondary", "accent", "contrastMinimum"],
+      "properties": {
+        "background": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "primary": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "secondary": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "accent": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+        "contrastMinimum": {"type": "number", "minimum": 1, "maximum": 21}
+      }
+    },
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lensMillimeters", "allowedMoves", "transitionRules"],
+      "properties": {
+        "lensMillimeters": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "number", "exclusiveMinimum": 0, "maximum": 300}},
+        "allowedMoves": {"type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": {"type": "string", "enum": ["static", "push_in", "pull_out", "orbit", "pan", "tilt", "dolly", "reveal", "macro"]}},
+        "transitionRules": {"type": "array", "maxItems": 32, "items": {"type": "string", "minLength": 1, "maxLength": 300}}
+      }
+    },
+    "lighting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["keyDirection", "contrast", "volumetricsAllowed", "continuityRule"],
+      "properties": {
+        "keyDirection": {"type": "string", "minLength": 1, "maxLength": 200},
+        "contrast": {"type": "string", "enum": ["soft", "balanced", "high"]},
+        "volumetricsAllowed": {"type": "boolean"},
+        "continuityRule": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "materials": {"type": "array", "minItems": 1, "maxItems": 64, "items": {"type": "string", "minLength": 1, "maxLength": 300}},
+    "typography": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fontFamily", "titleStyle", "captionStyle", "safeAreaPercent", "maxLines"],
+      "properties": {
+        "fontFamily": {"type": "string", "minLength": 1, "maxLength": 200},
+        "titleStyle": {"type": "string", "minLength": 1, "maxLength": 500},
+        "captionStyle": {"type": "string", "minLength": 1, "maxLength": 500},
+        "safeAreaPercent": {"type": "number", "minimum": 0, "maximum": 25},
+        "maxLines": {"type": "integer", "minimum": 1, "maximum": 4}
+      }
+    },
+    "audio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["voiceDirection", "musicDirection", "sfxDirection", "duckingDb"],
+      "properties": {
+        "voiceDirection": {"type": "string", "minLength": 1, "maxLength": 500},
+        "musicDirection": {"type": "string", "minLength": 1, "maxLength": 500},
+        "sfxDirection": {"type": "string", "minLength": 1, "maxLength": 500},
+        "duckingDb": {"type": "number", "minimum": -24, "maximum": 0}
+      }
+    },
+    "negativeConstraints": {"type": "array", "minItems": 1, "maxItems": 64, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 300}},
+    "reviewState": {"type": "string", "enum": ["draft", "needs_review", "approved", "rejected"]}
+  }
+}

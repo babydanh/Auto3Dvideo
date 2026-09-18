@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0.0",
+  "jobType": "asset.ingest",
+  "projectId": "plan023-true3d",
+  "runId": "plan023-asset-ingest",
+  "assets": [
+    {
+      "assetId": "tiger-reference",
+      "title": "Tiger identity reference",
+      "sourcePath": "outputs/topic-image-retrieval-test/greenhouse_plants_cc0.jpg",
+      "declaredKind": "reference_image",
+      "role": "identity",
+      "rightsStatus": "personal",
+      "reviewState": "needs_review",
+      "shotIds": ["SHOT-001", "SHOT-002", "SHOT-005"],
+      "provenance": "PLAN-023 local fixture input; reference-only, not a model 3D asset",
+      "tags": ["reference", "identity"],
+      "note": "Fixture để kiểm tra ảnh phác/reference không bị nhận nhầm thành model3d."
+    },
+    {
+      "assetId": "tiger-model",
+      "title": "Tiger Blender scene source",
+      "sourcePath": "outputs/blender-quality-smoke/toolkit-scene.blend",
+      "declaredKind": "model3d",
+      "role": "model3d",
+      "rightsStatus": "personal",
+      "reviewState": "needs_review",
+      "shotIds": ["SHOT-001", "SHOT-002", "SHOT-003"],
+      "provenance": "PLAN-023 local Blender smoke fixture; quality must be checked before binding",
+      "tags": ["model3d", "blender"],
+      "note": "Fixture model để chạy quality/lookdev pass trong Blender."
+    },
+    {
+      "assetId": "tiger-texture",
+      "title": "Texture fixture",
+      "sourcePath": "outputs/topic-image-retrieval-test/greenhouse_plants_cc0.jpg",
+      "declaredKind": "texture",
+      "role": "texture",
+      "rightsStatus": "personal",
+      "reviewState": "needs_review",
+      "shotIds": ["SHOT-001"],
+      "provenance": "PLAN-023 local fixture input; texture classification test",
+      "tags": ["texture"],
+      "note": "Fixture chỉ kiểm tra phân loại texture, chưa phải texture hero."
+    },
+    {
+      "assetId": "pending-render",
+      "title": "Pending render fixture",
+      "sourcePath": "outputs/blender-quality-smoke-final/preview.png",
+      "declaredKind": "render",
+      "role": "composition",
+      "rightsStatus": "pending",
+      "reviewState": "needs_review",
+      "shotIds": ["SHOT-008"],
+      "provenance": "PLAN-023 rights quarantine fixture",
+      "tags": ["render", "rights-pending"],
+      "note": "Phải nằm trong quarantine và không được binding active."
+    }
+  ]
+}

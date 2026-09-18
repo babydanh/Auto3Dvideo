@@ -1,0 +1,458 @@
+{
+  "status": "ready",
+  "operation": "snapshot",
+  "reportPath": ".auto3dvideo/reports/browsermcp-snapshot-run_1789651209080813900.json",
+  "serverInfo": {
+    "name": "browseros_mcp",
+    "title": "BrowserOS MCP server"
+  },
+  "protocolVersion": "2025-03-26",
+  "toolCount": 24,
+  "tools": [
+    "tabs",
+    "tab_groups",
+    "history",
+    "navigate",
+    "snapshot",
+    "diff",
+    "act",
+    "download",
+    "upload",
+    "read",
+    "grep",
+    "screenshot",
+    "pdf",
+    "wait",
+    "windows",
+    "evaluate",
+    "run",
+    "connector_mcp_servers",
+    "discover_server_categories_or_actions",
+    "get_category_actions",
+    "get_action_details",
+    "execute_action",
+    "search_documentation",
+    "handle_auth_failure"
+  ],
+  "toolName": "snapshot",
+  "approved": true,
+  "browserSessionAttached": true,
+  "browserActionsPerformed": true,
+  "networkCallsMade": true,
+  "operationResult": {
+    "isError": false,
+    "contentItemCount": 1,
+    "contentTypes": [
+      "text"
+    ],
+    "textBytes": 12484,
+    "hasImage": false,
+    "uiRefCount": 80,
+    "uiRefs": [
+      {
+        "role": "link",
+        "label": "Skip to main content",
+        "reference": "e1"
+      },
+      {
+        "role": "button",
+        "label": "More options",
+        "reference": "e2"
+      },
+      {
+        "role": "button",
+        "label": "Create with Google Flow",
+        "reference": "e3"
+      },
+      {
+        "role": "link",
+        "label": "Google AI Subscriptions",
+        "reference": "e4"
+      },
+      {
+        "role": "link",
+        "label": "FAQ",
+        "reference": "e5"
+      },
+      {
+        "role": "button",
+        "label": "Pause video",
+        "reference": "e6"
+      },
+      {
+        "role": "figure",
+        "label": "figure",
+        "reference": "e7"
+      },
+      {
+        "role": "button",
+        "label": "Play feature video",
+        "reference": "e8"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e9"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e10"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e11"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e12"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e13"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e14"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e15"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e16"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e17"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e18"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e19"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e20"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e21"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e22"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e23"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e24"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e25"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e26"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e27"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e28"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e29"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e30"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e31"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e32"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e33"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e34"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e35"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e36"
+      },
+      {
+        "role": "button",
+        "label": "Try in Google Flow",
+        "reference": "e37"
+      },
+      {
+        "role": "button",
+        "label": "Learn more",
+        "reference": "e38"
+      },
+      {
+        "role": "button",
+        "label": "Previous model",
+        "reference": "e39"
+      },
+      {
+        "role": "button",
+        "label": "Next model",
+        "reference": "e40"
+      },
+      {
+        "role": "button",
+        "label": "Previous slide",
+        "reference": "e41"
+      },
+      {
+        "role": "button",
+        "label": "Next slide",
+        "reference": "e42"
+      },
+      {
+        "role": "button",
+        "label": "Previous slide",
+        "reference": "e43"
+      },
+      {
+        "role": "button",
+        "label": "Next slide",
+        "reference": "e44"
+      },
+      {
+        "role": "button",
+        "label": "Previous slide",
+        "reference": "e45"
+      },
+      {
+        "role": "button",
+        "label": "Next slide",
+        "reference": "e46"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e47"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e48"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e49"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e50"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e51"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e52"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e53"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e54"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e55"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e56"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e57"
+      },
+      {
+        "role": "link",
+        "label": "View tool",
+        "reference": "e58"
+      },
+      {
+        "role": "button",
+        "label": "Previous applet",
+        "reference": "e59"
+      },
+      {
+        "role": "button",
+        "label": "Next applet",
+        "reference": "e60"
+      },
+      {
+        "role": "button",
+        "label": "Explore Tools in Google Flow",
+        "reference": "e61"
+      },
+      {
+        "role": "button",
+        "label": "Apply here",
+        "reference": "e62"
+      },
+      {
+        "role": "link",
+        "label": "Watch",
+        "reference": "e63"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e64"
+      },
+      {
+        "role": "button",
+        "label": "Watch video",
+        "reference": "e65"
+      },
+      {
+        "role": "link",
+        "label": "Watch",
+        "reference": "e66"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e67"
+      },
+      {
+        "role": "button",
+        "label": "Watch video",
+        "reference": "e68"
+      },
+      {
+        "role": "link",
+        "label": "Watch",
+        "reference": "e69"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e70"
+      },
+      {
+        "role": "button",
+        "label": "Watch video",
+        "reference": "e71"
+      },
+      {
+        "role": "link",
+        "label": "Watch",
+        "reference": "e72"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e73"
+      },
+      {
+        "role": "button",
+        "label": "Watch video",
+        "reference": "e74"
+      },
+      {
+        "role": "link",
+        "label": "Watch",
+        "reference": "e75"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e76"
+      },
+      {
+        "role": "button",
+        "label": "Watch video",
+        "reference": "e77"
+      },
+      {
+        "role": "link",
+        "label": "Watch",
+        "reference": "e78"
+      },
+      {
+        "role": "generic",
+        "label": "generic",
+        "reference": "e79"
+      },
+      {
+        "role": "button",
+        "label": "Watch video",
+        "reference": "e80"
+      }
+    ],
+    "currentUrl": "https://flow.google.com/about",
+    "detail": ""
+  },
+  "message": "BrowserOS snapshot đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.",
+  "process": null
+}

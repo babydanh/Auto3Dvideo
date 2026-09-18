@@ -1,0 +1,50 @@
+{
+  "status": "ready",
+  "operation": "probe",
+  "reportPath": ".auto3dvideo\\reports\\browseros-github-probe.json",
+  "serverInfo": {
+    "name": "browseros-neo"
+  },
+  "protocolVersion": "2025-03-26",
+  "toolCount": 20,
+  "tools": [
+    "tabs",
+    "tab_groups",
+    "history",
+    "navigate",
+    "snapshot",
+    "diff",
+    "act",
+    "download",
+    "upload",
+    "read",
+    "grep",
+    "screenshot",
+    "pdf",
+    "wait",
+    "windows",
+    "evaluate",
+    "run",
+    "name_session",
+    "save_skill",
+    "mark_skill_run"
+  ],
+  "toolName": null,
+  "approved": false,
+  "browserSessionAttached": false,
+  "browserActionsPerformed": false,
+  "networkCallsMade": false,
+  "operationResult": {
+    "isError": false,
+    "contentItemCount": 0,
+    "contentTypes": [],
+    "textBytes": 0,
+    "hasImage": false,
+    "uiRefCount": 0,
+    "uiRefs": [],
+    "currentUrl": null,
+    "detail": ""
+  },
+  "message": "BrowserOS neo MCP endpoint đã sẵn sàng; dùng granular tools, không dùng run để tránh lỗi structuredContent của build hiện tại.",
+  "process": null
+}

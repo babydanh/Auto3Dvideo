@@ -1,0 +1,7 @@
+{
+  "text": "Bạn có bao giờ tự hỏi: vì sao Trái Đất luôn nhìn thấy gần như cùng một mặt của Mặt Trăng? Mặt Trăng vẫn quay quanh chính nó, nhưng thời gian tự quay lại đúng bằng thời gian nó đi hết một vòng quanh Trái Đất. Đó gọi là khóa thủy triều. Vì thế, khi Mặt Trăng tiến về phía chúng ta, cùng một nửa của nó luôn hướng về Trái Đất. Còn mặt xa không phải là mặt tối: nó cũng nhận ánh sáng Mặt Trời, chỉ là chúng ta không đứng ở phía đó để nhìn thấy. Vũ trụ giữ bí mật bằng chuyển động, không phải bằng phép màu.",
+  "voice": "Adam",
+  "backend": "onnx",
+  "precision": "int8",
+  "outputPath": ".auto3dvideo/tts/moon-story-narration.wav"
+}

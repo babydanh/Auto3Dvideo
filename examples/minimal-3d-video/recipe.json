@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "recipeId": "minimal-image-slideshow",
+  "kind": "image_slideshow",
+  "fps": 30,
+  "width": 1080,
+  "height": 1920,
+  "durationSeconds": 30,
+  "policy": {
+    "rightsRequired": true,
+    "humanReviewRequired": true,
+    "externalPublish": false,
+    "paidGeneration": false
+  }
+}

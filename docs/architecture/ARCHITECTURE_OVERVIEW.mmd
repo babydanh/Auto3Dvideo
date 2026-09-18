@@ -1,0 +1,18 @@
+flowchart LR
+    UI["Tauri desktop UI"] --> CMD["Typed Rust commands"]
+    CMD --> DB[("SQLite + migrations")]
+    CMD --> RUNNER["Tokio durable job runner"]
+    RUNNER --> POLICY["Rights / budget / review gates"]
+    POLICY --> LOCAL["Local adapters"]
+    POLICY --> CLOUD["Optional cloud adapters"]
+    LOCAL --> COMFY["ComfyUI loopback"]
+    LOCAL --> BLENDER["Blender CLI + Python"]
+    LOCAL --> FFMPEG["FFmpeg"]
+    CLOUD --> VIDEO["Provider video APIs"]
+    COMFY --> ASSETS["Versioned project assets"]
+    BLENDER --> ASSETS
+    VIDEO --> ASSETS
+    ASSETS --> REVIEW["Human preview + approval"]
+    FFMPEG --> REVIEW
+    REVIEW --> DELIVERY["Validated delivery package"]
+    DELIVERY --> EDITOR["Optional Kdenlive / Resolve handoff"]
