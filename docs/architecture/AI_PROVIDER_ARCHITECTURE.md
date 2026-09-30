@@ -101,6 +101,40 @@ Every cloud adapter has a mock implementation and a deterministic fixture output
 
 The preferred reference-image path is the Nano Banana composer built into the user's signed-in Google Flow project. BrowserMCP supplies fresh UI refs, Auto3Dvideo submits one shot at a time, waits for a newly downloaded image, hashes/imports it into the Asset Library, and resumes by `(shotId, revisionId, inputHash)` without creating a duplicate. The image path does not claim final video generation, never stores provider credentials, and keeps every imported asset at `rights=pending` until human review.
 
+## Google Flow video generation path
+
+The desktop one-prompt action runs through the attached BrowserMCP session,
+not the separate gflow-cli Chrome profile. It opens the exact Flow project ID
+saved for the active local project, verifies the live project identity and
+video composer before typing any shot prompt, and stops if either is unverified.
+The persisted Cloud/API gate must be enabled.
+
+The app leaves model, aspect ratio, resolution and duration at the current
+Flow selections; the live DOM must expose all four.
+Project galleries can saturate BrowserOS snapshot refs, so composer and
+Generate controls must be prioritized alongside direct same-project DOM
+evidence for model, settings and visible price. Opening video settings is
+idempotent and read-only; missing evidence blocks rather than changing settings
+or submitting a prompt.
+Before typing any shot prompt, it reads one unambiguous visible unit price and
+requests one explicit approval for `unit price × planned shot count` as the
+batch credit cap. The cap and settings evidence are fixed for the run. Before
+every prompt and Generate click, it refreshes the same-project composer, price
+and selected settings; it stops if settings differ or cumulative visible-price
+estimates exceed the approved cap. A changed setting, unknown price/model,
+cap overflow, disabled Cloud/API gate, stale ref, project mismatch, timeout or
+invalid output blocks without a retry. Completed shots are downloaded,
+FFprobed and imported with local hash/evidence for human review. An uncertain
+click is never retried automatically.
+
+The video submit path is a narrow typed Tauri operation, not a generic BrowserMCP click: it accepts only prompt-entry or Generate, validates shot/revision/run identity, the selected `Omni 1.1 Flash` model, and a fresh positive visible unit price. Each request must carry the batch approval cap and the explicit approval state; the Rust boundary blocks requests that cannot fund the full planned shot count.
+
+After submission, output matching requires the exact batch identity. The app clicks only a Download control scoped to the matching video card, then requires one new local video file before FFprobe/import/compose. Ambiguous or missing output stops without retrying Generate.
+
+### Flow cinematic prompt vocabulary
+
+The shot planner may attach an allowlisted `flowDirectives` array to a local script segment. Entries such as `/groundlevel`, `/pushin` and `/filmlook` are prompt vocabulary copied from the approved creative reference, not browser commands or UI selectors. The prompt compiler emits both the exact token and its natural-language interpretation so a provider may use the creative intent even when it does not implement slash-token syntax. Unknown, duplicate or destructive tokens are rejected before provider submission.
+
 The older Nano Banana MCP stdio/CDP worker remains a compatibility path for historical reports and installations, but it is not the default route. ComfyUI remains an explicit local fallback rather than an implicit cloud provider.
 
 ## Evaluation

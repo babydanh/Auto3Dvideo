@@ -10,4 +10,5 @@
 | `PLAN-021-UNIFIED-SHOT-PRODUCTION-WORKSPACE.md` | Unified prompt, preset, asset, shot, 3D composer, workflow console and provider handoff workspace | One truthful, versioned, inspectable shot-production workspace |
 | `PLAN-023-AUTONOMOUS-TRUE-3D-PIPELINE.md` | Autonomous true-3D topic-to-MP4 runner, Blender, assets, voice, alignment and QA | One golden project runs through real Blender with resumable evidence |
 
+| `PLAN-027-DESKTOP-MODULARIZATION.md` | Incremental Tauri/React feature-boundary refactor | Maintainable modules with unchanged desktop behavior |
 The plans describe intended work. A plan is not evidence that the feature is implemented. Implementation changes require their own change record, tests and release evidence.

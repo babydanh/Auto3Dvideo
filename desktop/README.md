@@ -55,3 +55,7 @@ Trong editor, mỗi cue có thể sửa trực tiếp nội dung, thời điểm
 `Xuất sidecar` tạo một file SRT hoặc WebVTT mới theo đường dẫn workspace-relative và không ghi đè file đã tồn tại. `Burn-in vào bản sao MP4` chạy FFmpeg qua native direct supervisor, tạo file MP4 mới và giữ video gốc nguyên vẹn. Sau khi xuất, người dùng vẫn phải mở video, kiểm tra chữ, timing, font, safe area, tiếng Việt và quyền xử lý trước delivery.
 
 Subtitle Studio hiện là editor deterministic cho SRT/VTT. Tự động nghe video để tạo transcript hoặc dịch sang ngôn ngữ khác cần provider STT/LLM đã cấu hình; app không tự tải video TikTok/Douyin/YouTube, không xóa watermark và không tự publish. Contract của document nằm tại `../contracts/subtitle-document.schema.json`, worker local là `../../scripts/subtitle_worker.py` và native command nằm tại `src-tauri/src/subtitle.rs`.
+
+## Google Flow video shots
+
+Select a saved Google Flow project and connect the signed-in BrowserOS tab before running a video shot plan. The app keeps the current Flow model/settings unchanged, requires a visible unit credit price, and asks for one explicit batch cap before entering any prompt. It submits one shot at a time, binds each result to its run/shot/revision IDs, downloads only from that matching video card, and imports a newly created video file after validation. Timeouts, ambiguous results or uncertain clicks stop without retrying Generate. Generated clips still require human review for creative quality, rights, safety and platform policy; generation does not publish or establish monetization rights.

@@ -42,9 +42,10 @@ All contracts are versioned and validated before execution. JSON Schema is used 
 | `browser-handoff.schema.json` | BrowserMCP web handoff pack with allowlisted Google target, hashed local inputs, prompt, independent upload/generate/import approvals and network/rights policy |
 | `browser-flow-workflow.schema.json` | Durable first-run BrowserMCP discovery, adaptive roadmap, named process log and asset IDs for a Google Flow workflow |
 | `browser-flow-playwright-report.schema.json` | Bounded Google Flow Playwright/CDP observation, prompt, generation-click and real-download evidence |
+| `google-flow-video-action.schema.json` | Paid Flow video prompt/Generate request, batch approval cap and typed action result |
 | `prompt-preset.schema.json` | Project-owned, versioned prompt text with variables, negative constraints, provider targets and rights notes |
 | `reference-set.schema.json` | Reusable asset assignments for identity, composition, camera, style, frame and negative continuity |
-| `video-workflow-session.schema.json` | Local resumable video session with prompt, shot script, reference paths and preview state |
+| `video-workflow-session.schema.json` | Local resumable video session with prompt, shot script, reference paths, preview state, an optional `canvasGraph` layout and optional per-shot `shotReferenceBindings` (local identity plus the manually confirmed Flow project/media ID) |
 
 The canonical JSON contract uses camelCase field names. Execution-attempt records are append-only evidence for a job attempt; they must never store secrets, raw shell commands or unredacted logs. Human-authored YAML workflow fixtures may use the repository's existing snake_case convention; the future Rust loader must normalize and validate that mapping before execution. A provider profile contains model and endpoint references, not secret values. Credential references such as `env:AUTO3DVIDEO_TTS_API_KEY` are handles only.
 

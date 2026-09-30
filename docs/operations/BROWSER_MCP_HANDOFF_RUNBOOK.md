@@ -80,9 +80,80 @@ Bấm **Probe runtime** trước. Kết quả `ready` chỉ chứng minh Node v�
 
 Sau khi Connect, bấm **Snapshot tab đã Connect**. Chỉ khi report trả session attached thì mới bấm **Tôi đã Connect + login**. Nếu snapshot trả `blocked` hoặc `detached`, dừng tại đây, kiểm tra đúng tab/extension rồi thử lại; không được đánh dấu login bằng tay để vượt gate.
 
+BrowserMCP references such as `e12` are temporary snapshot references, not
+Google Flow HTML IDs. The click worker takes a fresh snapshot and resolves the
+exact accessible label to one unique interactive control immediately before
+clicking, in the same MCP worker/session. It does not trust a reference from the
+separate Rust preflight. Missing, duplicate or non-interactive matches are
+blocked rather than guessed; Rust still applies the existing destructive and
+route allowlists before launching the worker. A saved page ID is reused only
+while it resolves to an allowed Google Flow URL; a recycled ID pointing at
+BrowserOS home or another Google app is blocked without clicking or opening a
+replacement tab. Attachment status is reported only when the operation returns
+a verified Flow URL; a page with UI refs but no Flow origin is not connected.
+
 Nút **Mở target qua BrowserMCP** có confirmation riêng và chỉ cho HTTPS host `aistudio.google.com`. Nút này là tùy chọn; nó không login và không upload. Screenshot chỉ dùng để kiểm tra trạng thái và report không lưu page text, cookie, token hoặc ảnh nội dung.
 
 ## Upload và Generate
+
+### One-prompt Google Flow video in the desktop workspace
+
+The **Tạo video từ một prompt** action uses the saved Flow Project ID for the
+current Auto3Dvideo project. Before touching the composer, the native BrowserMCP
+discovery opens that exact `https://flow.google.com/project/<id>` URL; the app
+then verifies the live project key and an actual video composer. A missing
+selection, sign-in page, non-Flow origin, project mismatch or non-video composer
+blocks before any shot prompt is typed.
+
+Flow settings remain at the current model, aspect-ratio, resolution and duration
+selections in the signed-in UI; the app does not guess them. Before typing any
+shot prompt, the live DOM must expose those selections and one unambiguous
+credit price. The app estimates `price × planned shot count` and asks once for
+approval of that total as a hard batch cap. Before every prompt and paid click,
+it refreshes the same-project composer, price and settings, submits only while
+settings still match and cumulative visible-price estimates remain within the
+cap, and stops before prompt entry or Generate on missing/ambiguous
+price/model evidence, changed settings or cap overflow. Cancel types nothing
+and submits nothing; an uncertain click is never retried.
+
+Media-heavy project pages can fill the BrowserOS snapshot with gallery-card refs.
+Snapshots must retain the active prompt, Video, Generate, visible-price and
+download controls; selected model/settings and price are also verified from
+the live DOM in the same saved project. Opening video settings is read-only and
+idempotent: if the settings menu is already open, wait boundedly for evidence
+instead of clicking its toggle. Missing or ambiguous evidence blocks before
+prompt entry and Generate.
+
+The desktop also exposes a separate, non-generative **Chọn Omni 1.1 Flash
+trong Flow** action. It is bound to the saved project ID, requires one fresh
+`Video` radio, one model-group picker and one exact `Omni 1.1 Flash` option,
+then verifies the same-project video composer. It never types a prompt or
+clicks Generate. Missing/ambiguous refs or an unavailable BrowserOS MCP session
+block the action; open the selected project's actual video composer in Flow and
+retry only after BrowserOS is healthy.
+
+In the current Flow UI, the model chip (for example `Nano Banana 2`) opens
+the generation-type menu that contains the `Video` radio. The non-generative
+Omni selector first verifies the exact saved project and image composer, then
+opens only one visible interactive model chip whose label contains `Nano
+Banana 2`; it proceeds only when a fresh snapshot exposes exactly one `Video`
+radio. Missing/duplicate chips or radios stop before prompt entry.
+
+When Flow is already at `/project/<id>/tools`, the current Vietnamese UI may
+expose the safe return control as `Nút quay lại để quay về trang trước`.
+Resolve it from the fresh snapshot; do not click the `Công cụ` link again or
+guess a different project URL.
+
+After approval, the app waits for a new Flow result, downloads the matching
+video, validates it with FFprobe and imports it with hash/evidence for review.
+The next shot runs only after the previous result completes. Generated files
+remain `needs_review`; this route does not publish or clear rights.
+
+If the current project screenshot exposes an exact `Video` sidebar item but
+BrowserOS accessibility omits it, the app may use its fixed DOM resolver only
+on that project root. It requires one visible interactive target and a
+same-project destination. Multiple targets, a Tools page or a cross-project
+link are blockers; do not guess coordinates or use the separate Tools page.
 
 ### Gemini storyboard stills (tùy chọn)
 
@@ -123,7 +194,7 @@ python scripts/validate_project.py --project .
 
 ## Không hỗ trợ trong Browser Handoff slice
 
-Connection Center không tự login, không xử lý CAPTCHA, không dùng credential từ `.env`, không gọi Google API/Veo/Gemini API, không tự upload, không tự thanh toán, không bật Prepay/Auto-reload và không auto-publish. Handoff upload/download vẫn là thao tác thủ công. Riêng nút chạy image composer Flow đã được user chủ động bấm có thể dùng adapter Playwright ở trên để nhập prompt, Generate và bắt download thật theo từng shot; các gate identity, file validation, rights và human review vẫn giữ nguyên. Nếu BrowserMCP package sau này bổ sung upload/download tool, phải audit tool schema, thiết kế approval riêng, cập nhật contract và test trước khi expose; không tự bật chỉ vì package version thay đổi.
+Connection Center không tự login, không xử lý CAPTCHA, không dùng credential từ `.env`, không gọi Google API/Veo/Gemini API, không tự upload, không tự thanh toán, không bật Prepay/Auto-reload và không auto-publish. Handoff upload/download vẫn là thao tác thủ công. Nút Flow image composer đã được user chủ động bấm có thể dùng adapter Playwright để nhập prompt, Generate và bắt download thật theo từng shot; One-prompt Google Flow video dùng BrowserMCP riêng, xác minh project đích, yêu cầu Cloud/API bật và hỏi duyệt credit hiển thị trước từng Generate. Các gate identity, file validation, rights và human review vẫn giữ nguyên.
 
 ## Tài liệu tham khảo
 

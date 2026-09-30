@@ -4,6 +4,380 @@
 
 `IN_PROGRESS / NEEDS_HUMAN_REVIEW`
 
+### 2026-09-28 native canvas and Flow shot references
+
+Design authority for this slice is the binding contract `contracts/video-workflow-session.schema.json`,
+the Flow media-binding rules in `scripts/flow_exact_media.mjs` and the gates named in this entry
+itself; the session-local implementation plan the work was executed from is not a durable repo
+artifact. The delivered slices are:
+
+- **Session contract and domain identity.** `contracts/video-workflow-session.schema.json` gained
+  optional `canvasGraph` (version 1: bounded nodes/edges/viewport over stable session/segment/asset
+  IDs) and optional `shotReferenceBindings` (bounded; `segmentId`, `referenceSetId`,
+  `assignmentId`, `assetId`, `assetSha256`, `role`, plus the four dependent Flow fields
+  `flowProjectId`/`flowMediaId`/`confirmedAt`/`confirmationKind`). Both Rust session DTOs and the
+  TypeScript `VideoWorkflowSession{,Input}` mirror them with `serde(default)` semantics, so older
+  sessions still load and `schemaVersion: 1.0.0`, the storage path, the index and the 32-session
+  limit are unchanged. `desktop/src/features/workspace/canvasGraph.ts` is a pure layout validator
+  and model; parsing is not enough to execute anything.
+- **Canvas presentation and shot ownership.** `ProjectWorkspaceCanvas.tsx` renders an ordered shot
+  board from the session script, a selected-shot inspector, a local asset rail with rights badges,
+  run/review/output status and session-save labels; `App.css` carries the responsive styling and an
+  accessible canvas region. The dead hidden `.studio-flow-shell` presentation was removed while
+  `runStudioFlowAgent()` stayed the live entry point. Arrangement is layout only and never changes
+  script order or executor behaviour.
+- **Native drop and local reference assignment.** Exactly one supported image dropped on one armed
+  shot target (or the accessible file-picker fallback) imports through the existing asset path and
+  creates/updates a shot-scoped `start_frame` assignment, then persists the session fields. A drop
+  never implies a Flow attachment, an upload or a generation. **Native acceptance is outstanding:**
+  the real WebView2 `tauri://drag-drop` event, non-100% DPI hit-testing, the durable SQLite
+  assignment and a save/reopen round-trip were never exercised, so this slice stays
+  `NEEDS_HUMAN_REVIEW`.
+- **Manual Flow card bind and exact ingredient.** Read-only, bounded Flow image-card discovery
+  (`discover_google_flow_image_cards`) returns sanitized media IDs, labels and thumbnails only, and
+  never accepts a free-form media ID. A truncated read marks every retained card unselectable and
+  reports the truncation, in the worker normalizer, the Rust parser and the UI confirmation gate
+  alike; duplicates stay listed but unselectable. A local preflight
+  (`preflight_shot_reference_flow_binding`) requires the project/segment/assignment/role identity,
+  an image-kind asset, cleared rights evidence, an approved assignment, a safe in-workspace path
+  and a recomputed current byte hash before anything may be prepared for Flow. The explicit
+  binding then attaches that exact media ID via `animate_image` with a matching `sourceMediaId`, and
+  the Playwright route refuses a grid larger than its bounded media scan instead of calling a
+  sampled match unique. No label fallback exists while an explicit binding is present.
+- **Prompt and provenance.** Both shot-prompt compilers carry stable `SHOT_ID`/`REVISION_ID`/
+  `RUN_ID`, project/session identity, duration, per-shot subject/action/camera/light/continuity and
+  inline exclusions; a bound reference is described by its role sentence, and a reference-free shot
+  omits it. The paid prompt no longer contains local relative paths, absolute paths, `@Image` tags
+  or unverified attachment claims. A canonical reference fingerprint over
+  `(projectId, flowProjectId, sessionId, segmentId, assignmentId, assetSha256, flowMediaId, role,
+  confirmationKind)` feeds a shot `inputHash`, while reference-free shots keep the previous
+  prompt-only hash, the v1 checkpoint key and `schemaVersion: 1`. A prior submission whose
+  provenance no longer matches the current binding blocks for human reconciliation instead of
+  starting a second Generate.
+
+Task 5 hardening review fixes: dynamic prompt prose is sanitized before compilation; each split
+paid part is previewed with its own revision ID; explicit reference media is re-verified directly
+before prompt entry and again before Generate. The fresh SQLite preflight now runs before composer
+acquisition, so a stale/rejected binding cannot navigate or mutate the live Flow tab. Locally
+imported exact outputs are reconciled first; a paid output that exists in Flow but is not yet
+imported cannot be auto-recovered when its current local reference fails preflight and requires
+human reconciliation. Verification: focused Node suites passed, desktop build passed,
+`cargo fmt --check` passed, and full unfiltered Rust tests passed (148 passed, 4 ignored).
+`CHANGELOG.md` and `contracts/README.md` record the slice. Native drop/save-reopen and live Flow
+card/chip identity remain human-review requirements.
+Evidence for this slice is the focused Node suites (`test_flow_exact_media.mjs`,
+`test_flow_shot_prompt.mjs`, `test_flow_run_checkpoint.mjs`, `test_flow_shot_provenance.mjs`,
+`test_browseros_mcp_runtime_worker.mjs`, `test_canvas_graph.mjs`, `test_shot_reference_drop.mjs`,
+`desktop/test_project_workspace_canvas.mjs`), the focused Rust tests, `pnpm run build` in
+`desktop/`, `cargo fmt --check` and `python scripts/validate_project.py --project .`. All ran with
+no provider request, no upload, no live Flow action and no paid generation. **Not verified:** real
+Flow DOM exposure of card/chip media identity, the native WebView2 drop path, and native
+save/reopen. This slice must not be called release-ready on the strength of mocked tests alone.
+
+### 2026-09-23 active video route moved to pinned gflow-cli
+
+- The visible one-prompt video action now runs the local Prompt Skill planner,
+  then invokes the vendored `ffroliva/gflow-cli` checkout at commit
+  `56d9501526767f9eaa71d9155608719414ac0e24` for one Flow video per shot. It
+  no longer routes that action through the old Google Flow MCP image fallback.
+- The app installs gflow-cli and its pinned Playwright 1.61 dependency closure
+  into `.auto3dvideo/tools/gflow-cli/site-packages`, separate from Blender's
+  Python. “Kết nối Google Flow” launches gflow-cli's real Google Chrome login
+  for the local `auto3dvideo` profile; every video run checks that profile
+  before submitting a paid job.
+- Worker state is persisted atomically before submit and after validation.
+  A same-input validated MP4 is skipped; a prior uncertain submit or orphaned
+  output blocks automatic resubmit/overwrite. Each downloaded clip must pass
+  ffprobe before Asset Library import. FFmpeg scales/pads to the selected
+  aspect, trims each clip to its Prompt Skill target duration, then validates
+  the final MP4 before import.
+- Contract: `contracts/gflow-cli-video-generation.schema.json`. UI/Rust builds
+  passed on 2026-09-23. No live Flow account login, paid generation or final
+  MP4 has been verified in this change; human login and a user-approved
+  credit-spending run are still required.
+- Known provider limits: gflow-cli is an unofficial alpha browser automation
+  project and Google can change Flow without notice. The app needs an existing
+  Flow project ID and a Google Chrome login (Brave's active cookies are not
+  reused). Flow charges the signed-in account for generated clips. Review the
+  generated clips and project rights before delivery.
+
+### 2026-09-24 Windows worker JSON encoding
+
+- Both the video-generation and interactive-login workers emit stdout JSON with ASCII escapes so Vietnamese diagnostics survive Windows legacy code pages. The cp1252 regression test covers success and failure payloads without contacting Flow.
+- No generation is triggered by this fix. A live Google Flow run remains credit-bearing and requires explicit user approval.
+
+### 2026-09-24 auth probe failure handling
+
+- A session status probe can fail after an earlier successful sign-in. Report it as `GFLOW_AUTH_UNVERIFIED` with safe CLI detail, not as definite missing login.
+- Rust surfaces the worker's structured failure JSON on non-zero exit with secret filtering; generation still stops until the session probe passes.
+- The observed `OSError` root cause remains unresolved. No generation request was sent during this investigation.
+- The no-generation `Kết nối Google Flow` retry also failed with `GFLOW_AUTH_FAILED`; its output contained no allowlisted structured diagnostic. The auth worker now exposes only allowlisted event fields/error classes on failure and hides raw browser output. The login root cause remains unresolved.
+
+
+### 2026-09-24 live BrowserMCP target resolution
+
+- BrowserOS click resolution now takes the fresh snapshot and performs the semantic click in the same MCP worker/session; it never reuses the caller's transient `eN` reference as the target.
+- Clicks are blocked when the label is missing, duplicated, non-interactive, destructive, or outside the existing allowlist. Saved page IDs must still resolve to an allowed Google Flow URL; recycled IDs pointing to another page are blocked without a click or replacement tab. Attachment status requires a verified Flow URL, not merely UI refs.
+- The live BrowserOS status check returned a verified Flow page. One safe `Trang chủ` button click resolved against the same-session fresh snapshot and completed; the Generate control was not clicked.
+- The open Flow project did not match the saved destination selected in the desktop app. Both were left unchanged; generation must remain blocked until the user selects the intended project.
+- The project validator still reports `MANIFEST_INVENTORY_INVALID` for unregistered repository entries; none of the changed files were listed, and no unrelated artifacts or manifests were changed.
+
+### 2026-09-24 saved Google Flow project selector
+
+- The Google Flow Project ID controls had been rendered inside `.video-session-strip`, which the active workspace CSS hides. They now appear above the prompt workspace as a named project selector with ID/name editing and save/remove actions.
+- Saved Flow projects and the selected destination are stored in local browser storage, scoped to the selected Auto3Dvideo project. The previous single global ID is migrated to the first local project that opens it.
+- The selector is intentionally a local saved list, not live account discovery: pinned `gflow project list` reads gflow-cli's local SQLite catalog and does not authoritatively list the current Flow account. Users add an existing project's ID from its Flow URL.
+- Selecting a destination never creates a remote project or starts generation. The generation action still requires an explicitly saved selection; Flow credit spend remains visible before running.
+
+### 2026-09-25 desktop Google Flow video route
+
+- The primary one-prompt action now runs video shots through the attached BrowserMCP session rather than the separate gflow-cli generation route.
+- Discovery navigates to the exact saved Flow project URL before snapshot binding; the app verifies the live project key and a video composer before typing any shot prompt.
+- Cloud/API must remain explicitly enabled. Before any shot prompt is typed, a fresh DOM preflight establishes the visible unit price and selected model/settings; the user approves `unit price × planned shot count` once as a hard batch cap. Every shot requires fresh composer/settings/price evidence; unknown price, missing model/settings, target mismatch, cap overflow, timeout or invalid output blocks without automatic retry.
+- The Flow model, aspect ratio, duration and resolution remain the user's currently selected settings. A successful result is downloaded, FFprobed and imported for human review; no publish or rights clearance is implied.
+- Verification runs `node --experimental-strip-types scripts/test_flow_batch_budget.mjs`, the desktop build and a no-submit UI smoke. Paid Flow generation requires one explicit batch budget approval, a fresh price/settings check before every shot and a hard cumulative credit cap; any mismatch stops before the next Generate.
+
+### 2026-09-25 localized Flow video navigation
+
+- A fresh Flow project screenshot visibly exposes a `Video` sidebar item, while BrowserOS accessibility refs omit that item.
+- The `Tác nhân` composer chip does not open Video mode. The app now ignores it as a mode selector and uses a narrowly scoped exact-label DOM fallback only when the unique visible `Video` target belongs to the already-bound Flow project root.
+- The prior Tools detour and this preflight stopped before prompt entry or Generate; no credits were spent.
+
+- Live 2026-09-25 verification after the unique Video navigation click: the same bound Flow project still exposes the Nano Banana 2 image composer, not a video composer. The existing project shows an older Omni 1.1 Flash output, but the current model selector remains Nano Banana 2; do not switch the user's paid model setting by inference. No shot prompt or Generate action was submitted. Resume with the separate explicit model selector, require fresh video-composer evidence, and keep the per-shot credit approval gate.
+
+### 2026-09-25 explicit Flow video model selection
+
+- Added a separate desktop action for the user-selected `Omni 1.1 Flash` model. It requires a fresh same-project `Video` radio, a unique model-group picker and a unique exact model option; it then verifies the video composer before reporting success.
+- Selection never enters shot text or presses Generate. No generation or credit is incurred by changing model.
+- Live selection did not complete: the current BrowserOS snapshot exposed no unique Video radio, and reconnect returned HTTP 503. Keep shot prompting and Generate blocked until BrowserOS is healthy and the selected project exposes a verified video composer; resume with a fresh snapshot and one bounded batch-budget approval.
+
+### 2026-09-25 current Flow model-picker menu
+
+- The live composer screenshot shows Video navigation but leaves the prompt on the Nano Banana 2 image model. Flow hides the Video radio until the visible model chip is opened.
+- The non-generative model action now verifies the saved project and Nano Banana 2 composer, opens exactly one visible Nano Banana 2 button/combobox, then requires a unique Video radio before continuing to the selected video model. Missing/duplicate controls still block without typing or Generate.
+
+
+### 2026-09-26 live Flow composer and batch approval
+
+- The saved Flow project already exposes its Video composer. The live DOM confirms the unchanged selection `Omni 1.1 Flash`, 16:9, 720p, 8 seconds and 12 credits per shot.
+- Media-heavy project snapshots can saturate BrowserOS refs with card controls. Runtime snapshots now retain prompt, Video, Generate, price and download controls; the Flow inspector waits boundedly for model/settings/price evidence and does not toggle an already-open settings menu.
+- The desktop combines fresh UI refs with same-project DOM evidence before prompt entry, and rechecks composer, settings and price before each shot and Generate.
+- Smoke reached the native approval for the 12-shot, 60-second plan: 12 credits/shot, 144-credit maximum. The smoke canceled at approval; zero prompt type actions, zero Generate clicks and zero credits spent. No output artifact exists until a user approves.
+- Verification: `node --check` for both BrowserOS workers, `node scripts/test_browseros_mcp_runtime_worker.mjs`, `node --experimental-strip-types scripts/test_flow_batch_budget.mjs`, desktop frontend/native builds and canceled live preflight.
+
+### 2026-09-26 direct video prompt, Generate and output binding
+
+- The paid video action now uses a typed Tauri command for prompt entry and Generate; both worker operations revalidate the saved Flow project, exact shot/revision metadata, Omni 1.1 Flash, a fresh visible unit price and the batch's explicitly approved credit cap.
+- After Generate, the app waits for the exact `runId`/`shotId`/`revisionId` Flow output, clicks only its scoped video Download control, requires exactly one new local video file, then imports, FFprobes and composes it. Ambiguous cards, downloads, changed settings or uncertain clicks stop without automatic retry.
+- The Rust command rejects unapproved or underfunded requests, prompts without the matching shot/revision identity, unsupported models and batches outside 1–12 shots. No remote project creation, model switching, publishing or rights clearance is implied.
+- Legacy shot plans that repeat the entire brief under a generic role contract
+  are grounded to the matching numbered source shot before prompt entry; no
+  project-specific identity or scene template is hard-coded. Missing source
+  shot context blocks the request. Regression coverage verifies that unrelated
+  shot descriptions are excluded from each prompt.
+- Video composition now receives the requested duration for every shot, trims
+  each downloaded clip before concatenation, caps FFmpeg output at the sum and
+  rejects/deletes the result if FFprobe reports a mismatch beyond 250 ms.
+- Verification: frontend build, BrowserOS/budget/prompt regressions, targeted
+  Rust duration guard test, project validator, native build and a throwaway
+  FFmpeg/FFprobe 12-shot × 5-second composition check passed.
+- Safety incident during resumed UI preflight: the embedded WebView accepted
+  `window.confirm` without an explicit user decision, then reported one
+  successful Generate click (12-credit estimate) and ambiguous matching
+  outputs. No clip was downloaded/imported or composed; actual provider charge
+  and output status are unverified. No retry or further paid action was made.
+- Replacing native confirmation with an explicit in-app approval dialog; the
+  next batch remains blocked until the user reviews and approves its exact
+  displayed cap. Human review remains required.
+- Batch spending now waits on an app-owned alertdialog. Only its explicit Approve
+  button can continue; Cancel/Escape exits before prompt entry.
+- Output reconciliation recognizes Flow's image-backed video posters only when
+  the card also exposes the verified video model, resolution, duration, aspect
+  ratio and exact run/shot/revision identity. Unrelated image cards are excluded;
+  multiple matching outputs remain blocked without retry.
+- Interrupted Flow batches persist a run identity and pre-Generate shot/revision
+  credit estimates scoped to local project, Flow project, session and prompt
+  hash. Resume imports only one exact output match, skips imported clips and
+  never repeats a recorded Generate without verified output; remaining shots
+  still require explicit cumulative budget approval. Clear the checkpoint only
+  after FFprobe confirms composition duration. Provider charges remain unverified.
+- Verification after this recovery change: desktop TypeScript/Vite build,
+  checkpoint/recovery decision tests, BrowserOS Flow matching tests, cumulative
+  budget tests and the focused Rust video-download allowlist test pass. A native
+  Tauri rebuild completed after the user approved closing the old app; the
+  rebuilt app launched and preserved the saved Flow project name/ID. No paid
+  action or output download was made during verification.
+- Project validator completed with `AUTO3DVIDEO_PROJECT_VALID`,
+  455 manifest/physical files, 100 JSON and 17 YAML files; semantic YAML
+  parsing was unavailable and external tools were not executed.
+- The old binary reported one batch-video match versus two prompt-video
+  matches for legacy SHOT-001. The rebuilt app's read-only inspector reports
+  one of each. The legacy run predates checkpoints, so it is not auto-resumed;
+  download/import and its provider charge remain unverified.
+
+### 2026-09-27 shadow-hosted video poster recovery
+
+- The user explicitly authorized Flow credit use. The app showed a cumulative
+  ceiling of 144 credits; the checkpoint recorded SHOT-001 at 12 estimated
+  credits before resume. The resumed run generated SHOT-002 at another displayed
+  12-credit estimate, then stopped before further shots when the download
+  selector rejected its output.
+- The read-only output report found exactly one prompt-matched video for
+  SHOT-002, but the downloader could not classify its image-backed video poster
+  through a shadow-root host. The worker now walks DOM/shadow-host ancestors
+  while retaining exact run/shot/revision, model/settings and unique-media
+  checks. A shadow-host poster regression passes; desktop rebuild is pending.
+- SHOT-001 was downloaded and imported at
+  `outputs/sessions/video-session-1789650831022801100/browser-flow/downloads/flow-SHOT-001-rev-001.mp4`;
+  its prior workflow record contains the imported file identity. SHOT-002 and
+  final composition remain unimported/unverified. Both checkpoints retain a
+  12-credit estimate; actual provider charges remain unverified. Do not repeat
+  Generate for either checkpointed shot.
+
+
+### 2026-09-27 idempotent Flow video import
+
+- Restarted imports now reuse an existing destination only for an exact
+  run/shot/revision request with a valid input hash and matching source/
+  destination size and SHA-256. A mismatch is preserved and fails closed.
+  Newly created destinations use no-overwrite creation and are rolled back on
+  copy or FFprobe validation failure; reused files are still FFprobed before
+  the resumed workflow records them.
+- The post-build app repro downloaded the checkpointed SHOT-001 Flow output
+  but blocked reuse because uppercase `SHOT-001` was checked by the generic
+  lowercase-only `safe_id`. The local source and existing workspace file had
+  matching size and SHA-256. The video reuse gate now validates ASCII shot IDs
+  separately while retaining exact run/revision/input-hash and file-hash checks.
+- The focused Rust regression passes (1/1), covering uppercase `SHOT-001`,
+  exact-output reuse and preservation of a same-size mismatched destination.
+  The repro reached download/import only; it did not trigger another Generate.
+  Native rebuild, checkpoint recovery, remaining shots and composition remain
+  pending; actual Flow charges remain unverified.
+
+
+### 2026-09-27 Flow download marker lifecycle
+
+- The video worker restores labels left by an earlier output-card scan before
+  resolving a fresh BrowserOS Download ref, then restores the temporary marker
+  after the BrowserOS action. The cleanup covers both metadata-backed and
+  legacy markers without saved label metadata.
+- `node --check` passed for the worker and focused regression file; the
+  BrowserOS worker regression passed, including stale-marker recovery and
+  marker cleanup after action.
+- The refreshed desktop executable launched and restored the saved Flow
+  project/checkpoint. BrowserOS MCP returned HTTP 503 at startup, so no live
+  download/import or Generate was attempted. Charges for checkpointed Flow
+  shots remain unverified.
+
+### 2026-09-27 localized Flow edit completion
+
+- The authorized cumulative run reached SHOT-009 (108 estimated credits of the 144-credit cap). Eight clips were imported. Flow opened an 8-second tiger/T-Rex result in `/edit/<media-id>`, but output reconciliation stopped because the edit-route guard recognized English “Done editing” and not Flow’s Vietnamese “Đã chỉnh sửa xong” control. No later Generate was issued; actual provider charges remain unverified.
+- The guard now permits that exact normalized Vietnamese completion label while retaining the destructive-action gate; a focused regression covers the edit-route ref and label. Resume only the persisted run under the same 144-credit cumulative cap. Never repeat Generate for SHOT-009 before reconciling the existing Flow result.
+- Focused Rust resume/composition regressions passed (2/2); `pnpm run build` passed; `python scripts/validate_project.py --project .` passed (455 files, 100 JSON, 17 YAML; semantic YAML validation unavailable). Stopping the managed desktop process released the executable lock, and the updated native build succeeded.
+- Resume lookup restored the workflow with eight imported clips; SHOT-009 was reconciled and SHOT-010–012 were generated/imported under the already-approved 144-credit estimate. After fixing uppercase `SHOT-###` compose validation, the desktop composed all 12 clips to `outputs/sessions/video-session-1789650831022801100/browser-flow/downloads/compose/auto-muigr1z5-browser-flow-final.mp4`. The app cleared the checkpoint after its FFprobe duration check; local video metadata confirms 60.0s, 1280x720, 30fps H.264/AAC, 19.3 MiB. SHA-256: `56f152ed9224972fea7f975085464ae777abdc56aae3f8e102e00725c193ffe9`. Actual provider charges remain unverified; human creative/rights review is still required.
+
+### 2026-09-24 persisted Cloud/API gate
+
+- The cloud-generation setting was held only in `AppState` memory, so a restart or second app process restored `LOCAL-FIRST` even after the user enabled it. It now lives in SQLite and every status/provider/generation check reads that same setting.
+- The migration restores the latest prior `cloud_generation.enabled/disabled` audit event, preserving an explicit choice made by an existing user. A fresh database still defaults off.
+- The enabled choice persists across app restarts; the provider screen states this and offers an explicit off action. No generation is started by saving the preference.
+
+### 2026-09-21 Generate-control mapping and pre-prompt state
+
+- Flow may render the real image Generate control disabled while the prompt is
+  empty. The worker now distinguishes `generateButtonFound` (safe evidence
+  that the image composer is present and may receive text) from
+  `generateButtonEnabled` (required immediately before the paid Generate
+  click), removing the pre-prompt deadlock.
+- The Rust `GoogleFlowDomOutputReport` now forwards both fields to the desktop
+  UI. Previously the worker returned the field but the Rust mapping discarded
+  it; the mapping now accepts the worker's `generationButtonFound` spelling
+  (and the legacy alias), eliminating the misleading `generate=false`
+  diagnostic despite a valid composer fingerprint.
+
+### 2026-09-21 fresh-ref destructive-click gate and edit-route recovery
+
+- The Flow accessibility ref is now re-read immediately before every generic
+  BrowserMCP click. The executor compares the requested `ref + label` with the
+  fresh snapshot and refuses the action when the ref was recycled, the label
+  changed, or the current target is destructive. This closes the gap where a
+  safe cached label could point at Flow's Trash icon after a route transition.
+- On `/project/<id>/edit/<media-id>`, only Back/Undo/Download/Done editing
+  controls are allowed. Image fallback automatically returns to the same
+  pinned project before inspecting or typing; it never clicks Restore,
+  Delete permanently, Trash or a generic More options control on that route.
+- A stale-ref or edit-route rejection is recorded as a blocked safety event
+  with the fresh snapshot evidence; it does not retry the click or claim a
+  generated asset. Unit tests cover recycled refs, Trash labels and unknown
+  controls on edit routes.
+
+### 2026-09-20 per-shot DOM proof retention
+
+- The image runner no longer lets a later accessibility snapshot erase a valid
+  same-project DOM composer proof. After the model gate, a report with the
+  exact image-editor/ingredients fingerprint remains valid for the current
+  project, even when Flow hides the Nano Banana label outside Agent settings.
+- Before every shot, the runner still re-reads the live DOM and requires the
+  current project URL, exact prompt editor, enabled image Generate control and
+  image-mode evidence. A blocked DOM probe now reports project, editor,
+  Generate, image-mode and fingerprint fields instead of the misleading
+  generic “Nano Banana + prompt” message.
+- This change is transport/gating only. It does not click Generate, create
+  paid media, delete/restore Flow media, or convert a blocked 5/12 run into a
+  success; the existing resumable partial state remains authoritative.
+
+### 2026-09-20 exact image-composer gate and bounded transport retry
+
+- BrowserOS no longer treats a generic `contenteditable` or a page-wide
+  `Start generation` label as proof of the image composer. Before typing or
+  clicking, the live DOM must show Flow's exact ProseMirror image editor,
+  `Add ingredients to the prompt box`, and an enabled image Generate control.
+  The output inspector records these evidence fields and the selected model.
+- When a shot has `mediaCount` unchanged, no matching RUN/shot batch, and
+  `generationActive=false`, the runner records the full DOM diagnosis, takes
+  a fresh snapshot, reacquires the exact composer and retries that same shot
+  once. It never downloads a historical tile, deletes imported assets, or
+  retries indefinitely; a second failure remains resumable and blocked.
+
+### 2026-09-20 image fallback route guard and partial-resume evidence
+
+- The Vision planner may inspect a fresh screenshot/DOM, but `Tools` is a
+  video-only fallback. When the goal is Nano Banana/image composer, the Rust
+  executor rejects `Tools`, media menus and new-project controls before any
+  browser click; the planner must keep the current project and return a fresh
+  image ref or stop.
+- The image fallback reconciles local assets before probing the provider
+  composer. If Flow is blocked at shot 1, the report preserves the verified
+  `N/N` local assets and resume skips those shots; it no longer reports `0/N`
+  or implies that existing images were deleted/regenerated.
+- If a previous video attempt left the shared Flow tab at `/tools`, the image
+  route first returns to the same project using a fresh Back ref, or a pinned
+  provider project URL when Back is absent; it never opens Tools again.
+- A Trash/Delete overlay is now a hard safety boundary. The image route may
+  use only a fresh `Undo` recovery ref; stale `Agent`, `Tools`, media and
+  destructive refs are rejected before BrowserOS receives the click.
+- The shared Rust executor now applies a final destructive-click lock for every
+  BrowserOS/BrowserMCP route, including direct actions outside the Vision
+  planner. Labels containing Delete, Remove, Trash, Move to trash or their
+  Vietnamese equivalents are rejected before a worker is spawned and recorded
+  as `BLOCKED_DESTRUCTIVE_FLOW_CLICK`; only non-destructive recovery controls
+  such as Undo/Back can proceed.
+
+### 2026-09-20 project/composer fingerprint gate
+
+- BrowserOS now reads the live DOM URL and emits a composer fingerprint instead
+  of trusting only the accessibility snapshot: project key, exact ProseMirror
+  image editor, Add ingredients control, enabled Generate control and selected
+  Nano Banana Pro model.
+- Model setup is idempotent. If the current composer already proves Nano Banana
+  Pro x1, the worker does not click the selected model button looking for an
+  option that Flow does not render. If x1 is not proven, it opens the settings
+  panel, searches menu/listbox/option/button controls in the live DOM and logs
+  candidate labels when the option is absent.
+- The selected model/x1 fingerprint is persisted per project/page. Type and
+  Generate require that fingerprint, while the native Rust report rejects a
+  worker response whose live target URL belongs to another project.
+
 ## 2026-09-15 BrowserOS GitHub backend checkpoint
 
 ### 2026-09-16 BrowserOS model-selection gate fix
@@ -946,3 +1320,162 @@ heartbeat message alone is not completion evidence.
   the local machine does not render a final Blender video; the cloud provider creates the final
   shot outputs. Provider login, composer/snapshot, credit, upload and human review gates remain
   fail-closed and are not bypassed by this routing change.
+
+- 2026-09-19 asset-optional video-first correction: Nano Banana reference images are optional.
+  The default run only uses image-to-video Animate when a complete reference set already exists;
+  missing or partial assets no longer block the run at `0/N`. The runner falls back to direct
+  per-shot text-to-video, validates/downloads every shot, and composes the final project output
+  only after all required video shots are present.
+
+- 2026-09-19 Flow mode-selector correction: a fresh project snapshot can expose the bottom
+  composer only as an exact `Agent` button, with no visible Video/Text-to-video control yet.
+  The runner may click that exact mode selector once, take a fresh snapshot, and continue only
+  when an explicit video mode, prompt control and Generate control are visible. `Add media`,
+  `Add ingredients` and chat remain prohibited substitutes; no prompt or paid generation is
+  sent while the mode evidence is missing.
+
+- 2026-09-19 Flow tool-picker correction: the live project snapshot also exposes a `Tools`
+  navigation link beside the All media/image composer. Video discovery now opens that exact
+  Flow navigation first, snapshots again, and only then tries the bounded Agent mode selector.
+  This remains navigation-only and does not authorize prompt entry or paid Generate.
+
+- 2026-09-19 Windows mapped-cache correction: video session saves now write a uniquely named
+  recovery snapshot before updating the stable session index. If Windows returns
+  `ERROR_USER_MAPPED_FILE` (os error 1224) because the fixed index is mapped by WebView or
+  another process, the save remains recoverable and the reader prefers the newest valid recovery
+  snapshot on the next launch. Other filesystem failures remain explicit errors.
+
+- 2026-09-19 Browser planner wait correction: the bounded planner contract already permits
+  `{"action":"wait","ref":null}` while Flow is visibly loading. The executor now sends that
+  page-level wait without requiring a UI ref; only click/type still require a fresh allowlisted
+  ref. This prevents a legitimate loading wait from being reported as a planner failure before
+  the next snapshot.
+
+- 2026-09-19 Flow route-priority correction: the live project snapshot exposed both `Agent` and
+  `Tools`, but opening `Tools` first moved the session to `/project/<id>/tools` and removed the
+  Agent/video refs. The runner now opens the exact project-level `Agent` selector first; `Tools`
+  is fallback-only. A stale `/tools` route can return through its fresh Back ref before another
+  composer probe, with no prompt or Generate action during navigation.
+
+- 2026-09-19 Agent-menu fallback correction: after the project-level `Agent` selector was opened,
+  the live snapshot exposed only `Agent instructions`, `Settings` and `Start generation`, not
+  Video/Text-to-video. The runner no longer falls through to `Tools` after that attempt; it
+  reports `BLOCKED_VIDEO_MODE_NOT_EXPOSED` with the exact missing capability and preserves the
+  project route.
+
+- 2026-09-20 Flow capability probe cache: once a project-level Agent menu has been freshly
+  inspected and proves that Video/Text-to-video is not exposed, the desktop UI stores that
+  negative capability result in local storage keyed by local project plus provider project
+  identity/current URL. Subsequent auto-runs stop from the cached result without repeating
+  planner or snapshot discovery. The user-facing `Đọc trạng thái Flow` snapshot action clears
+  the project cache for an explicit re-probe; changing provider project identity or URL uses a
+  different cache key automatically.
+
+- 2026-09-20 Flow image fallback: when an auto-run proves that the current Flow project only
+  exposes the Nano Banana image composer, it no longer treats the provider mismatch as the
+  final run failure. It generates one image per planned shot through the verified image route,
+  imports each new file, then invokes a bounded local FFmpeg/FFprobe compose command using the
+  requested shot durations. The output is explicitly labeled an image slideshow with light
+  camera motion, not a provider-generated motion video; the workflow never clicks an image
+  `Start generation` control as if it were video.
+
+- 2026-09-20 Flow fallback detection and authentication gate correction: the auto-run now
+  recognizes the persisted semantic signature `Agent` + `Settings`/`Settings trigger` +
+  `Start generation` with no Video mode, even when the workflow's generic `lastMessage` only
+  says that a snapshot completed. This preserves the image fallback instead of ending at 86%.
+  A fresh Google sign-in page (`accounts.google.com`, or the Email/Password + Google sign-in
+  UI signature) is reported as `BLOCKED_GOOGLE_SIGN_IN`; the app never enters credentials and
+  asks the user to authenticate once in the BrowserOS profile.
+
+- 2026-09-20 native smoke test: rebuilt the Tauri executable, launched it, clicked `Tự làm
+  toàn bộ` through the live WebView DOM, and observed the fallback reach Nano Banana Pro,
+  enter `SHOT-001`, and wait for a real Flow download. Flow reached the bounded 300-second
+  wait without producing a new file, so the run ended with `0/12` images and no false video
+  success. Provider output/download remains an external-state blocker.
+
+- 2026-09-20 composer route-settling correction: Flow can expose only a root ref for a short
+  interval after leaving `/tools` or opening the Agent selector. The desktop composer probe
+  now waits two seconds and takes a fresh snapshot after each bounded navigation action before
+  deciding that the composer is missing. It also recognizes the live image-agent signature
+  `Agent instructions` + `Settings` + `Start generation` even when the exact `Agent` selector
+  ref is absent, returning `BLOCKED_VIDEO_MODE_NOT_EXPOSED` so auto-run enters the image fallback
+  instead of retrying the planner and ending at the generic `composer.ready` blocker. A live
+  BrowserOS wait/snapshot rehearsal returned the signed-in project URL with 71 fresh refs and
+  the expected image-agent signature without spending another generation credit.
+
+- 2026-09-20 native validation: installed Microsoft C++ Build Tools/Windows SDK, rebuilt the
+  Tauri release executable successfully, and clicked `Tự làm toàn bộ` through the live desktop
+  accessibility tree. The run reached the intended `Flow image fallback từng shot + FFmpeg
+  compose` branch, then stopped honestly at `0/12` because Flow did not return image downloads.
+  A follow-up report showed Flow changing fresh `Start generation` to `Stop` after prompt entry;
+  image generation now treats that as an active generation and never reuses the stale pre-type
+  ref that previously caused `Unknown ref e80`.
+
+- 2026-09-20 fallback gate correction: `BLOCKED_CHAT_ROUTE`, `BLOCKED_VIDEO_COMPOSER`, and
+  `BLOCKED_VIDEO_MODE_NOT_EXPOSED` now all route to the image-per-shot fallback, while sign-in,
+  credit and connection blockers remain fail-closed. The full fallback still requires 12 verified
+  downloads before local FFmpeg compose and never runs Blender.
+
+- 2026-09-20 image transition correction: after prompt entry, Flow can temporarily remove both
+  `Start generation` and `Stop` from the accessibility tree while the request is committed. The
+  fallback now captures the media baseline before typing, checks the live DOM for
+  `generationActive`/one fresh media, and waits up to five fresh two-second snapshots before
+  declaring the shot blocked. It never retypes the prompt or clicks a stale Generate ref during
+  this transition.
+
+- 2026-09-20 BrowserOS image download correction: the Flow bridge can acknowledge an ordinary
+  accessibility click on `1K original size` without emitting a file into the user Downloads
+  folder. The worker now prefers the BrowserOS `download` helper for the final size menu item,
+  preserves attached/action flags when a later file check fails, and includes media ID, click
+  method, download directory and visible-file diagnostics in a blocked report. A live download
+  test for fresh media `5699dc1a-6fe5-4830-aa54-27282cbf74e0` returned a real
+  `flow-SHOT-001-rev-001.jpeg` (264,822 bytes) in the workspace.
+
+- 2026-09-20 revision composer route correction: Google Flow returns to
+  `/project/<id>/edit/<output-id>` after downloading an image. Before revision, the desktop app
+  now navigates back to the project root, re-verifies the Nano Banana Pro image composer, and
+  only then types the revision prompt; it no longer assumes the output-detail route exposes the
+  ProseMirror prompt editor.
+
+- 2026-09-20 revision timeout/resume correction: a 300-second revision wait now extends to a
+  900-second bounded window when fresh DOM snapshots still show generation activity or recent
+  activity. The app never resubmits while Flow is active; if Flow has stopped with no output it
+  retries the same revision identity once as a transport recovery, then fails closed. On a later
+  run it first inspects and downloads an already-created revision output before generating again,
+  and the fallback log tells the user to resume from the existing `N/N` assets instead of
+  restarting the 12-shot batch.
+
+- 2026-09-20 unlabeled-output DOM correction: some Flow image cards omit `SHOT_ID/RUN_ID` from
+  `flow-batch-info` even though the DOM media count changes from 15 to 16 after the current
+  Generate. The fallback now accepts only an exact temporal `+1` media delta with generation
+  stopped, then asks the BrowserOS/Playwright worker to select the newest tile and still requires
+  a new local download before import. A delta of zero or more than one remains blocked to avoid
+  importing history.
+
+- 2026-09-20 detail-route download correction: Flow output detail `/edit/<id>` exposes a single
+  toolbar `Download media` control without batch identity. BrowserOS/Playwright now prefer that
+  unique detail-route control before tile/history fallback and still require a fresh local file
+  as success evidence.
+
+- 2026-09-20 live DOM re-probe correction: a cached video-composer blocker is now diagnostic only;
+  every run takes fresh BrowserOS/UI snapshots and re-analyzes the current route. After the Agent
+  menu is inspected, the route may still try a newly exposed Tools ref before concluding that
+  Video/Text-to-video is unavailable. This prevents a stale probe or one menu layout from
+  permanently blocking the automatic image fallback.
+
+- 2026-09-20 action-recovery correction: when the planner returns a stale/missing ref or a click/type
+  fails, the agent now starts a bounded recovery turn with the execution error plus a newly captured
+  screenshot and DOM/UI snapshot. The model must return a ref from that new snapshot; infrastructure
+  failures such as missing Python or provider credentials remain terminal and are not retried as UI
+  actions.
+
+- 2026-09-20 revision safety correction: Playwright no longer falls back to an arbitrary
+  `contenteditable`/Agent chat editor. Before typing a revision it requires the exact image-composer
+  editor and a visible enabled Generate control. If revision fails, the outer image run preserves all
+  previously imported assets instead of returning an empty `generatedAssets` list.
+
+- 2026-09-20 revision continuity correction: an open Flow image-detail panel is now closed by its
+  current `Close` ref before image-composer discovery. The planner is forbidden from clicking
+  `Create New`/`New project` when the current provider project is known. If Gemini revision fails,
+  the original shot remains valid and the batch continues to the next shot instead of stopping at
+  `N/N`.

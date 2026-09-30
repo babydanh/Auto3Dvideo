@@ -37,6 +37,7 @@ const MAX_BROWSER_FLOW_PROCESS_HISTORY: usize = 96;
 const MAX_PROMPT_CHARS: usize = 4_000;
 const MAX_TIMEOUT_SECONDS: u64 = 300;
 const MAX_RUNTIME_TIMEOUT_SECONDS: u64 = 45;
+const MAX_BROWSEROS_TYPE_TIMEOUT_SECONDS: u64 = 90;
 const BROWSERMCP_EXTENSION_RECONNECT_WAIT_MS: u64 = 2_000;
 const MAX_CANDIDATE_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 const MAX_AUDIT_BYTES: u64 = 1 * 1024 * 1024;
@@ -520,7 +521,23 @@ pub struct ComposeBrowserFlowOutputsRequest {
     pub project_id: String,
     pub workflow_id: String,
     pub run_id: String,
-    pub shot_ids: Vec<String>,
+    pub shots: Vec<ComposeBrowserFlowShot>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComposeBrowserFlowShot {
+    pub shot_id: String,
+    pub duration_seconds: f64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComposeBrowserFlowImagesRequest {
+    pub project_id: String,
+    pub workflow_id: String,
+    pub run_id: String,
+    pub shots: Vec<ComposeBrowserFlowShot>,
 }
 
 #[derive(Debug, Serialize)]
@@ -574,7 +591,7 @@ pub struct BrowserCandidateImportReport {
     pub ffprobe: ExternalProcessResult,
 }
 
-fn safe_id(value: &str, field: &str) -> Result<String, String> {
+pub(crate) fn safe_id(value: &str, field: &str) -> Result<String, String> {
     let value = value.trim();
     if !(3..=64).contains(&value.len())
         || !value.chars().enumerate().all(|(index, character)| {
@@ -656,7 +673,10 @@ fn safe_runtime_prompt(value: &str) -> Result<String, String> {
     Ok(value.to_string())
 }
 
-fn workspace_for_project(state: &State<'_, AppState>, project_id: &str) -> Result<PathBuf, String> {
+pub(crate) fn workspace_for_project(
+    state: &State<'_, AppState>,
+    project_id: &str,
+) -> Result<PathBuf, String> {
     valid_text(project_id, "Project ID")?;
     let connection = state
         .database
@@ -857,7 +877,7 @@ fn browser_flow_agent_ref<'a>(
 }
 
 fn browser_flow_agent_click_is_safe(label: &str) -> bool {
-    let label = label.trim().to_ascii_lowercase();
+    let label = label.trim().to_lowercase();
     if label.is_empty()
         || [
             "delete",
@@ -878,6 +898,9 @@ fn browser_flow_agent_click_is_safe(label: &str) -> bool {
             "close tab",
             "close window",
             "close account",
+            "add media menu",
+            "add media",
+            "media menu",
         ]
         .iter()
         .any(|term| label.contains(term))
@@ -886,6 +909,9 @@ fn browser_flow_agent_click_is_safe(label: &str) -> bool {
     }
     browser_flow_project_entry_label_is_safe(Some(&label))
         || browser_flow_is_image_mode_label(&label)
+        || label == "agent"
+        || matches!(label.as_str(), "tools" | "công cụ")
+        || label == "trang chủ"
         || [
             "video",
             "text-to-video",
@@ -901,6 +927,8 @@ fn browser_flow_agent_click_is_safe(label: &str) -> bool {
             "send",
             "gửi",
             "download",
+            "done editing",
+            "đã chỉnh sửa xong",
             "tải xuống",
             "export",
             "approve",
@@ -915,9 +943,189 @@ fn browser_flow_agent_click_is_safe(label: &str) -> bool {
             "dismiss",
             "đóng",
             "bỏ qua",
+            "back",
+            "quay lại",
         ]
         .iter()
         .any(|term| label == *term || label.contains(term))
+}
+
+fn browser_flow_click_is_destructive(label: &str) -> bool {
+    let label = label.trim().to_ascii_lowercase();
+    [
+        "delete",
+        "remove",
+        "trash",
+        "move to trash",
+        "delete permanently",
+        "xóa",
+        "xoá",
+        "thùng rác",
+    ]
+    .iter()
+    .any(|term| label.contains(term))
+}
+
+fn browser_flow_normalize_control_label(label: &str) -> String {
+    label
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
+fn browser_flow_edit_route(url: Option<&str>) -> bool {
+    url.is_some_and(|value| {
+        let lower = value.to_ascii_lowercase();
+        lower.contains("/project/") && lower.contains("/edit/")
+    })
+}
+
+fn browser_flow_edit_route_click_is_safe(label: &str) -> bool {
+    let label = browser_flow_normalize_control_label(label);
+    if browser_flow_click_is_destructive(&label) {
+        return false;
+    }
+    matches!(
+        label.as_str(),
+        "back"
+            | "back button to go to previous page"
+            | "quay lại"
+            | "dismiss"
+            | "close"
+            | "done editing"
+            | "đã chỉnh sửa xong"
+            | "download"
+            | "download media"
+            | "download image"
+            | "download video"
+            | "tải xuống"
+            | "tải ảnh"
+            | "tải video"
+            | "xuất ảnh"
+            | "xuất video"
+            | "save image"
+            | "save video"
+            | "lưu ảnh"
+            | "lưu video"
+    )
+}
+
+fn browser_flow_validate_fresh_click_target(
+    ui_refs: &[BrowserFlowUiRef],
+    current_url: Option<&str>,
+    requested_label: &str,
+    requested_ref: &str,
+) -> Result<String, String> {
+    let requested = browser_flow_normalize_control_label(requested_label);
+    let mut matching_targets = ui_refs
+        .iter()
+        .filter(|item| browser_flow_normalize_control_label(&item.label) == requested);
+    let fresh_target = matching_targets.next().ok_or_else(|| {
+        format!(
+            "BLOCKED_STALE_FLOW_REF: không còn control có label chính xác “{requested_label}” trong snapshot mới; ref {requested_ref} không được dùng."
+        )
+    })?;
+    if matching_targets.next().is_some() {
+        return Err(format!(
+            "BLOCKED_AMBIGUOUS_FLOW_TARGET: có nhiều control cùng label “{requested_label}” trong snapshot mới; không click ref {requested_ref}."
+        ));
+    }
+    if !matches!(
+        fresh_target.role.as_str(),
+        "button" | "link" | "menuitem" | "option" | "tab" | "checkbox" | "radio" | "switch"
+    ) {
+        return Err(format!(
+            "BLOCKED_NONINTERACTIVE_FLOW_TARGET: label “{}” có role “{}”; không click ref {requested_ref}.",
+            fresh_target.label, fresh_target.role
+        ));
+    }
+    if browser_flow_click_is_destructive(&fresh_target.label) {
+        return Err(browser_flow_destructive_click_message(&fresh_target.label));
+    }
+    if browser_flow_has_destructive_overlay(ui_refs) {
+        return Err(
+            "FLOW_DESTRUCTIVE_OVERLAY_VISIBLE: snapshot đang có Trash/Delete/Undo/View in trash; khóa mọi click tự động để không xoá thêm. Người dùng phải khôi phục thủ công rồi snapshot lại.".to_string(),
+        );
+    }
+    if browser_flow_edit_route(current_url)
+        && !browser_flow_edit_route_click_is_safe(&fresh_target.label)
+    {
+        return Err(format!(
+            "BLOCKED_FLOW_EDIT_ROUTE_CLICK: route /edit chỉ cho phép Back/Undo/Download/Done editing; ref {requested_ref} label “{}” bị khóa.",
+            fresh_target.label
+        ));
+    }
+    if !browser_flow_agent_click_is_safe(&fresh_target.label) {
+        return Err(format!(
+            "BLOCKED_UNALLOWLISTED_FLOW_CLICK: control “{}” không nằm trong allowlist thao tác an toàn; không mở menu/More options để tránh click nhầm Trash/Delete.",
+            fresh_target.label
+        ));
+    }
+    Ok(fresh_target.reference.clone())
+}
+
+fn browser_flow_operation_is_click(operation: &str) -> bool {
+    matches!(
+        operation,
+        "click" | "click_project" | "click_ingredients" | "click_storyboard"
+    )
+}
+
+fn browser_flow_video_dom_fallback_is_allowed(
+    operation: &str,
+    label: &str,
+    element_ref: Option<&str>,
+) -> bool {
+    operation == "click" && element_ref.is_none() && label.trim().eq_ignore_ascii_case("video")
+}
+
+fn browser_flow_destructive_click_message(label: &str) -> String {
+    format!(
+        "BLOCKED_DESTRUCTIVE_FLOW_CLICK: từ chối click control “{}”; khóa an toàn không cho app xóa, Remove hoặc Move to trash trong Google Flow.",
+        label.trim()
+    )
+}
+
+fn browser_flow_agent_image_goal_forbids_tools(goal: &str, label: &str) -> bool {
+    let goal = goal.trim().to_lowercase();
+    let label = label.trim().to_lowercase();
+    let image_goal = goal.contains("image composer")
+        || goal.contains("nano banana")
+        || goal.contains("tạo ảnh")
+        || goal.contains("image generation")
+        || goal.contains("image control");
+    image_goal
+        && matches!(
+            label.as_str(),
+            "tools"
+                | "công cụ"
+                | "add media"
+                | "add media menu"
+                | "media menu"
+                | "new project"
+                | "create new"
+                | "agent"
+                | "agent instructions"
+        )
+}
+
+fn browser_flow_has_destructive_overlay(ui_refs: &[BrowserFlowUiRef]) -> bool {
+    ui_refs
+        .iter()
+        .map(|item| item.label.trim().to_ascii_lowercase())
+        .any(|label| {
+            label.contains("delete permanently")
+                || label == "undo"
+                || label.contains("view in trash")
+                || label.contains("moved to trash")
+                || label == "trashed"
+        })
+}
+
+fn browser_flow_destructive_overlay_allows(label: &str) -> bool {
+    let _ = label;
+    false
 }
 
 const BROWSER_FLOW_AGENT_PROTOCOL: &str = r#"
@@ -1078,7 +1286,7 @@ fn browser_flow_agent_plan_payload(
     .map_err(|error| format!("Không serialize được Browser Flow planner context: {error}"))
 }
 
-fn ensure_relative_parent(workspace: &Path, relative: &str) -> Result<PathBuf, String> {
+pub(crate) fn ensure_relative_parent(workspace: &Path, relative: &str) -> Result<PathBuf, String> {
     let path = workspace.join(relative);
     let parent = path
         .parent()
@@ -1245,6 +1453,37 @@ fn persist_browser_flow(workspace: &Path, workflow: &BrowserFlowWorkflow) -> Res
     }
     fs::write(&path, [bytes, b"\n".to_vec()].concat())
         .map_err(|error| format!("Không cập nhật được Browser Flow workflow: {error}"))
+}
+
+fn browser_flow_target_project_key(target_url: &str) -> Option<&str> {
+    let suffix = target_url.strip_prefix("https://flow.google.com/project/")?;
+    let key = suffix.split(['/', '?', '#']).next()?;
+    if key.len() < 8
+        || key.len() > 160
+        || !key
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '_' | '-'))
+    {
+        return None;
+    }
+    Some(key)
+}
+
+fn browser_flow_discovery_operations(
+    target_url: &str,
+) -> Vec<(String, Option<String>, Option<f64>)> {
+    let mut operations = Vec::with_capacity(6);
+    if browser_flow_target_project_key(target_url).is_some() {
+        operations.push(("navigate".to_string(), Some(target_url.to_string()), None));
+        operations.push(("wait".to_string(), None, Some(2.0)));
+    }
+    operations.extend([
+        ("snapshot".to_string(), None, None),
+        ("wait".to_string(), None, Some(2.0)),
+        ("snapshot".to_string(), None, None),
+        ("screenshot".to_string(), None, None),
+    ]);
+    operations
 }
 
 fn browser_flow_route(target_url: &str) -> Vec<BrowserFlowRouteStep> {
@@ -1491,10 +1730,16 @@ fn browser_flow_prompt_ref_is_safe(ui_refs: &[BrowserFlowUiRef], reference: &str
         ]
         .iter()
         .any(|candidate| role.contains(candidate));
-    let is_known_generic_composer =
-        label.is_empty() || label == "textbox" || label == "editable text" || label == "paragraph";
+    let is_known_generic_composer = label.is_empty()
+        || label == "textbox"
+        || label == "editable text"
+        || label == "paragraph"
+        || label == "generic";
     (is_explicit_prompt || near_prompt_controls || near_image_mode)
-        && (is_text_input || (role == "paragraph" && label == "paragraph") || is_explicit_composer)
+        && (is_text_input
+            || (role == "paragraph" && label == "paragraph")
+            || (role == "generic" && label == "generic" && near_prompt_controls)
+            || is_explicit_composer)
         && (is_explicit_prompt || is_known_generic_composer || role == "paragraph")
 }
 
@@ -2367,10 +2612,19 @@ fn browsermcp_operation_arguments(request: &BrowserMcpActionRequest) -> Result<V
             }
             Ok(json!({"time": time}))
         }
-        "click" => Ok(json!({
-            "element": safe_runtime_text(request.element.as_deref().ok_or_else(|| "click cần element".to_string())?, "element", 400)?,
-            "ref": safe_runtime_text(request.element_ref.as_deref().ok_or_else(|| "click cần elementRef".to_string())?, "elementRef", 200)?,
-        })),
+        "click" => {
+            let element = request
+                .element
+                .as_deref()
+                .ok_or_else(|| "click cần element".to_string())?;
+            if browser_flow_click_is_destructive(element) {
+                return Err(browser_flow_destructive_click_message(element));
+            }
+            Ok(json!({
+                "element": safe_runtime_text(element, "element", 400)?,
+                "ref": safe_runtime_text(request.element_ref.as_deref().ok_or_else(|| "click cần elementRef".to_string())?, "elementRef", 200)?,
+            }))
+        }
         "type" => Ok(json!({
             "element": safe_runtime_text(request.element.as_deref().ok_or_else(|| "type cần element".to_string())?, "element", 400)?,
             "ref": safe_runtime_text(request.element_ref.as_deref().ok_or_else(|| "type cần elementRef".to_string())?, "elementRef", 200)?,
@@ -2694,6 +2948,16 @@ fn run_browseros_mcp_action(
     if operation != "probe" && browsermcp_tool_for_operation(&operation).is_none() {
         return Err(format!("BrowserOS operation chưa allowlist: {operation}"));
     }
+    if browser_flow_operation_is_click(&operation)
+        && request
+            .element
+            .as_deref()
+            .is_some_and(browser_flow_click_is_destructive)
+    {
+        return Err(browser_flow_destructive_click_message(
+            request.element.as_deref().unwrap_or("unknown"),
+        ));
+    }
     let worker = ensure_browseros_runtime_worker(&workspace)?;
     let mut command = Command::new(&node_path);
     command
@@ -2711,6 +2975,7 @@ fn run_browseros_mcp_action(
     for (flag, value) in [
         ("--url", request.url.clone()),
         ("--element-ref", request.element_ref.clone()),
+        ("--element", request.element.clone()),
         ("--text", request.text.clone()),
         ("--key", request.key.clone()),
     ] {
@@ -2733,7 +2998,12 @@ fn run_browseros_mcp_action(
     let mut child = command
         .spawn()
         .map_err(|error| format!("Không khởi động được BrowserOS MCP worker: {error}"))?;
-    let deadline = Instant::now() + Duration::from_secs(MAX_RUNTIME_TIMEOUT_SECONDS);
+    let timeout_seconds = if operation == "type" {
+        MAX_BROWSEROS_TYPE_TIMEOUT_SECONDS
+    } else {
+        MAX_RUNTIME_TIMEOUT_SECONDS
+    };
+    let deadline = Instant::now() + Duration::from_secs(timeout_seconds);
     loop {
         if let Some(status) = child
             .try_wait()
@@ -2750,7 +3020,7 @@ fn run_browseros_mcp_action(
             let _ = child.kill();
             let _ = child.wait();
             return Err(format!(
-                "BrowserOS MCP worker timeout sau {MAX_RUNTIME_TIMEOUT_SECONDS} giây"
+                "BrowserOS MCP worker timeout sau {timeout_seconds} giây (operation={operation})"
             ));
         }
         thread::sleep(Duration::from_millis(100));
@@ -2985,10 +3255,103 @@ fn run_browsermcp_stdio_action(
 fn run_browsermcp_stdio_action_with_snapshot_retry(
     node_path: PathBuf,
     server_entry: PathBuf,
-    request: BrowserMcpActionRequest,
+    mut request: BrowserMcpActionRequest,
     workspace: PathBuf,
     report_relative: String,
 ) -> Result<BrowserMcpRuntimeReport, String> {
+    if browser_flow_operation_is_click(&request.operation) {
+        let requested_label = request
+            .element
+            .as_deref()
+            .ok_or_else(|| "BLOCKED_STALE_FLOW_REF: click thiếu label control".to_string())?;
+        if browseros_backend_enabled()
+            && browser_flow_video_dom_fallback_is_allowed(
+                &request.operation,
+                requested_label,
+                request.element_ref.as_deref(),
+            )
+        {
+            return run_browseros_mcp_action_with_snapshot_retry(
+                node_path,
+                request,
+                workspace,
+                report_relative,
+            );
+        }
+        let requested_ref = request
+            .element_ref
+            .as_deref()
+            .ok_or_else(|| "BLOCKED_STALE_FLOW_REF: click thiếu ref control".to_string())?;
+        let preflight_path = operation_report_path("browser-flow-click-preflight")?;
+        let snapshot_request = BrowserMcpActionRequest {
+            project_id: request.project_id.clone(),
+            handoff_id: request.handoff_id.clone(),
+            operation: "snapshot".to_string(),
+            approved: true,
+            url: None,
+            element: None,
+            element_ref: None,
+            text: None,
+            submit: None,
+            key: None,
+            time: None,
+        };
+        let preflight = if browseros_backend_enabled() {
+            run_browseros_mcp_action(
+                node_path.clone(),
+                snapshot_request,
+                workspace.clone(),
+                preflight_path,
+            )
+        } else {
+            run_browsermcp_stdio_action(
+                node_path.clone(),
+                server_entry.clone(),
+                snapshot_request,
+                workspace.clone(),
+                preflight_path,
+            )
+        }
+        .map_err(|error| {
+            format!("BLOCKED_STALE_FLOW_REF: không đọc được snapshot ngay trước click: {error}")
+        })?;
+        if preflight.status != "ready" || !preflight.browser_session_attached {
+            return Err(format!(
+                "BLOCKED_STALE_FLOW_REF: snapshot ngay trước click chưa sẵn sàng: {} (evidence={})",
+                preflight.message, preflight.report_path
+            ));
+        }
+        let fresh_refs = preflight
+            .operation_result
+            .get("uiRefs")
+            .cloned()
+            .ok_or_else(|| {
+                format!(
+                    "BLOCKED_STALE_FLOW_REF: snapshot ngay trước click không trả UI refs (evidence={})",
+                    preflight.report_path
+                )
+            })
+            .and_then(|value| {
+                serde_json::from_value::<Vec<BrowserFlowUiRef>>(value).map_err(|error| {
+                    format!(
+                        "BLOCKED_STALE_FLOW_REF: không đọc được UI refs snapshot mới: {error} (evidence={})",
+                        preflight.report_path
+                    )
+                })
+            })?;
+        let current_url = preflight
+            .operation_result
+            .get("currentUrl")
+            .and_then(Value::as_str);
+        let fresh_reference = browser_flow_validate_fresh_click_target(
+            &fresh_refs,
+            current_url,
+            requested_label,
+            requested_ref,
+        )
+        .map_err(|error| format!("{error} snapshot={}", preflight.report_path))?;
+        request.element_ref = Some(fresh_reference);
+    }
     if browseros_backend_enabled() {
         return run_browseros_mcp_action_with_snapshot_retry(
             node_path,
@@ -3067,6 +3430,51 @@ fn operation_report_path(operation: &str) -> Result<String, String> {
         operation,
         now_id("run").replace('-', "_")
     ))
+}
+
+fn write_browser_flow_failure_evidence(
+    workspace: &Path,
+    project_id: &str,
+    workflow: &BrowserFlowWorkflow,
+    request: &RunBrowserFlowStepRequest,
+    process_id: &str,
+    error: &str,
+) -> Result<String, String> {
+    let relative = operation_report_path("flow-failure")?;
+    let path = ensure_relative_parent(workspace, &relative)?;
+    let ref_present = request.element_ref.as_deref().is_some_and(|reference| {
+        workflow
+            .ui_refs
+            .iter()
+            .any(|item| item.reference == reference)
+    });
+    let payload = json!({
+        "schemaVersion": "1.0.0",
+        "kind": "browser_flow_failure_evidence",
+        "projectId": project_id,
+        "workflowId": workflow.workflow_id,
+        "processId": process_id,
+        "operation": request.operation,
+        "phaseBeforeFailure": workflow.phase,
+        "currentUrl": workflow.current_url,
+        "browserSessionAttached": workflow.browser_session_attached,
+        "uiRefCount": workflow.ui_refs.len(),
+        "element": request.element,
+        "elementRef": request.element_ref,
+        "elementRefPresentInLastSnapshot": ref_present,
+        "textChars": request.text.as_deref().map(|value| value.chars().count()),
+        "submit": request.submit.unwrap_or(false),
+        "timeoutBudgetSeconds": if request.operation == "type" { MAX_BROWSEROS_TYPE_TIMEOUT_SECONDS } else { MAX_RUNTIME_TIMEOUT_SECONDS },
+        "error": error.chars().take(1_600).collect::<String>(),
+        "sideEffectStatus": if request.operation == "type" { "unknown_prompt_may_or_may_not_be_filled" } else { "not_confirmed" },
+        "nextAction": "Read this evidence, take a fresh snapshot, and do not repeat a side-effecting browser action blindly.",
+    });
+    let bytes = serde_json::to_vec_pretty(&payload).map_err(|serialize_error| {
+        format!("Không serialize được failure evidence: {serialize_error}")
+    })?;
+    fs::write(&path, [bytes, b"\n".to_vec()].concat())
+        .map_err(|write_error| format!("Không ghi được failure evidence: {write_error}"))?;
+    Ok(relative)
 }
 
 fn runtime_report_from_value(
@@ -3634,24 +4042,34 @@ fn browseros_chrome_path() -> Result<PathBuf, String> {
         candidates.push(PathBuf::from(program_files).join(r"BrowserOS\Application\chrome.exe"));
     }
     if let Some(program_files_x86) = std::env::var_os("ProgramFiles(x86)") {
-        candidates.push(
-            PathBuf::from(program_files_x86).join(r"BrowserOS\Application\chrome.exe"),
-        );
+        candidates.push(PathBuf::from(program_files_x86).join(r"BrowserOS\Application\chrome.exe"));
     }
     if let Some(local_app_data) = std::env::var_os("LOCALAPPDATA") {
         candidates.push(PathBuf::from(local_app_data).join(r"BrowserOS\Application\chrome.exe"));
     }
     candidates
         .into_iter()
-        .find_map(|candidate| candidate.is_file().then(|| fs::canonicalize(candidate).ok()).flatten())
-        .ok_or_else(|| "Không tìm thấy BrowserOS chrome.exe trong các thư mục cài đặt chuẩn".to_string())
+        .find_map(|candidate| {
+            candidate
+                .is_file()
+                .then(|| fs::canonicalize(candidate).ok())
+                .flatten()
+        })
+        .ok_or_else(|| {
+            "Không tìm thấy BrowserOS chrome.exe trong các thư mục cài đặt chuẩn".to_string()
+        })
 }
 
 #[tauri::command]
-pub fn open_browseros_flow() -> Result<String, String> {
+pub fn open_browseros_flow(target_url: Option<String>) -> Result<String, String> {
     if !browseros_backend_enabled() {
         return Err("Backend BrowserOS neo đang tắt trong cấu hình".to_string());
     }
+    let target_url = target_url
+        .as_deref()
+        .map(validate_target_url)
+        .transpose()?
+        .unwrap_or_else(|| "https://flow.google.com/".to_string());
     let executable = browseros_chrome_path()?;
     let mut command = Command::new(&executable);
     command
@@ -3659,7 +4077,7 @@ pub fn open_browseros_flow() -> Result<String, String> {
             "--new-window",
             "--no-first-run",
             "--no-default-browser-check",
-            "https://flow.google.com/",
+            target_url.as_str(),
         ])
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -3826,7 +4244,15 @@ fn browser_flow_prompt_identity(text: Option<&str>) -> Option<String> {
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .unwrap_or("rev-001");
-    Some(format!("{shot}|{revision}"))
+    let run = text
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("RUN_ID:"))
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    Some(match run {
+        Some(run) => format!("{shot}|{revision}|{run}"),
+        None => format!("{shot}|{revision}"),
+    })
 }
 
 fn browser_flow_prompt_identity_marker(message: &str) -> Option<String> {
@@ -4005,12 +4431,8 @@ pub async fn start_browser_flow_discovery(
         }
     };
 
-    let operations = vec![
-        ("snapshot".to_string(), None, None),
-        ("wait".to_string(), None, Some(2.0_f64)),
-        ("snapshot".to_string(), None, None),
-        ("screenshot".to_string(), None, None),
-    ];
+    let operations = browser_flow_discovery_operations(&target_url);
+    let operation_count = operations.len();
     let mut prompt_input_available = false;
     for (index, (operation, url, time)) in operations.into_iter().enumerate() {
         let process_id = if index == 0 {
@@ -4025,7 +4447,9 @@ pub async fn start_browser_flow_discovery(
         if index > 0 {
             workflow.processes.push(browser_flow_process(
                 process_id.clone(),
-                if operation == "snapshot" {
+                if operation == "navigate" {
+                    "Browser Flow · mở project đã chọn".to_string()
+                } else if operation == "snapshot" {
                     "Browser Flow · đọc bản đồ UI".to_string()
                 } else if operation == "screenshot" {
                     "Browser Flow · chụp visual state".to_string()
@@ -4036,7 +4460,7 @@ pub async fn start_browser_flow_discovery(
                 index as u32,
                 "running",
                 format!(
-                    "Đang thực hiện bước discovery {} / 4: giữ tab hiện tại và {operation}.",
+                    "Đang thực hiện bước discovery {} / {operation_count}: {operation}.",
                     index + 1
                 ),
                 Some(
@@ -4047,7 +4471,7 @@ pub async fn start_browser_flow_discovery(
             process.operation = operation.clone();
             process.step_index = index as u32;
             process.message =
-                format!("Đang thực hiện bước discovery 1 / 4: giữ tab hiện tại và {operation}.");
+                format!("Đang thực hiện bước discovery 1 / {operation_count}: {operation}.");
         }
         workflow.updated_at = now_string();
         persist_browser_flow(&workspace, &workflow)?;
@@ -4567,6 +4991,48 @@ pub async fn run_browser_flow_step(
             workflow,
         });
     }
+    if browser_flow_operation_is_click(&operation)
+        && request
+            .element
+            .as_deref()
+            .is_some_and(browser_flow_click_is_destructive)
+    {
+        let label = request.element.as_deref().unwrap_or("unknown");
+        let process_id = now_id("process-destructive-click-guard");
+        let message = browser_flow_destructive_click_message(label);
+        workflow.processes.push(browser_flow_process(
+            process_id.clone(),
+            "Browser Flow · khóa chống xóa".to_string(),
+            operation.clone(),
+            workflow.current_step,
+            "waiting_user",
+            message.clone(),
+            Some(
+                "Không có thao tác tiếp theo tự động; app sẽ không gửi click này sang BrowserOS."
+                    .to_string(),
+            ),
+        ));
+        workflow.phase = "waiting_user".to_string();
+        workflow.last_message = message.clone();
+        update_browser_flow_roadmap(
+            &mut workflow,
+            "roadmap-safety",
+            "blocked",
+            Some(process_id),
+            None,
+            Some(
+                "Executor đã chặn destructive click trước khi khởi động BrowserOS worker."
+                    .to_string(),
+            ),
+        );
+        workflow.updated_at = now_string();
+        persist_browser_flow(&workspace, &workflow)?;
+        return Ok(BrowserFlowWorkflowReport {
+            status: "waiting_user".to_string(),
+            message,
+            workflow,
+        });
+    }
     if operation == "type" {
         if !browser_flow_has_generation_composer(&workflow.ui_refs) {
             let process_id = now_id("process-chat-route-guard");
@@ -4729,6 +5195,7 @@ pub async fn run_browser_flow_step(
     } else {
         None
     };
+    let failure_request = request.clone();
     let runtime_request = browser_flow_runtime_request(
         &project_id,
         &operation,
@@ -5209,24 +5676,69 @@ pub async fn run_browser_flow_step(
             if operation == "snapshot" {
                 clear_browser_flow_live_state(&mut workflow);
             }
+            let timeout_failure = error.to_ascii_lowercase().contains("timeout");
+            let safety_block = error.starts_with("BLOCKED_");
+            let failure_evidence = write_browser_flow_failure_evidence(
+                &workspace,
+                &project_id,
+                &workflow,
+                &failure_request,
+                &process_id_for_update,
+                &error,
+            )
+            .ok();
+            let diagnostic = if timeout_failure {
+                let phase = match operation.as_str() {
+                    "type" => "BrowserOS act/fill (browser_type)",
+                    "click" => "BrowserOS act/click",
+                    "snapshot" => "BrowserOS snapshot",
+                    "wait" => "BrowserOS wait",
+                    _ => operation.as_str(),
+                };
+                format!(
+                    "BROWSEROS_TIMEOUT: phase={phase}; ref={}; ref_present_in_last_snapshot={}; text_chars={}; timeout_budget={}s; worker không trả report. Side effect của bước này chưa xác minh, app không tự gõ lại. Evidence={}",
+                    failure_request.element_ref.as_deref().unwrap_or("none"),
+                    failure_request.element_ref.as_deref().is_some_and(|reference| workflow.ui_refs.iter().any(|item| item.reference == reference)),
+                    failure_request.text.as_deref().map(|value| value.chars().count()).unwrap_or(0),
+                    if operation == "type" { MAX_BROWSEROS_TYPE_TIMEOUT_SECONDS } else { MAX_RUNTIME_TIMEOUT_SECONDS },
+                    failure_evidence.as_deref().unwrap_or("not_written"),
+                )
+            } else if let Some(evidence) = failure_evidence.as_deref() {
+                format!("{error}; Evidence={evidence}")
+            } else {
+                error.clone()
+            };
             let process_id_for_roadmap = {
                 let process = workflow
                     .processes
                     .iter_mut()
                     .find(|process| process.process_id == process_id_for_update)
                     .ok_or_else(|| "Không tìm thấy Browser Flow process".to_string())?;
-                process.state = "failed".to_string();
+                process.state = if safety_block {
+                    "waiting_user".to_string()
+                } else {
+                    "failed".to_string()
+                };
                 process.updated_at = now_string();
-                process.message = error.clone();
-                process.next_action = Some(if operation == "type" && error.contains("text") {
+                process.output = failure_evidence.clone();
+                process.message = diagnostic.clone();
+                process.next_action = Some(if timeout_failure && operation == "type" {
+                    "Đọc failure evidence; chụp snapshot mới để xác minh prompt đã vào hay chưa, không gõ lại ngay vì side effect đang không xác định.".to_string()
+                } else if safety_block {
+                    "Không click lại ref này. Đọc snapshot mới; app đã chặn trước khi gửi click vì ref/label/route không còn khớp.".to_string()
+                } else if operation == "type" && error.contains("text") {
                     "Prompt bị bộ kiểm tra chặn; app đã chuẩn hóa xuống dòng và giữ giới hạn 4.000 ký tự, hãy chạy lại bước nạp prompt.".to_string()
                 } else {
                     "Xem process log; kiểm tra Connect/element ref rồi chạy lại.".to_string()
                 });
                 process.process_id.clone()
             };
-            workflow.phase = "failed".to_string();
-            workflow.last_message = error.clone();
+            workflow.phase = if safety_block {
+                "waiting_user".to_string()
+            } else {
+                "failed".to_string()
+            };
+            workflow.last_message = diagnostic.clone();
             let milestone_id = match operation.as_str() {
                 "type" => "roadmap-prompt",
                 "click" => "roadmap-generate",
@@ -5239,10 +5751,14 @@ pub async fn run_browser_flow_step(
             update_browser_flow_roadmap(
                 &mut workflow,
                 milestone_id,
-                "failed",
+                if safety_block { "blocked" } else { "failed" },
                 Some(process_id_for_roadmap),
-                None,
-                Some(if operation == "type" && error.contains("text") {
+                failure_evidence.clone(),
+                Some(if timeout_failure && operation == "type" {
+                    "Đọc failure evidence, snapshot lại để đối chiếu ref/side effect trước khi retry; không tự nhập lại prompt.".to_string()
+                } else if safety_block {
+                    "Ref/label/route đã thay đổi; chụp DOM mới rồi chọn lại control an toàn, không dùng ref cũ.".to_string()
+                } else if operation == "type" && error.contains("text") {
                     "Prompt bị bộ kiểm tra chặn trước khi gửi sang Flow; chạy lại sau khi app chuẩn hóa prompt.".to_string()
                 } else {
                     "Xem process log và kiểm tra đúng ref/Connect trước khi chạy lại.".to_string()
@@ -5251,8 +5767,12 @@ pub async fn run_browser_flow_step(
             workflow.updated_at = now_string();
             persist_browser_flow(&workspace, &workflow)?;
             Ok(BrowserFlowWorkflowReport {
-                status: "failed".to_string(),
-                message: error,
+                status: if safety_block {
+                    "waiting_user".to_string()
+                } else {
+                    "failed".to_string()
+                },
+                message: diagnostic,
                 workflow,
             })
         }
@@ -5365,6 +5885,19 @@ pub async fn browser_flow_agent_step(
     }
 
     let context = browser_flow_agent_plan_payload(&workflow, &goal, provided_text.is_some())?;
+    let image_goal = {
+        let normalized = goal.trim().to_ascii_lowercase();
+        normalized.contains("image composer")
+            || normalized.contains("nano banana")
+            || normalized.contains("tạo ảnh")
+            || normalized.contains("image generation")
+            || normalized.contains("image control")
+    };
+    let tools_instruction = if image_goal {
+        "This is an IMAGE-composer route. Never click Agent, Tools, Add media, Media menu, New project, or Create New. Agent/Tools are navigation fallbacks and are forbidden here because stale refs can hit project media controls. If the exact image composer is not visible, return snapshot, wait, or stop; do not navigate away from this project."
+    } else {
+        "The exact Tools link is allowed once to open Flow's tool picker when explicit Video/Text-to-video controls are not exposed."
+    };
     let visual_mode_instruction = if dom_only_fallback {
         "No fresh screenshot is available in this BrowserOS build. Use the fresh accessibility DOM refs only; do not infer pixels or claim visual confirmation."
     } else {
@@ -5386,9 +5919,20 @@ object and no markdown: {{"action":"click|type|wait|snapshot|stop",
 Use only a ref present in uiRefs. Use type only for the current Flow prompt composer
 and set textSource=provided_text; never type credentials, URLs, titles or chat. The
 provided text must represent the current shot, not an entire 12-shot brief.
-Use click only for an obvious Flow project/composer/model/x1/current-output-download/
-safe dismiss control. A Close/Dismiss control is allowed only to close a visible
+Use click only for an obvious Flow project/composer/mode selector/model/
+x1/current-output-download/safe dismiss control.
+{tools_instruction}
+Never click "Create New", "New project", or any control that starts a different
+project when a provider project is already present; close the current detail/modal
+panel or return to that same project instead.
+The exact "Agent" button is allowed once as a mode-selector navigation step when it is
+visible and explicit Video/Text-to-video controls are not yet exposed; it must not be
+treated as a chat prompt or generation action. A Close/Dismiss control is allowed only to close a visible
 on-page modal or onboarding overlay; never close a tab/window/account.
+Never click "Add media menu", "Add media", or an upload/ingredients menu as a
+substitute for Video/Text-to-video. Those controls open media/reference input,
+not the video composer. If explicit video mode is not visible, return snapshot,
+wait, or stop rather than guessing.
 control, and never click a paid Generate/Create control without an approval state.
 Prefer snapshot after any mutating action and wait while generation is active.
 Take one action only. If the state is ambiguous, return snapshot or bounded wait;
@@ -5531,15 +6075,52 @@ return stop only for a real blocker or after bounded recovery."#
         });
     }
 
-    let reference = action
-        .get("ref")
-        .and_then(Value::as_str)
-        .ok_or_else(|| format!("Planner action {action_name} thiếu ref"))?;
-    let target = browser_flow_agent_ref(&workflow, reference).ok_or_else(|| {
-        "Planner trả ref không có trong snapshot hiện tại; không thao tác".to_string()
-    })?;
+    // A bounded wait is a page-level operation and intentionally has no UI
+    // target. Click/type actions still require a ref from this fresh snapshot.
+    let target = if action_name == "wait" {
+        None
+    } else {
+        let reference = action
+            .get("ref")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("Planner action {action_name} thiếu ref"))?;
+        Some(browser_flow_agent_ref(&workflow, reference).ok_or_else(|| {
+            "Planner trả ref không có trong snapshot hiện tại; không thao tác".to_string()
+        })?)
+    };
+    let blocked_image_route = target
+        .map(|target| {
+            (action_name == "click"
+                && browser_flow_agent_image_goal_forbids_tools(&goal, &target.label))
+            .then(|| target.label.clone())
+        })
+        .flatten();
+    if let Some(target_label) = blocked_image_route {
+        return Ok(BrowserFlowAgentStepReport {
+            status: "waiting_user".to_string(),
+            workflow,
+            model,
+            action: Some(action),
+            planner_report_path: Some(planner_report_path),
+            message: format!(
+                "Planner đề xuất click “{}” trong image fallback; app không thực thi vì route này không mở image composer. Giữ nguyên project và chờ ref image/Nano Banana thật.",
+                target_label
+            ),
+        });
+    }
+    if action_name == "click" && browser_flow_has_destructive_overlay(&workflow.ui_refs) {
+        return Ok(BrowserFlowAgentStepReport {
+            status: "waiting_user".to_string(),
+            workflow,
+            model,
+            action: Some(action),
+            planner_report_path: Some(planner_report_path),
+            message: "Snapshot đang có overlay Trash/Delete; app từ chối mọi click tự động, kể cả Undo/Back, để không gửi nhầm ref trong màn hình phục hồi.".to_string(),
+        });
+    }
     let operation = match action_name {
         "click" => {
+            let target = target.ok_or_else(|| "Planner click thiếu ref".to_string())?;
             if !browser_flow_agent_click_is_safe(&target.label) {
                 return Err(format!(
                     "Planner chọn control không nằm trong allowlist Flow: {}",
@@ -5555,6 +6136,8 @@ return stop only for a real blocker or after bounded recovery."#
             }
         }
         "type" => {
+            let target = target.ok_or_else(|| "Planner type thiếu ref".to_string())?;
+            let reference = target.reference.as_str();
             if provided_text.is_none()
                 || action.get("textSource").and_then(Value::as_str) != Some("provided_text")
                 || !browser_flow_prompt_ref_is_safe(&workflow.ui_refs, reference)
@@ -5582,6 +6165,9 @@ return stop only for a real blocker or after bounded recovery."#
         .get("submit")
         .and_then(Value::as_bool)
         .unwrap_or(false);
+    let target_label = target
+        .map(|target| target.label.clone())
+        .unwrap_or_else(|| "(không có ref)".to_string());
     let executed = run_browser_flow_step(
         RunBrowserFlowStepRequest {
             project_id,
@@ -5589,8 +6175,8 @@ return stop only for a real blocker or after bounded recovery."#
             operation: operation.to_string(),
             approved: request.approved,
             url: None,
-            element: Some(target.label.clone()),
-            element_ref: Some(target.reference.clone()),
+            element: target.map(|target| target.label.clone()),
+            element_ref: target.map(|target| target.reference.clone()),
             text: provided_text,
             submit: Some(submit),
             key: None,
@@ -5607,7 +6193,7 @@ return stop only for a real blocker or after bounded recovery."#
         planner_report_path: Some(planner_report_path),
         message: format!(
             "Planner chọn {} “{}”: {}",
-            operation, target.label, executed.message
+            operation, target_label, executed.message
         ),
     })
 }
@@ -5722,11 +6308,7 @@ pub async fn evaluate_browser_flow_image(
     let process = run_external_process(ExternalProcessRequest {
         spec: ProcessSpec {
             executable_id: "python".to_string(),
-            args: vec![
-                evaluator_script,
-                "--request".to_string(),
-                request_relative,
-            ],
+            args: vec![evaluator_script, "--request".to_string(), request_relative],
             working_directory: ".".to_string(),
             environment: evaluator_environment,
             timeout_seconds: 120,
@@ -5753,7 +6335,10 @@ pub async fn evaluate_browser_flow_image(
         .and_then(Value::as_str)
         .unwrap_or("needs_review")
         .to_string();
-    let criteria = payload.get("criteria").cloned().unwrap_or_else(|| json!({}));
+    let criteria = payload
+        .get("criteria")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
     let flags = payload
         .get("flags")
         .and_then(Value::as_array)
@@ -5901,6 +6486,171 @@ pub fn get_latest_browser_flow_workflow(
     }))
 }
 
+fn browser_flow_imported_video_count_for_run(
+    downloaded_files: &[BrowserFlowDownloadedFile],
+    run_id: &str,
+) -> usize {
+    downloaded_files
+        .iter()
+        .filter(|file| {
+            file.media_kind == "video"
+                && file.run_id.as_deref() == Some(run_id)
+                && file
+                    .shot_id
+                    .as_deref()
+                    .is_some_and(|value| !value.trim().is_empty())
+                && file
+                    .revision_id
+                    .as_deref()
+                    .is_some_and(|value| !value.trim().is_empty())
+                && file.input_hash.as_deref().is_some_and(|value| {
+                    value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+                })
+        })
+        .count()
+}
+
+#[tauri::command]
+pub fn get_browser_flow_workflow_for_run(
+    project_id: String,
+    session_id: String,
+    run_id: String,
+    state: State<'_, AppState>,
+) -> Result<Option<BrowserFlowWorkflowReport>, String> {
+    let project_id = safe_id(&project_id, "projectId")?;
+    let session_id = safe_id(&session_id, "sessionId")?;
+    let run_id = safe_id(&run_id, "runId")?;
+    let workspace = workspace_for_project(&state, &project_id)?;
+    let directory = workspace.join(".auto3dvideo").join("browser-flow");
+    if !directory.is_dir() {
+        return Ok(None);
+    }
+    let mut best: Option<(BrowserFlowWorkflow, usize)> = None;
+    let entries = fs::read_dir(&directory)
+        .map_err(|error| format!("Không đọc được Browser Flow cache: {error}"))?;
+    for entry in entries {
+        let entry =
+            entry.map_err(|error| format!("Không đọc được Browser Flow cache entry: {error}"))?;
+        let file_name = entry.file_name();
+        let Some(file_name) = file_name.to_str() else {
+            continue;
+        };
+        let Some(workflow_id) = file_name
+            .strip_prefix("workflow-")
+            .and_then(|value| value.strip_suffix(".json"))
+        else {
+            continue;
+        };
+        let (workflow, _) = load_browser_flow(&workspace, workflow_id)?;
+        if workflow.project_id != project_id
+            || workflow.session_id.as_deref() != Some(session_id.as_str())
+        {
+            continue;
+        }
+        let matching_videos =
+            browser_flow_imported_video_count_for_run(&workflow.downloaded_files, &run_id);
+        if matching_videos == 0 {
+            continue;
+        }
+        let replace = best
+            .as_ref()
+            .map(|(current, count)| {
+                matching_videos > *count
+                    || (matching_videos == *count && workflow.updated_at > current.updated_at)
+            })
+            .unwrap_or(true);
+        if replace {
+            best = Some((workflow, matching_videos));
+        }
+    }
+    Ok(
+        best.map(|(workflow, matching_videos)| BrowserFlowWorkflowReport {
+            status: workflow.phase.clone(),
+            message: format!(
+                "Đã khôi phục workflow {} với {matching_videos} video đã nhập cho run {}",
+                workflow.workflow_id, run_id
+            ),
+            workflow,
+        }),
+    )
+}
+
+#[cfg(test)]
+mod browser_flow_run_resume_tests {
+    use super::*;
+
+    #[test]
+    fn imported_video_count_requires_exact_run_and_complete_identity() {
+        let hash = "a".repeat(64);
+        let make_file =
+            |download_id: &str,
+             media_kind: &str,
+             run_id: Option<&str>,
+             shot_id: Option<&str>,
+             revision_id: Option<&str>,
+             input_hash: Option<&str>| BrowserFlowDownloadedFile {
+                download_id: download_id.to_string(),
+                name: "clip.mp4".to_string(),
+                source_relative_path: "downloads/clip.mp4".to_string(),
+                relative_path: "outputs/session/clip.mp4".to_string(),
+                media_kind: media_kind.to_string(),
+                sha256: hash.clone(),
+                size_bytes: 1,
+                imported_at: "now".to_string(),
+                process_id: "process".to_string(),
+                run_id: run_id.map(str::to_string),
+                shot_id: shot_id.map(str::to_string),
+                revision_id: revision_id.map(str::to_string),
+                input_hash: input_hash.map(str::to_string),
+            };
+        let files = vec![
+            make_file(
+                "match",
+                "video",
+                Some("run-1"),
+                Some("SHOT-001"),
+                Some("rev-001"),
+                Some(&hash),
+            ),
+            make_file(
+                "other-run",
+                "video",
+                Some("run-2"),
+                Some("SHOT-002"),
+                Some("rev-001"),
+                Some(&hash),
+            ),
+            make_file(
+                "incomplete",
+                "video",
+                Some("run-1"),
+                Some("SHOT-003"),
+                Some("rev-001"),
+                None,
+            ),
+            make_file(
+                "image",
+                "image",
+                Some("run-1"),
+                Some("SHOT-004"),
+                Some("rev-001"),
+                Some(&hash),
+            ),
+        ];
+
+        assert_eq!(
+            browser_flow_imported_video_count_for_run(&files, "run-1"),
+            1
+        );
+    }
+    #[test]
+    fn compose_accepts_uppercase_shot_ids_without_path_syntax() {
+        assert!(validate_browser_flow_shot_id("SHOT-001").is_ok());
+        assert!(validate_browser_flow_shot_id("SHOT-010").is_ok());
+        assert!(validate_browser_flow_shot_id("../SHOT-001").is_err());
+    }
+}
+
 fn sha256_file(path: &Path) -> Result<String, String> {
     let mut file =
         fs::File::open(path).map_err(|error| format!("Không mở được file hash: {error}"))?;
@@ -5918,7 +6668,7 @@ fn sha256_file(path: &Path) -> Result<String, String> {
     Ok(format!("{:x}", hasher.finalize()))
 }
 
-fn candidate_probe_args(relative_path: &str) -> ProcessSpec {
+pub(crate) fn candidate_probe_args(relative_path: &str) -> ProcessSpec {
     ProcessSpec {
         executable_id: "ffprobe".to_string(),
         args: vec![
@@ -5937,7 +6687,7 @@ fn candidate_probe_args(relative_path: &str) -> ProcessSpec {
     }
 }
 
-fn parse_candidate_probe(
+pub(crate) fn parse_candidate_probe(
     parsed: &Value,
 ) -> Result<(Option<f64>, Option<u64>, Option<u64>, Option<String>, bool), String> {
     let streams = parsed
@@ -6133,7 +6883,11 @@ fn sanitized_download_stem(path: &Path) -> String {
     }
 }
 
-fn stable_flow_import_stem(shot_id: Option<&str>, revision_id: Option<&str>, source: &Path) -> String {
+fn stable_flow_import_stem(
+    shot_id: Option<&str>,
+    revision_id: Option<&str>,
+    source: &Path,
+) -> String {
     let clean = |value: &str| {
         value
             .chars()
@@ -6169,6 +6923,102 @@ fn browser_flow_download_directory(
         ));
     }
     Ok(format!("outputs/browser-flow/{workflow_id}/downloads"))
+}
+
+fn browser_flow_video_reuse_identity_is_valid(
+    media_kind: &str,
+    run_id: Option<&str>,
+    shot_id: Option<&str>,
+    revision_id: Option<&str>,
+    input_hash: Option<&str>,
+) -> bool {
+    media_kind == "video"
+        && run_id.is_some_and(|value| safe_id(value, "runId").is_ok())
+        && shot_id.is_some_and(|value| {
+            (3..=64).contains(&value.len())
+                && value.chars().enumerate().all(|(index, character)| {
+                    character.is_ascii_alphanumeric() || (index > 0 && character == '-')
+                })
+        })
+        && revision_id.is_some_and(|value| safe_id(value, "revisionId").is_ok())
+        && input_hash.is_some_and(|value| {
+            value.len() == 64 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+        })
+}
+
+fn copy_or_reuse_browser_flow_output(
+    source: &Path,
+    destination: &Path,
+    allow_reuse: bool,
+) -> Result<(bool, u64, String), String> {
+    let source_metadata =
+        fs::metadata(source).map_err(|error| format!("Không đọc được file tải về: {error}"))?;
+    if !source_metadata.is_file() || source_metadata.len() == 0 {
+        return Err("File tải về rỗng hoặc không phải file thường".to_string());
+    }
+    let source_hash = sha256_file(source)?;
+    match fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(destination)
+    {
+        Ok(mut output) => {
+            let write_result = (|| -> std::io::Result<()> {
+                let mut input = fs::File::open(source)?;
+                std::io::copy(&mut input, &mut output)?;
+                output.sync_all()
+            })();
+            if let Err(error) = write_result {
+                drop(output);
+                let _ = fs::remove_file(destination);
+                return Err(format!(
+                    "Không copy được file tải về vào workspace: {error}"
+                ));
+            }
+            drop(output);
+            let copied = (|| -> Result<(u64, String), String> {
+                let destination_metadata = fs::metadata(destination)
+                    .map_err(|error| format!("Không đọc được file sau khi copy: {error}"))?;
+                let destination_hash = sha256_file(destination)?;
+                if destination_metadata.len() != source_metadata.len()
+                    || destination_hash != source_hash
+                {
+                    return Err(
+                        "File workspace khác file tải về; bản copy mới đã rollback".to_string()
+                    );
+                }
+                Ok((destination_metadata.len(), destination_hash))
+            })();
+            match copied {
+                Ok((size, hash)) => Ok((true, size, hash)),
+                Err(error) => {
+                    let _ = fs::remove_file(destination);
+                    Err(error)
+                }
+            }
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+            if !allow_reuse {
+                return Err("File đích đã tồn tại; app không ghi đè output cũ".to_string());
+            }
+            let existing_metadata = fs::symlink_metadata(destination)
+                .map_err(|error| format!("Không đọc được file đích có sẵn: {error}"))?;
+            if existing_metadata.file_type().is_symlink() || !existing_metadata.is_file() {
+                return Err("File đích có sẵn không phải file thường; app không ghi đè".to_string());
+            }
+            if existing_metadata.len() != source_metadata.len() {
+                return Err(
+                    "File đích đã tồn tại với kích thước khác; app không ghi đè".to_string()
+                );
+            }
+            let existing_hash = sha256_file(destination)?;
+            if existing_hash != source_hash {
+                return Err("File đích đã tồn tại với nội dung khác; app không ghi đè".to_string());
+            }
+            Ok((false, existing_metadata.len(), existing_hash))
+        }
+        Err(error) => Err(format!("Không tạo được file output mới: {error}")),
+    }
 }
 
 #[tauri::command]
@@ -6217,7 +7067,11 @@ pub async fn import_browser_flow_download(
         .unwrap_or("mp4")
         .to_ascii_lowercase();
     let process_id = now_id("process-download");
-    let stem = stable_flow_import_stem(request.shot_id.as_deref(), request.revision_id.as_deref(), &source);
+    let stem = stable_flow_import_stem(
+        request.shot_id.as_deref(),
+        request.revision_id.as_deref(),
+        &source,
+    );
     let destination_root =
         browser_flow_download_directory(&workflow_id, workflow.session_id.as_deref())?;
     let imported_name = if request.shot_id.is_some() {
@@ -6230,15 +7084,15 @@ pub async fn import_browser_flow_download(
         "importedPath",
     )?;
     let destination = ensure_relative_parent(&workspace, &imported_relative)?;
-    if destination.exists() {
-        return Err("File đích đã tồn tại; app không ghi đè output cũ".to_string());
-    }
-    fs::copy(&source, &destination)
-        .map_err(|error| format!("Không copy được file tải về vào workspace: {error}"))?;
-    let size_bytes = fs::metadata(&destination)
-        .map_err(|error| format!("Không đọc được file sau khi copy: {error}"))?
-        .len();
-    let sha256 = sha256_file(&destination)?;
+    let allow_reuse = browser_flow_video_reuse_identity_is_valid(
+        &media_kind,
+        request.run_id.as_deref(),
+        request.shot_id.as_deref(),
+        request.revision_id.as_deref(),
+        request.input_hash.as_deref(),
+    );
+    let (created_destination, size_bytes, sha256) =
+        copy_or_reuse_browser_flow_output(&source, &destination, allow_reuse)?;
     let mut duration_seconds = None;
     let mut width = None;
     let mut height = None;
@@ -6250,32 +7104,49 @@ pub async fn import_browser_flow_download(
                 .map_err(|_| "Không thể khóa database".to_string())?;
             resolve_configured_tool(&connection, "ffprobe")?
         };
-        let ffprobe = run_external_process(ExternalProcessRequest {
+        let ffprobe = match run_external_process(ExternalProcessRequest {
             spec: candidate_probe_args(&imported_relative),
             executable_path: ffprobe_path,
             absolute_working_directory: workspace.clone(),
             output_root: workspace.clone(),
             cancellation: Arc::new(AtomicBool::new(false)),
         })
-        .await?;
+        .await
+        {
+            Ok(report) => report,
+            Err(error) => {
+                if created_destination {
+                    let _ = fs::remove_file(&destination);
+                }
+                return Err(error);
+            }
+        };
         if !ffprobe.succeeded {
-            let _ = fs::remove_file(&destination);
+            if created_destination {
+                let _ = fs::remove_file(&destination);
+            }
             return Err(
-                "FFprobe không xác nhận được video tải về; bản copy đã rollback".to_string(),
+                "FFprobe không xác nhận được video tải về; output mới đã rollback".to_string(),
             );
         }
         let parsed: Value = serde_json::from_str(ffprobe.stdout.trim()).map_err(|error| {
-            let _ = fs::remove_file(&destination);
-            format!("FFprobe trả JSON không hợp lệ; bản copy đã rollback: {error}")
+            if created_destination {
+                let _ = fs::remove_file(&destination);
+            }
+            format!("FFprobe trả JSON không hợp lệ; output mới đã rollback: {error}")
         })?;
         let (duration, parsed_width, parsed_height, _, _) = parse_candidate_probe(&parsed)
             .map_err(|error| {
-                let _ = fs::remove_file(&destination);
-                format!("{error}; bản copy đã rollback")
+                if created_destination {
+                    let _ = fs::remove_file(&destination);
+                }
+                format!("{error}; output mới đã rollback")
             })?;
         if duration.is_none_or(|value| value <= 0.0) {
-            let _ = fs::remove_file(&destination);
-            return Err("Video tải về không có duration dương; bản copy đã rollback".to_string());
+            if created_destination {
+                let _ = fs::remove_file(&destination);
+            }
+            return Err("Video tải về không có duration dương; output mới đã rollback".to_string());
         }
         duration_seconds = duration;
         width = parsed_width;
@@ -6326,7 +7197,7 @@ pub async fn import_browser_flow_download(
             .collect(),
         source_relative_path: request.relative_path.replace('\\', "/"),
         relative_path: imported_relative.clone(),
-        media_kind,
+        media_kind: media_kind.clone(),
         sha256: sha256.clone(),
         size_bytes,
         imported_at: now_string(),
@@ -6336,40 +7207,69 @@ pub async fn import_browser_flow_download(
         revision_id: request.revision_id.clone(),
         input_hash: request.input_hash.clone(),
     };
-    workflow.downloaded_files.push(downloaded_file);
-    workflow.files.push(BrowserFlowFileBinding {
-        file_id: safe_id(&format!("file-{process_id}"), "downloadFileId")?,
-        name: source
-            .file_name()
-            .and_then(|value| value.to_str())
-            .unwrap_or("Flow download")
-            .chars()
-            .take(180)
-            .collect(),
-        relative_path: imported_relative.clone(),
-        kind: if request.shot_id.is_some() {
-            "flow_shot_output"
-        } else {
-            "browser_flow_download"
-        }
-        .to_string(),
-        process_id: process_id.clone(),
+    let downloaded_file_exists = workflow.downloaded_files.iter().any(|file| {
+        file.relative_path == imported_relative
+            && file.media_kind == media_kind
+            && file.sha256 == sha256
+            && file.run_id == request.run_id
+            && file.shot_id == request.shot_id
+            && file.revision_id == request.revision_id
+            && file.input_hash == request.input_hash
     });
+    if !downloaded_file_exists {
+        workflow.downloaded_files.push(downloaded_file);
+    }
+    let binding_kind = if request.shot_id.is_some() {
+        "flow_shot_output"
+    } else {
+        "browser_flow_download"
+    };
+    if !workflow
+        .files
+        .iter()
+        .any(|file| file.relative_path == imported_relative && file.kind == binding_kind)
+    {
+        workflow.files.push(BrowserFlowFileBinding {
+            file_id: safe_id(&format!("file-{process_id}"), "downloadFileId")?,
+            name: source
+                .file_name()
+                .and_then(|value| value.to_str())
+                .unwrap_or("Flow download")
+                .chars()
+                .take(180)
+                .collect(),
+            relative_path: imported_relative.clone(),
+            kind: binding_kind.to_string(),
+            process_id: process_id.clone(),
+        });
+    }
+    let import_message = if created_destination {
+        "Đã copy file từ Downloads vào workspace và kiểm tra output local."
+    } else {
+        "Đã xác minh SHA-256 và tái sử dụng output trong workspace; không ghi đè file."
+    };
     workflow.processes.push(browser_flow_process(
         process_id.clone(),
         "Browser Flow · nhập file tải về".to_string(),
         "import_download".to_string(),
         workflow.current_step,
         "succeeded",
-        "Đã copy file từ Downloads vào workspace và kiểm tra output local.".to_string(),
+        import_message.to_string(),
         Some("Review file local trước khi dùng cho edit/delivery.".to_string()),
     ));
     workflow.current_step = workflow.current_step.saturating_add(1);
     workflow.phase = "ready".to_string();
-    workflow.last_message = format!(
-        "Đã nhập {} vào workflow; file đã qua kiểm tra local, chưa publish.",
-        imported_relative
-    );
+    workflow.last_message = if created_destination {
+        format!(
+            "Đã nhập {} vào workflow; file đã qua kiểm tra local, chưa publish.",
+            imported_relative
+        )
+    } else {
+        format!(
+            "Đã xác minh lại {} theo SHA-256 và đăng ký vào workflow hiện tại; chưa publish.",
+            imported_relative
+        )
+    };
     workflow.updated_at = now_string();
     update_browser_flow_roadmap(
         &mut workflow,
@@ -6397,7 +7297,11 @@ pub async fn import_browser_flow_download(
         width,
         height,
         asset: imported_asset,
-        message: "Đã nhập file tải về vào workspace; không tự publish và vẫn cần review rights/chất lượng.".to_string(),
+        message: if created_destination {
+            "Đã nhập file tải về vào workspace; không tự publish và vẫn cần review rights/chất lượng.".to_string()
+        } else {
+            "Đã tái sử dụng file workspace cùng SHA-256; không ghi đè hay tự publish.".to_string()
+        },
     })
 }
 
@@ -6426,6 +7330,24 @@ fn browser_flow_concat_file(
     fs::write(output, content).map_err(|error| format!("Không ghi được compose manifest: {error}"))
 }
 
+fn validate_browser_flow_compose_duration(actual: f64, expected: f64) -> Result<(), String> {
+    if !actual.is_finite()
+        || !expected.is_finite()
+        || expected <= 0.0
+        || (actual - expected).abs() > 0.25
+    {
+        return Err(format!(
+            "Thời lượng output compose {:.2}s không khớp tổng thời lượng shot {:.2}s",
+            actual, expected
+        ));
+    }
+    Ok(())
+}
+
+fn validate_browser_flow_shot_id(shot_id: &str) -> Result<(), String> {
+    crate::validate_google_flow_batch_identity(shot_id, "shotId").map(|_| ())
+}
+
 #[tauri::command]
 pub async fn compose_browser_flow_outputs(
     request: ComposeBrowserFlowOutputsRequest,
@@ -6434,19 +7356,29 @@ pub async fn compose_browser_flow_outputs(
     let project_id = safe_id(&request.project_id, "projectId")?;
     let workflow_id = safe_id(&request.workflow_id, "workflowId")?;
     let run_id = safe_id(&request.run_id, "runId")?;
-    if request.shot_ids.is_empty() || request.shot_ids.len() > 24 {
+    if request.shots.is_empty() || request.shots.len() > 24 {
         return Err("Compose cần ít nhất một và tối đa 24 shot".to_string());
+    }
+    let total_duration: f64 = request.shots.iter().map(|shot| shot.duration_seconds).sum();
+    if !total_duration.is_finite() || !(0.1..=600.0).contains(&total_duration) {
+        return Err("Tổng thời lượng video compose phải nằm trong khoảng 0.1–600 giây".to_string());
+    }
+    for shot in &request.shots {
+        if !shot.duration_seconds.is_finite() || !(0.1..=120.0).contains(&shot.duration_seconds) {
+            return Err(format!("Thời lượng không hợp lệ cho {}", shot.shot_id));
+        }
+        validate_browser_flow_shot_id(&shot.shot_id)?;
     }
     let workspace = workspace_for_project(&state, &project_id)?;
     let (mut workflow, _) = load_browser_flow(&workspace, &workflow_id)?;
     if workflow.project_id != project_id {
         return Err("Browser Flow workflow không khớp projectId".to_string());
     }
-    let mut clips = Vec::with_capacity(request.shot_ids.len());
-    for shot_id in &request.shot_ids {
-        let file = workflow.downloaded_files.iter().rev().find(|item| item.shot_id.as_deref() == Some(shot_id.as_str()) && item.media_kind == "video")
-            .ok_or_else(|| format!("Chưa có video đã import cho {shot_id} trong run {run_id}, cũng không có output được chấp nhận từ run trước"))?;
-        clips.push(file.relative_path.clone());
+    let mut clips = Vec::with_capacity(request.shots.len());
+    for shot in &request.shots {
+        let file = workflow.downloaded_files.iter().rev().find(|item| item.shot_id.as_deref() == Some(shot.shot_id.as_str()) && item.media_kind == "video")
+            .ok_or_else(|| format!("Chưa có video đã import cho {} trong run {run_id}, cũng không có output được chấp nhận từ run trước", shot.shot_id))?;
+        clips.push((file.relative_path.clone(), shot.duration_seconds));
     }
     let compose_id = now_id("compose");
     let root = browser_flow_download_directory(&workflow_id, workflow.session_id.as_deref())?;
@@ -6462,7 +7394,6 @@ pub async fn compose_browser_flow_outputs(
     if output_path.exists() {
         return Err("Output compose cùng run đã tồn tại; không ghi đè output cũ".to_string());
     }
-    browser_flow_concat_file(&workspace, &clips, &concat_path)?;
     let (ffmpeg_path, ffprobe_path) = {
         let connection = state
             .database
@@ -6473,7 +7404,87 @@ pub async fn compose_browser_flow_outputs(
             resolve_configured_tool(&connection, "ffprobe")?,
         )
     };
-    let ffmpeg = run_external_process(ExternalProcessRequest {
+
+    let cleanup_normalized_clips = |paths: &[String]| {
+        for relative in paths {
+            let _ = fs::remove_file(workspace.join(relative));
+        }
+    };
+    let mut normalized_clips = Vec::with_capacity(clips.len());
+    for (index, (clip_relative, duration_seconds)) in clips.iter().enumerate() {
+        let source_relative = safe_relative(clip_relative, "clipPath")?;
+        let normalized_relative = safe_relative(
+            &format!("{compose_root}/trimmed/{compose_id}-{:02}.mp4", index + 1),
+            "trimmedClipPath",
+        )?;
+        let normalized_path = ensure_relative_parent(&workspace, &normalized_relative)?;
+        let normalized_result = run_external_process(ExternalProcessRequest {
+            spec: ProcessSpec {
+                executable_id: "ffmpeg".to_string(),
+                args: vec![
+                    "-y".to_string(),
+                    "-i".to_string(),
+                    source_relative,
+                    "-t".to_string(),
+                    format!("{duration_seconds:.3}"),
+                    "-map".to_string(),
+                    "0:v:0".to_string(),
+                    "-map".to_string(),
+                    "0:a?".to_string(),
+                    "-c:v".to_string(),
+                    "libx264".to_string(),
+                    "-pix_fmt".to_string(),
+                    "yuv420p".to_string(),
+                    "-r".to_string(),
+                    "30".to_string(),
+                    "-c:a".to_string(),
+                    "aac".to_string(),
+                    "-ar".to_string(),
+                    "48000".to_string(),
+                    "-ac".to_string(),
+                    "2".to_string(),
+                    "-movflags".to_string(),
+                    "+faststart".to_string(),
+                    normalized_relative.clone(),
+                ],
+                working_directory: ".".to_string(),
+                environment: BTreeMap::new(),
+                timeout_seconds: 300,
+                expected_outputs: vec![normalized_relative.clone()],
+            },
+            executable_path: ffmpeg_path.clone(),
+            absolute_working_directory: workspace.clone(),
+            output_root: workspace.clone(),
+            cancellation: Arc::new(AtomicBool::new(false)),
+        })
+        .await;
+        match normalized_result {
+            Ok(report) if report.succeeded => normalized_clips.push(normalized_relative),
+            Ok(report) => {
+                let _ = fs::remove_file(&normalized_path);
+                cleanup_normalized_clips(&normalized_clips);
+                let _ = fs::remove_file(&concat_path);
+                return Err(format!(
+                    "Không thể cắt {} về {:.2}s: {}",
+                    clip_relative,
+                    duration_seconds,
+                    report.stderr.chars().take(480).collect::<String>()
+                ));
+            }
+            Err(error) => {
+                let _ = fs::remove_file(&normalized_path);
+                cleanup_normalized_clips(&normalized_clips);
+                let _ = fs::remove_file(&concat_path);
+                return Err(error);
+            }
+        }
+    }
+    if let Err(error) = browser_flow_concat_file(&workspace, &normalized_clips, &concat_path) {
+        let _ = fs::remove_file(&concat_path);
+        cleanup_normalized_clips(&normalized_clips);
+        return Err(error);
+    }
+    let ffmpeg_result = run_external_process(ExternalProcessRequest {
         spec: ProcessSpec {
             executable_id: "ffmpeg".to_string(),
             args: vec![
@@ -6484,6 +7495,8 @@ pub async fn compose_browser_flow_outputs(
                 "0".to_string(),
                 "-i".to_string(),
                 concat_relative.clone(),
+                "-t".to_string(),
+                format!("{total_duration:.3}"),
                 "-map".to_string(),
                 "0:v:0".to_string(),
                 "-map".to_string(),
@@ -6508,8 +7521,10 @@ pub async fn compose_browser_flow_outputs(
         output_root: workspace.clone(),
         cancellation: Arc::new(AtomicBool::new(false)),
     })
-    .await?;
+    .await;
     let _ = fs::remove_file(&concat_path);
+    cleanup_normalized_clips(&normalized_clips);
+    let ffmpeg = ffmpeg_result?;
     if !ffmpeg.succeeded {
         return Err(format!(
             "Compose FFmpeg thất bại: {}",
@@ -6529,7 +7544,15 @@ pub async fn compose_browser_flow_outputs(
     }
     let parsed: Value = serde_json::from_str(probe.stdout.trim())
         .map_err(|error| format!("FFprobe compose trả JSON không hợp lệ: {error}"))?;
-    let (duration_seconds, _, _, _, _) = parse_candidate_probe(&parsed)?;
+    let (probed_duration, _, _, _, _) = parse_candidate_probe(&parsed)?;
+    let Some(duration_seconds) = probed_duration else {
+        let _ = fs::remove_file(&output_path);
+        return Err("FFprobe output compose thiếu duration".to_string());
+    };
+    if let Err(error) = validate_browser_flow_compose_duration(duration_seconds, total_duration) {
+        let _ = fs::remove_file(&output_path);
+        return Err(error);
+    }
     let size_bytes = fs::metadata(&output_path)
         .map_err(|error| format!("Không đọc được output compose: {error}"))?
         .len();
@@ -6565,7 +7588,255 @@ pub async fn compose_browser_flow_outputs(
         &workflow_id,
         "browser_flow.compose_outputs",
     )?;
-    Ok(BrowserFlowComposeReport { status: "completed".to_string(), workflow, output_path: output_relative, sha256, size_bytes, duration_seconds, message: "Đã compose output Flow theo thứ tự shot và kiểm tra FFprobe; vẫn cần human review trước delivery.".to_string() })
+    Ok(BrowserFlowComposeReport { status: "completed".to_string(), workflow, output_path: output_relative, sha256, size_bytes, duration_seconds: Some(duration_seconds), message: "Đã compose output Flow theo thứ tự shot, xác minh thời lượng bằng FFprobe; vẫn cần human review trước delivery.".to_string() })
+}
+
+#[tauri::command]
+pub async fn compose_browser_flow_images(
+    request: ComposeBrowserFlowImagesRequest,
+    state: State<'_, AppState>,
+) -> Result<BrowserFlowComposeReport, String> {
+    let project_id = safe_id(&request.project_id, "projectId")?;
+    let workflow_id = safe_id(&request.workflow_id, "workflowId")?;
+    let run_id = safe_id(&request.run_id, "runId")?;
+    if request.shots.is_empty() || request.shots.len() > 24 {
+        return Err("Compose ảnh cần ít nhất một và tối đa 24 shot".to_string());
+    }
+    let total_duration: f64 = request.shots.iter().map(|shot| shot.duration_seconds).sum();
+    if !total_duration.is_finite() || !(0.1..=600.0).contains(&total_duration) {
+        return Err("Tổng thời lượng compose ảnh phải nằm trong khoảng 0.1–600 giây".to_string());
+    }
+    for shot in &request.shots {
+        if !shot.duration_seconds.is_finite() || !(0.1..=120.0).contains(&shot.duration_seconds) {
+            return Err(format!("Thời lượng không hợp lệ cho {}", shot.shot_id));
+        }
+        validate_browser_flow_shot_id(&shot.shot_id)?;
+    }
+    let workspace = workspace_for_project(&state, &project_id)?;
+    let (mut workflow, _) = load_browser_flow(&workspace, &workflow_id)?;
+    if workflow.project_id != project_id {
+        return Err("Browser Flow workflow không khớp projectId".to_string());
+    }
+    let mut images = Vec::with_capacity(request.shots.len());
+    for shot in &request.shots {
+        let image = workflow
+            .downloaded_files
+            .iter()
+            .rev()
+            .find(|item| {
+                item.shot_id.as_deref() == Some(shot.shot_id.as_str()) && item.media_kind == "image"
+            })
+            .ok_or_else(|| format!("Chưa có ảnh đã import cho {}", shot.shot_id))?;
+        let relative = safe_relative(&image.relative_path, "imagePath")?;
+        let absolute = workspace.join(&relative);
+        if !absolute.is_file() {
+            return Err(format!("Không tìm thấy ảnh đã import {}", relative));
+        }
+        images.push((shot, relative));
+    }
+    let compose_id = now_id("compose-images");
+    let root = browser_flow_download_directory(&workflow_id, workflow.session_id.as_deref())?;
+    let compose_root = safe_relative(&format!("{root}/compose-images"), "composeImagesRoot")?;
+    let output_relative = safe_relative(
+        &format!("{compose_root}/{run_id}-{compose_id}.mp4"),
+        "outputPath",
+    )?;
+    let output_path = ensure_relative_parent(&workspace, &output_relative)?;
+    if output_path.exists() {
+        return Err("Output compose ảnh cùng run đã tồn tại; không ghi đè output cũ".to_string());
+    }
+    let (ffmpeg_path, ffprobe_path) = {
+        let connection = state
+            .database
+            .lock()
+            .map_err(|_| "Không thể khóa database".to_string())?;
+        (
+            resolve_configured_tool(&connection, "ffmpeg")?,
+            resolve_configured_tool(&connection, "ffprobe")?,
+        )
+    };
+    let mut clips = Vec::with_capacity(images.len());
+    for (index, (shot, image_relative)) in images.iter().enumerate() {
+        let clip_relative = safe_relative(
+            &format!("{compose_root}/clips/{compose_id}-{:02}.mp4", index + 1),
+            "clipPath",
+        )?;
+        let clip_args = vec![
+            "-y".to_string(),
+            "-loop".to_string(),
+            "1".to_string(),
+            "-framerate".to_string(),
+            "30".to_string(),
+            "-i".to_string(),
+            image_relative.clone(),
+            "-t".to_string(),
+            format!("{:.3}", shot.duration_seconds),
+            "-vf".to_string(),
+            "scale=1280:720:force_original_aspect_ratio=increase,crop=1280:720,zoompan=z='min(zoom+0.0012,1.08)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1280x720:fps=30".to_string(),
+            "-an".to_string(),
+            "-c:v".to_string(),
+            "libx264".to_string(),
+            "-pix_fmt".to_string(),
+            "yuv420p".to_string(),
+            "-r".to_string(),
+            "30".to_string(),
+            "-movflags".to_string(),
+            "+faststart".to_string(),
+            clip_relative.clone(),
+        ];
+        let clip_process = run_external_process(ExternalProcessRequest {
+            spec: ProcessSpec {
+                executable_id: "ffmpeg".to_string(),
+                args: clip_args,
+                working_directory: ".".to_string(),
+                environment: BTreeMap::new(),
+                timeout_seconds: 300,
+                expected_outputs: vec![clip_relative.clone()],
+            },
+            executable_path: ffmpeg_path.clone(),
+            absolute_working_directory: workspace.clone(),
+            output_root: workspace.clone(),
+            cancellation: Arc::new(AtomicBool::new(false)),
+        })
+        .await?;
+        if !clip_process.succeeded {
+            return Err(format!(
+                "Tạo clip slideshow {} chưa thành công: mã thoát {:?}",
+                shot.shot_id, clip_process.exit_code
+            ));
+        }
+        clips.push(clip_relative);
+    }
+    let concat_relative = safe_relative(
+        &format!("{compose_root}/{run_id}-{compose_id}.txt"),
+        "concatPath",
+    )?;
+    let concat_path = ensure_relative_parent(&workspace, &concat_relative)?;
+    browser_flow_concat_file(&workspace, &clips, &concat_path)?;
+    let ffmpeg = run_external_process(ExternalProcessRequest {
+        spec: ProcessSpec {
+            executable_id: "ffmpeg".to_string(),
+            args: vec![
+                "-y".to_string(),
+                "-f".to_string(),
+                "concat".to_string(),
+                "-safe".to_string(),
+                "0".to_string(),
+                "-i".to_string(),
+                concat_relative.clone(),
+                "-map".to_string(),
+                "0:v:0".to_string(),
+                "-an".to_string(),
+                "-c:v".to_string(),
+                "libx264".to_string(),
+                "-pix_fmt".to_string(),
+                "yuv420p".to_string(),
+                "-r".to_string(),
+                "30".to_string(),
+                "-movflags".to_string(),
+                "+faststart".to_string(),
+                output_relative.clone(),
+            ],
+            working_directory: ".".to_string(),
+            environment: BTreeMap::new(),
+            timeout_seconds: 1800,
+            expected_outputs: vec![output_relative.clone()],
+        },
+        executable_path: ffmpeg_path,
+        absolute_working_directory: workspace.clone(),
+        output_root: workspace.clone(),
+        cancellation: Arc::new(AtomicBool::new(false)),
+    })
+    .await?;
+    let _ = fs::remove_file(&concat_path);
+    if !ffmpeg.succeeded {
+        return Err(format!(
+            "Compose slideshow FFmpeg thất bại: {}",
+            ffmpeg.stderr.chars().take(480).collect::<String>()
+        ));
+    }
+    let probe = run_external_process(ExternalProcessRequest {
+        spec: candidate_probe_args(&output_relative),
+        executable_path: ffprobe_path,
+        absolute_working_directory: workspace.clone(),
+        output_root: workspace.clone(),
+        cancellation: Arc::new(AtomicBool::new(false)),
+    })
+    .await?;
+    if !probe.succeeded {
+        return Err("FFprobe không xác nhận output slideshow".to_string());
+    }
+    let parsed: Value = serde_json::from_str(probe.stdout.trim())
+        .map_err(|error| format!("FFprobe slideshow trả JSON không hợp lệ: {error}"))?;
+    let (duration_seconds, _, _, _, _) = parse_candidate_probe(&parsed)?;
+    let size_bytes = fs::metadata(&output_path)
+        .map_err(|error| format!("Không đọc được output slideshow: {error}"))?
+        .len();
+    let sha256 = sha256_file(&output_path)?;
+    let process_id = format!("{compose_id}-process");
+    let output_name = output_path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or("flow-image-slideshow.mp4")
+        .to_string();
+    workflow.downloaded_files.push(BrowserFlowDownloadedFile {
+        download_id: now_id("compose-download"),
+        name: output_name.clone(),
+        source_relative_path: output_relative.clone(),
+        relative_path: output_relative.clone(),
+        media_kind: "video".to_string(),
+        sha256: sha256.clone(),
+        size_bytes,
+        imported_at: now_string(),
+        process_id: process_id.clone(),
+        run_id: Some(run_id.clone()),
+        shot_id: None,
+        revision_id: None,
+        input_hash: None,
+    });
+    workflow.files.push(BrowserFlowFileBinding {
+        file_id: safe_id(&format!("file-{compose_id}"), "composeFileId")?,
+        name: output_name,
+        relative_path: output_relative.clone(),
+        kind: "flow_image_slideshow_video".to_string(),
+        process_id: process_id.clone(),
+    });
+    workflow.processes.push(browser_flow_process(
+        compose_id.clone(),
+        "Browser Flow · ghép ảnh thành video slideshow".to_string(),
+        "compose_image_outputs".to_string(),
+        workflow.current_step,
+        "succeeded",
+        format!(
+            "Đã ghép {} ảnh theo thời lượng shot và qua FFprobe; đây là slideshow có chuyển động camera nhẹ, không phải motion video do Flow sinh.",
+            images.len()
+        ),
+        Some("Review continuity, chuyển động camera, âm thanh và rights trước delivery.".to_string()),
+    ));
+    workflow.current_step = workflow.current_step.saturating_add(1);
+    workflow.phase = "ready".to_string();
+    workflow.last_message = format!(
+        "Đã ghép {} ảnh thành slideshow {}.",
+        images.len(),
+        output_relative
+    );
+    workflow.updated_at = now_string();
+    persist_browser_flow(&workspace, &workflow)?;
+    audit_db(
+        &state,
+        &project_id,
+        &workflow_id,
+        "browser_flow.compose_image_outputs",
+    )?;
+    Ok(BrowserFlowComposeReport {
+        status: "completed".to_string(),
+        workflow,
+        output_path: output_relative,
+        sha256,
+        size_bytes,
+        duration_seconds,
+        message: "Flow không expose video composer; đã tạo từng ảnh theo shot và ghép local thành MP4 slideshow qua FFmpeg/FFprobe. Đây không phải motion video provider.".to_string(),
+    })
 }
 
 #[tauri::command]
@@ -6703,22 +7974,28 @@ pub async fn import_browser_candidate(
 mod tests {
     use super::{
         apply_handoff_action, browser_flow_agent_action_json, browser_flow_agent_click_is_safe,
-        browser_flow_download_directory, browser_flow_files, browser_flow_has_generation_composer,
+        browser_flow_agent_image_goal_forbids_tools, browser_flow_click_is_destructive,
+        browser_flow_destructive_click_message, browser_flow_destructive_overlay_allows,
+        browser_flow_discovery_operations, browser_flow_download_directory, browser_flow_files,
+        browser_flow_has_destructive_overlay, browser_flow_has_generation_composer,
         browser_flow_has_image_composer, browser_flow_has_project_entry_ref,
         browser_flow_has_prompt_input, browser_flow_has_video_composer,
-        browser_flow_is_project_entry_url, browser_flow_project_entry_label_is_safe,
-        browser_flow_process, browser_flow_prompt_identity, browser_flow_prompt_identity_marker,
-        browser_flow_recovery_project_url, browser_flow_roadmap,
-        BROWSER_FLOW_AGENT_PROTOCOL,
-        browser_flow_target_binding_from_identity, browser_flow_target_matches,
-        browsermcp_operation_arguments, browsermcp_snapshot_has_fresh_evidence,
-        browsermcp_tool_for_operation, clear_browser_flow_live_state, decode_base64_image,
-        extract_browser_ui_refs, initial_handoff_state, is_browsermcp_type_timeout,
+        browser_flow_is_project_entry_url, browser_flow_process,
+        browser_flow_project_entry_label_is_safe, browser_flow_prompt_identity,
+        browser_flow_prompt_identity_marker, browser_flow_recovery_project_url,
+        browser_flow_roadmap, browser_flow_target_binding_from_identity,
+        browser_flow_target_matches, browser_flow_target_project_key,
+        browser_flow_validate_fresh_click_target, browser_flow_video_dom_fallback_is_allowed,
+        browser_flow_video_reuse_identity_is_valid, browsermcp_operation_arguments,
+        browsermcp_snapshot_has_fresh_evidence, browsermcp_tool_for_operation,
+        clear_browser_flow_live_state, compact_browser_flow_process_history,
+        copy_or_reuse_browser_flow_output, decode_base64_image, extract_browser_ui_refs,
+        initial_handoff_state, is_browsermcp_type_timeout,
         provider_project_identity_from_operation_result, safe_id, safe_relative,
-        summarize_browsermcp_result, sync_embedded_worker, validate_target_url,
-        compact_browser_flow_process_history, MAX_BROWSER_FLOW_PROCESS_HISTORY,
-        BrowserFlowFileBindingInput, BrowserFlowUiRef, BrowserFlowWorkflow,
-        BrowserMcpActionRequest, BROWSER_FLOW_PLANNER_WORKER_SCRIPT,
+        summarize_browsermcp_result, sync_embedded_worker, validate_browser_flow_compose_duration,
+        validate_target_url, BrowserFlowFileBindingInput, BrowserFlowUiRef, BrowserFlowWorkflow,
+        BrowserMcpActionRequest, BROWSER_FLOW_AGENT_PROTOCOL, BROWSER_FLOW_PLANNER_WORKER_SCRIPT,
+        MAX_BROWSER_FLOW_PROCESS_HISTORY,
     };
     use serde_json::{json, Value};
     use std::fs;
@@ -6770,6 +8047,200 @@ mod tests {
     fn login_requires_attached_snapshot() {
         let mut state = initial_handoff_state("project-test", "handoff-test", "outputs/handoff");
         assert!(apply_handoff_action(&mut state, "mark_login_ready").is_err());
+    }
+
+    #[test]
+    fn fresh_click_gate_rejects_recycled_or_destructive_refs() {
+        let stale = vec![BrowserFlowUiRef {
+            role: "button".to_string(),
+            label: "Trash".to_string(),
+            reference: "e7".to_string(),
+        }];
+        let recycled = browser_flow_validate_fresh_click_target(
+            &stale,
+            Some("https://flow.google.com/project/project-123"),
+            "Download media",
+            "e7",
+        )
+        .expect_err("a ref whose label changed must be blocked");
+        assert!(recycled.contains("BLOCKED_STALE_FLOW_REF"));
+
+        let destructive = browser_flow_validate_fresh_click_target(
+            &stale,
+            Some("https://flow.google.com/project/project-123"),
+            "Trash",
+            "e7",
+        )
+        .expect_err("Trash must never be clickable");
+        assert!(destructive.contains("BLOCKED_DESTRUCTIVE_FLOW_CLICK"));
+    }
+
+    #[test]
+    fn flow_video_dom_fallback_is_limited_to_exact_unreferenced_click() {
+        assert!(browser_flow_video_dom_fallback_is_allowed(
+            "click", "Video", None
+        ));
+        assert!(!browser_flow_video_dom_fallback_is_allowed(
+            "click",
+            "Công cụ",
+            None
+        ));
+        assert!(!browser_flow_video_dom_fallback_is_allowed(
+            "click",
+            "Video",
+            Some("e19")
+        ));
+        assert!(!browser_flow_video_dom_fallback_is_allowed(
+            "click_storyboard",
+            "Video",
+            None
+        ));
+    }
+
+    #[test]
+    fn fresh_click_gate_rebinds_unique_label_to_current_ref() {
+        let refs = vec![BrowserFlowUiRef {
+            role: "button".to_string(),
+            label: "Dự án mới".to_string(),
+            reference: "e18".to_string(),
+        }];
+        let current_ref = browser_flow_validate_fresh_click_target(
+            &refs,
+            Some("https://flow.google.com/"),
+            "Dự án mới",
+            "e12",
+        )
+        .expect("unique current label is safe to rebind");
+        assert_eq!(current_ref, "e18");
+    }
+
+    #[test]
+    fn fresh_click_gate_rejects_ambiguous_labels() {
+        let refs = vec![
+            BrowserFlowUiRef {
+                role: "button".to_string(),
+                label: "Open project".to_string(),
+                reference: "e12".to_string(),
+            },
+            BrowserFlowUiRef {
+                role: "link".to_string(),
+                label: "Open project".to_string(),
+                reference: "e18".to_string(),
+            },
+        ];
+        let error = browser_flow_validate_fresh_click_target(
+            &refs,
+            Some("https://flow.google.com/"),
+            "Open project",
+            "e12",
+        )
+        .expect_err("repeated labels must not be guessed");
+        assert!(error.contains("BLOCKED_AMBIGUOUS_FLOW_TARGET"));
+    }
+
+    #[test]
+    fn fresh_click_gate_allows_localized_home_navigation() {
+        let refs = vec![BrowserFlowUiRef {
+            role: "button".to_string(),
+            label: "Trang chủ".to_string(),
+            reference: "e2".to_string(),
+        }];
+        let current_ref = browser_flow_validate_fresh_click_target(
+            &refs,
+            Some("https://flow.google.com/project/project-123"),
+            "Trang chủ",
+            "e12",
+        )
+        .expect("localized home navigation is safe");
+        assert_eq!(current_ref, "e2");
+    }
+
+    #[test]
+    fn fresh_click_gate_locks_unknown_controls_on_edit_route() {
+        let refs = vec![BrowserFlowUiRef {
+            role: "button".to_string(),
+            label: "More options".to_string(),
+            reference: "e8".to_string(),
+        }];
+        let blocked = browser_flow_validate_fresh_click_target(
+            &refs,
+            Some("https://flow.google.com/project/project-123/edit/media-456"),
+            "More options",
+            "e8",
+        )
+        .expect_err("unknown edit-route controls must be blocked");
+        assert!(blocked.contains("BLOCKED_FLOW_EDIT_ROUTE_CLICK"));
+
+        let download_refs = vec![BrowserFlowUiRef {
+            role: "button".to_string(),
+            label: "Download media".to_string(),
+            reference: "e9".to_string(),
+        }];
+        assert!(browser_flow_validate_fresh_click_target(
+            &download_refs,
+            Some("https://flow.google.com/project/project-123/edit/media-456"),
+            "Download media",
+            "e9",
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn fresh_click_gate_allows_done_editing_labels_on_edit_route() {
+        let english_refs = vec![BrowserFlowUiRef {
+            role: "button".to_string(),
+            label: "Done editing".to_string(),
+            reference: "e6".to_string(),
+        }];
+        assert!(browser_flow_validate_fresh_click_target(
+            &english_refs,
+            Some("https://flow.google.com/project/project-123/edit/media-456"),
+            "Done editing",
+            "e6",
+        )
+        .is_ok());
+
+        let refs = vec![BrowserFlowUiRef {
+            role: "button".to_string(),
+            label: "Đã chỉnh sửa xong".to_string(),
+            reference: "e7".to_string(),
+        }];
+        assert!(browser_flow_validate_fresh_click_target(
+            &refs,
+            Some("https://flow.google.com/project/project-123/edit/media-456"),
+            "Đã chỉnh sửa xong",
+            "e7",
+        )
+        .is_ok());
+    }
+
+    #[test]
+    fn fresh_click_gate_locks_every_click_while_trash_overlay_is_visible() {
+        let refs = vec![
+            BrowserFlowUiRef {
+                role: "button".to_string(),
+                label: "Undo".to_string(),
+                reference: "e10".to_string(),
+            },
+            BrowserFlowUiRef {
+                role: "button".to_string(),
+                label: "View in trash".to_string(),
+                reference: "e11".to_string(),
+            },
+            BrowserFlowUiRef {
+                role: "button".to_string(),
+                label: "Download image".to_string(),
+                reference: "e12".to_string(),
+            },
+        ];
+        let blocked = browser_flow_validate_fresh_click_target(
+            &refs,
+            Some("https://flow.google.com/project/project-123"),
+            "Download image",
+            "e12",
+        )
+        .expect_err("destructive overlay must lock even safe-looking controls");
+        assert!(blocked.contains("FLOW_DESTRUCTIVE_OVERLAY_VISIBLE"));
     }
 
     #[test]
@@ -6931,6 +8402,29 @@ mod tests {
     }
 
     #[test]
+    fn browser_flow_discovery_navigates_to_selected_project_before_binding_session() {
+        let target = "https://flow.google.com/project/5aae7b23-774a-4d1d-b787-12f2115b121";
+        let operations = browser_flow_discovery_operations(target);
+        assert_eq!(operations.len(), 6);
+        assert_eq!(operations[0].0, "navigate");
+        assert_eq!(operations[0].1.as_deref(), Some(target));
+        assert_eq!(operations[1].0, "wait");
+        assert_eq!(operations[2].0, "snapshot");
+        assert_eq!(
+            browser_flow_target_project_key(target),
+            Some("5aae7b23-774a-4d1d-b787-12f2115b121")
+        );
+        assert!(
+            browser_flow_target_project_key("https://evil.example/project/project-12345678")
+                .is_none()
+        );
+        assert_eq!(
+            browser_flow_discovery_operations("https://labs.google/fx/tools/flow")[0].0,
+            "snapshot"
+        );
+    }
+
+    #[test]
     fn provider_project_identity_requires_explicit_flow_project_url() {
         let identity = provider_project_identity_from_operation_result(&json!({
             "currentUrl": "https://flow.google.com/project/5aae7b23-774a-4d1d-b787-12f2115b121"
@@ -7082,6 +8576,12 @@ mod tests {
             Some(identity.clone())
         );
         assert_ne!(identity, "SHOT-003|rev-003");
+        let rerun = browser_flow_prompt_identity(Some(
+            "SHOT_ID: SHOT-002 | REVISION_ID: rev-003\nRUN_ID: flow-images-next\nSUBJECT: tiger",
+        ))
+        .unwrap();
+        assert_eq!(rerun, "SHOT-002|rev-003|flow-images-next");
+        assert_ne!(identity, rerun);
     }
 
     #[test]
@@ -7494,6 +8994,65 @@ mod tests {
     }
 
     #[test]
+    fn browser_flow_video_import_reuses_only_identical_existing_output() {
+        let root = std::env::temp_dir().join(format!(
+            "auto3dvideo-flow-output-import-test-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).expect("create import fixture");
+        let source = root.join("download.mp4");
+        let destination = root.join("flow-SHOT-001-rev-001.mp4");
+        fs::write(&source, b"verified video bytes").expect("write source video");
+        fs::write(&destination, b"verified video bytes").expect("write prior output");
+
+        let input_hash = "a".repeat(64);
+        let allow_reuse = browser_flow_video_reuse_identity_is_valid(
+            "video",
+            Some("auto-muigr1z5"),
+            Some("SHOT-001"),
+            Some("rev-001"),
+            Some(&input_hash),
+        );
+        assert!(allow_reuse);
+        assert!(!browser_flow_video_reuse_identity_is_valid(
+            "video",
+            Some("auto-muigr1z5"),
+            Some("SHOT-001"),
+            Some("rev-001"),
+            None
+        ));
+        let (created, size, _) =
+            copy_or_reuse_browser_flow_output(&source, &destination, allow_reuse)
+                .expect("reuse exact output");
+        assert!(!created);
+        assert_eq!(size, b"verified video bytes".len() as u64);
+        assert_eq!(
+            fs::read(&destination).expect("read reused output"),
+            b"verified video bytes"
+        );
+        assert!(copy_or_reuse_browser_flow_output(&source, &destination, false).is_err());
+
+        fs::write(&destination, b"tampered video bytes").expect("replace fixture contents");
+        let error = copy_or_reuse_browser_flow_output(&source, &destination, allow_reuse)
+            .expect_err("reject different existing output");
+        assert!(error.contains("nội dung khác"));
+        assert_eq!(
+            fs::read(&destination).expect("read preserved output"),
+            b"tampered video bytes"
+        );
+        fs::remove_dir_all(root).expect("clean import fixture");
+    }
+
+    #[test]
+    fn browser_flow_compose_duration_must_match_requested_shots() {
+        assert!(validate_browser_flow_compose_duration(60.0, 60.0).is_ok());
+        assert!(validate_browser_flow_compose_duration(60.24, 60.0).is_ok());
+        assert!(validate_browser_flow_compose_duration(60.26, 60.0).is_err());
+        assert!(validate_browser_flow_compose_duration(96.0, 60.0).is_err());
+    }
+
+    #[test]
     fn browser_flow_agent_action_is_strict_and_click_allowlist_is_bounded() {
         let action = browser_flow_agent_action_json(
             r#"```json
@@ -7509,13 +9068,84 @@ mod tests {
             "Got it, dismiss onboarding message"
         ));
         assert!(browser_flow_agent_click_is_safe("Get started"));
-        assert!(browser_flow_project_entry_label_is_safe(Some("Get started")));
+        assert!(browser_flow_project_entry_label_is_safe(Some(
+            "Get started"
+        )));
         assert!(browser_flow_agent_click_is_safe("Start new session"));
         assert!(browser_flow_agent_click_is_safe("Close"));
+        assert!(browser_flow_agent_click_is_safe(
+            "Back button to go to previous page"
+        ));
         assert!(browser_flow_agent_click_is_safe("Dismiss modal"));
         assert!(browser_flow_agent_click_is_safe("Generate video"));
+        assert!(browser_flow_agent_click_is_safe("Agent"));
+        assert!(browser_flow_agent_click_is_safe("Tools"));
+        assert!(browser_flow_agent_click_is_safe("Công cụ"));
+        assert!(browser_flow_agent_click_is_safe("CÔNG CỤ"));
+        assert!(browser_flow_agent_image_goal_forbids_tools(
+            "mở đúng image composer Nano Banana",
+            "Công cụ"
+        ));
+        assert!(!browser_flow_agent_image_goal_forbids_tools(
+            "mở đúng Video/Text-to-video composer",
+            "Công cụ"
+        ));
+        assert!(browser_flow_agent_image_goal_forbids_tools(
+            "mở đúng image composer Nano Banana",
+            "Tools"
+        ));
+        assert!(browser_flow_agent_image_goal_forbids_tools(
+            "mở đúng image composer Nano Banana",
+            "Agent"
+        ));
+        assert!(!browser_flow_agent_image_goal_forbids_tools(
+            "mở đúng Video/Text-to-video composer",
+            "Tools"
+        ));
+        assert!(!browser_flow_agent_click_is_safe("Add media menu"));
+        assert!(!browser_flow_agent_click_is_safe("Add media"));
         assert!(!browser_flow_agent_click_is_safe("Delete project"));
         assert!(!browser_flow_agent_click_is_safe("Close account"));
         assert!(!browser_flow_agent_click_is_safe("Bạn muốn tạo gì?"));
+        assert!(browser_flow_click_is_destructive("Move to trash"));
+        assert!(browser_flow_click_is_destructive("Delete permanently"));
+        assert!(browser_flow_click_is_destructive("Xóa 36 items"));
+        assert!(!browser_flow_click_is_destructive("Undo"));
+        assert!(browser_flow_destructive_click_message("Move to trash")
+            .contains("BLOCKED_DESTRUCTIVE_FLOW_CLICK"));
+        let blocked_click = BrowserMcpActionRequest {
+            project_id: "project".to_string(),
+            handoff_id: "handoff".to_string(),
+            operation: "click".to_string(),
+            approved: true,
+            url: None,
+            element: Some("Move to trash".to_string()),
+            element_ref: Some("e1".to_string()),
+            text: None,
+            submit: None,
+            key: None,
+            time: None,
+        };
+        assert!(browsermcp_operation_arguments(&blocked_click)
+            .expect_err("destructive click must be rejected")
+            .contains("BLOCKED_DESTRUCTIVE_FLOW_CLICK"));
+        assert!(browser_flow_has_destructive_overlay(&[BrowserFlowUiRef {
+            label: "Undo".to_string(),
+            reference: "e1".to_string(),
+            role: "button".to_string()
+        },]));
+        assert!(!browser_flow_destructive_overlay_allows("Undo"));
+        assert!(!browser_flow_destructive_overlay_allows("Agent"));
+    }
+
+    #[test]
+    fn browser_flow_agent_wait_action_may_omit_ref() {
+        let action = browser_flow_agent_action_json(
+            r#"{"action":"wait","ref":null,"textSource":"none","submit":false,"seconds":5,"reason":"Flow is loading"}"#,
+        )
+        .expect("planner wait JSON");
+        assert_eq!(action["action"], "wait");
+        assert!(action["ref"].is_null());
+        assert_eq!(action["seconds"], 5);
     }
 }

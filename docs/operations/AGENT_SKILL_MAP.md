@@ -44,6 +44,7 @@ Profile chủ đề mẫu nằm ở [`topic-profiles.example.json`](../../config
 | Skill | Nguồn chính | Bắt buộc phải tạo |
 |---|---|---|
 | `shot_prompt_designer` | `storyboard-shots-v1` · [`local_script_worker.py`](../../scripts/local_script_worker.py) | subject, world, action, camera/lens, lighting, material, composition |
+| `cinematic_prompt_enricher` | [`cinematic-video-prompt-skill`](https://github.com/Rylaispirit/cinematic-video-prompt-skill) · `role-skills.cinematic-3d.json` | one shot size + angle, one main action, one camera movement, compatible lighting/style/color/mood/technical blocks |
 | `continuity_prompt_guard` | `character-bible-v1` · `world-bible-v1` · `style-bible.schema.json` | silhouette, palette, scale, screen direction, time of day, reusable props |
 | `image_negative_prompt_guard` | `negativePrompt` trong `video-script.schema.json` và local worker | no extra subject, no random props, no text/logo/watermark, no morphing, no flicker, no broken geometry |
 | `reference_role_mapper` | [`reference-set.schema.json`](../../contracts/reference-set.schema.json) · `asset-candidates-v1` | identity, composition, pose, camera, style, start/end frame, negative |
@@ -66,6 +67,8 @@ SHOT_ID
 ```
 
 Repo hiện đã tạo các trường này trong script local, nhưng chưa có một adapter riêng cho Nano Banana/Gemini để tự generate ảnh và nhận output.
+
+`cinematic_prompt_enricher` dùng phần hướng dẫn prompt điện ảnh MIT của repo ngoài như vocabulary có giới hạn, không chạy code từ repo và không thay thế prompt contract của Auto3Dvideo. Worker giữ công thức shot-size/angle → subject/action → setting → lighting → camera movement → style/color → mood → technical; mỗi shot chỉ dùng một chuyển động camera và một hành động chính. Source được ghi trong `configs/role-skills.cinematic-3d.json` để prompt version/hash có thể truy nguyên.
 
 ## 3. Skill Blender
 

@@ -5,6 +5,7 @@ import { dirname, resolve } from "node:path";
 // still be selected explicitly with AUTO3DVIDEO_BROWSEROS_MCP_ENDPOINT=9010.
 const DEFAULT_ENDPOINT = "http://127.0.0.1:9000/mcp";
 const REQUEST_TIMEOUT_MS = 45_000;
+const TYPE_TIMEOUT_MS = 90_000;
 // Flow can take several seconds to paint the project/media workspace. Ten
 // seconds caused a screenshot timeout to masquerade as a route/composer
 // failure, so keep the wait bounded but give the real page enough time.
@@ -64,6 +65,41 @@ function safeUrl(value) {
     throw new Error("URL chỉ được dùng Google host allowlist");
   }
   return parsed.toString();
+}
+
+function isFlowUrl(value) {
+  if (typeof value !== "string") return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:"
+      && (parsed.hostname === "flow.google.com"
+        || parsed.hostname === "flow.google"
+        || parsed.hostname === "labs.google" && parsed.pathname.startsWith("/fx/tools/flow"));
+  } catch {
+    return false;
+  }
+}
+
+function flowProjectIdFromUrl(value) {
+  if (typeof value !== "string") return null;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol !== "https:" || parsed.hostname !== "flow.google.com") return null;
+    const match = parsed.pathname.match(/^\/project\/([^/]+)(?:\/|$)/i);
+    return match ? decodeURIComponent(match[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
+function isFlowProjectRoot(value, projectId) {
+  try {
+    const parsed = new URL(value);
+    return parsed.hostname === "flow.google.com"
+      && parsed.pathname.replace(/\/$/, "") === `/project/${encodeURIComponent(projectId)}`;
+  } catch {
+    return false;
+  }
 }
 
 function safePageId(value) {
@@ -147,7 +183,32 @@ function extractUiRefs(text) {
     refs.push({ role, label, reference });
     seen.add(reference);
   }
-  return refs.slice(0, MAX_UI_REFS);
+
+  const priority = ({ role, label }) => {
+    const normalized = label.normalize("NFKC").replace(/\s+/g, " ").trim().toLocaleLowerCase("vi-VN");
+    const kind = role.toLowerCase();
+    if (kind === "button" && /^(?:bắt đầu tạo|start generation|generate|generate video|tạo video|tạo ảnh)$/.test(normalized)) return true;
+    if (kind === "radio" && normalized === "video") return true;
+    if (/^(?:textbox|textarea|input|contenteditable|generic|paragraph)$/.test(kind)
+      && /^(?:văn bản có thể chỉnh sửa|textbox|generic|paragraph)$/.test(normalized)) return true;
+    if (/thêm thành phần vào ô nhập câu lệnh|add ingredients.*prompt|prompt.*ingredients/.test(normalized)) return true;
+    if (/\b(?:omni|veo)\b/.test(normalized) || /\b\d+\s*tín\s+dụng\b|\b\d+\s*credits?\b/.test(normalized)) return true;
+    if (/out of credits?|credits? exhausted|no credits|not enough credits?|insufficient credits?|credit required|quota (?:exceeded|exhausted)|limit reached|hết credit|không đủ credit|hết hạn mức|payment required|upgrade to generate/.test(normalized)) return true;
+    if (kind === "button" && /^(?:download|tải xuống|export|xuất)$/.test(normalized)) return true;
+    return false;
+  };
+  const priorityRefs = refs.filter(priority);
+  const priorityReferences = new Set(priorityRefs.map((item) => item.reference));
+  const regularRefs = refs.filter((item) => !priorityReferences.has(item.reference));
+  const reserved = Math.min(MAX_UI_REFS, priorityRefs.length);
+  return [
+    ...regularRefs.slice(0, MAX_UI_REFS - reserved),
+    ...priorityRefs.slice(0, MAX_UI_REFS),
+  ];
+}
+
+function normalizeControlLabel(value) {
+  return String(value || "").normalize("NFKC").replace(/\s+/g, " ").trim().toLocaleLowerCase("vi-VN");
 }
 
 function boundedDetail(value) {
@@ -294,6 +355,11 @@ class BrowserOsMcp {
       pageId: this.state.pageId ?? null,
       automationPageId: this.state.automationPageId ?? null,
       pageUrl: this.state.pageUrl ?? null,
+      // BrowserOS Flow worker stores the verified Nano Banana model gate in
+      // the same session file. Keep it when the generic MCP worker refreshes
+      // tabs/snapshots; otherwise the next type/generate process sees a
+      // missing fingerprint and falsely blocks at the next shot.
+      flowComposerFingerprint: this.state.flowComposerFingerprint ?? null,
       serverInfo: this.serverInfo,
       protocolVersion: this.protocolVersion,
       tools: this.tools.slice(0, 64),
@@ -360,6 +426,9 @@ class BrowserOsMcp {
 
   async ensurePage(requestUrl) {
     const requested = requestUrl ? safeUrl(requestUrl) : null;
+    if (requested && !isFlowUrl(requested)) {
+      throw new Error("BLOCKED_NON_FLOW_BROWSEROS_URL: BrowserOS actions are restricted to a verified Google Flow page.");
+    }
     const adoptOwnedPage = async () => {
       const tabs = await this.listTabs();
       const ownTabsText = contentText(tabs).split("Other agents' tabs:")[0];
@@ -382,6 +451,7 @@ class BrowserOsMcp {
       }
       return null;
     };
+    let rejectedPageId = false;
     if (Number.isInteger(this.state.pageId)) {
       try {
         await this.tool("snapshot", { page: this.state.pageId });
@@ -403,9 +473,17 @@ class BrowserOsMcp {
             return this.state.pageId;
           }
         } else {
-          const viewport = await this.viewport(this.state.pageId);
-          if (!viewport || viewport.width > 0 && viewport.height > 0) return this.state.pageId;
-          this.state.pageId = null;
+          const current = await this.pageUrl(this.state.pageId);
+          if (!isFlowUrl(current)) {
+            this.state.pageId = null;
+            this.state.pageUrl = null;
+            rejectedPageId = true;
+            await this.persistState();
+          } else {
+            const viewport = await this.viewport(this.state.pageId);
+            if (!viewport || viewport.width > 0 && viewport.height > 0) return this.state.pageId;
+            this.state.pageId = null;
+          }
         }
       } catch {
         this.state.pageId = null;
@@ -413,6 +491,9 @@ class BrowserOsMcp {
     }
     const adopted = await adoptOwnedPage().catch(() => null);
     if (adopted !== null) return adopted;
+    if (rejectedPageId) {
+      throw new Error("BLOCKED_NON_FLOW_BROWSEROS_TAB: saved page ID no longer identifies a Google Flow page; no action or replacement tab was started.");
+    }
     if (Number.isInteger(this.state.automationPageId)) {
       // A closed/crashed automation tab is recoverable. Only clear the guard
       // when BrowserOS explicitly lists that page id as gone; if it still
@@ -486,6 +567,128 @@ class BrowserOsMcp {
     }
   }
 
+  async clickFlowVideoNavigation(page, currentUrl) {
+    const projectId = flowProjectIdFromUrl(currentUrl);
+    if (!projectId || !isFlowProjectRoot(currentUrl, projectId)) {
+      throw new Error("BLOCKED_VIDEO_NAV_CONTEXT: Video chỉ được mở từ project Flow hiện tại.");
+    }
+    const code = `// AUTO3DVIDEO_FLOW_VIDEO_NAV
+return (() => {
+  const parts = location.pathname.split("/").filter(Boolean);
+  if (location.protocol !== "https:" || location.hostname !== "flow.google.com" || parts.length !== 2 || parts[0] !== "project") {
+    return JSON.stringify({ status: "blocked", reason: "not-project-root" });
+  }
+  const projectId = decodeURIComponent(parts[1]);
+  const textNodes = [...document.querySelectorAll("body *")].filter((element) => {
+    const label = (element.getAttribute("aria-label") || element.innerText || element.textContent || "").trim();
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return label === "Video" && rect.width > 0 && rect.height > 0
+      && style.display !== "none" && style.visibility !== "hidden";
+  });
+  const targetSet = new Set();
+  for (const element of textNodes) {
+    let current = element;
+    let selected = null;
+    let pointerFallback = null;
+    for (let depth = 0; current && depth < 6; depth += 1, current = current.parentElement) {
+      const style = getComputedStyle(current);
+      if (current.matches('a[href],button,[role="link"],[role="button"],[role="tab"],[role="menuitem"],mat-list-item')) {
+        selected = current;
+        break;
+      }
+      if (!pointerFallback && current.tagName !== "SPAN" && style.cursor === "pointer") pointerFallback = current;
+    }
+    targetSet.add(selected || pointerFallback || element);
+  }
+  const targets = [...targetSet];
+  const summaries = targets.slice(0, 4).map((element) => {
+    const href = element.getAttribute("href");
+    let sameProjectDestination = null;
+    if (href) {
+      try {
+        const destination = new URL(href, location.href);
+        const destinationParts = destination.pathname.split("/").filter(Boolean);
+        sameProjectDestination = destination.hostname === location.hostname
+          && destinationParts[0] === "project"
+          && decodeURIComponent(destinationParts[1] || "") === projectId;
+      } catch {
+        sameProjectDestination = false;
+      }
+    }
+    const style = getComputedStyle(element);
+    const parentChain = [];
+    for (let current = element, depth = 0; current && depth < 3; depth += 1, current = current.parentElement) {
+      parentChain.push({
+        tag: current.tagName.toLowerCase(),
+        className: String(current.className || "").slice(0, 100),
+        role: current.getAttribute("role"),
+        tabIndex: current.tabIndex,
+      });
+    }
+    return {
+      tag: element.tagName.toLowerCase(),
+      role: element.getAttribute("role"),
+      className: String(element.className || "").slice(0, 100),
+      containsExactVideo: textNodes.some((node) => node === element || element.contains(node)),
+      hrefPresent: Boolean(href),
+      sameProjectDestination,
+      tabIndex: element.tabIndex,
+      pointerCursor: style.cursor === "pointer",
+      disabled: Boolean(element.disabled) || element.getAttribute("aria-disabled") === "true",
+      parentChain,
+    };
+  });
+  if (targets.length !== 1) {
+    return JSON.stringify({
+      status: "blocked",
+      reason: "video-target-not-unique",
+      matches: targets.length,
+      exactTextCount: textNodes.length,
+      candidates: summaries,
+    });
+  }
+  const target = targets[0];
+  if (target.disabled || target.getAttribute("aria-disabled") === "true") {
+    return JSON.stringify({ status: "blocked", reason: "video-target-disabled" });
+  }
+  const href = target.getAttribute("href");
+  if (href) {
+    const destination = new URL(href, location.href);
+    const destinationParts = destination.pathname.split("/").filter(Boolean);
+    if (destination.hostname !== location.hostname || destinationParts[0] !== "project" || decodeURIComponent(destinationParts[1] || "") !== projectId) {
+      return JSON.stringify({ status: "blocked", reason: "cross-project-video-target" });
+    }
+  }
+  target.click();
+  return JSON.stringify({ status: "clicked", label: "Video", projectId });
+})()`;
+    const evaluated = await this.tool("evaluate", { page, code, timeout: 15_000 });
+    if (evaluated?.isError) throw new Error(operationErrorText(evaluated));
+    const text = contentText(evaluated);
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start < 0 || end <= start) throw new Error("BLOCKED_VIDEO_NAV_EVIDENCE: BrowserOS thiếu kết quả DOM xác minh Video.");
+    const evidence = JSON.parse(text.slice(start, end + 1));
+    if (evidence.status !== "clicked" || evidence.label !== "Video" || evidence.projectId !== projectId) {
+      const diagnostics = JSON.stringify({
+        matches: Number.isSafeInteger(evidence.matches) ? evidence.matches : null,
+        exactTextCount: Number.isSafeInteger(evidence.exactTextCount) ? evidence.exactTextCount : null,
+        candidates: Array.isArray(evidence.candidates) ? evidence.candidates.slice(0, 4) : [],
+      }).slice(0, 1_500);
+      throw new Error(`BLOCKED_VIDEO_NAV_TARGET: ${String(evidence.reason || evidence.status || "invalid evidence").slice(0, 120)} diagnostics=${diagnostics}`);
+    }
+    const afterUrl = await this.pageUrl(page);
+    const afterPath = new URL(afterUrl).pathname.replace(/\/+$/, "");
+    if (flowProjectIdFromUrl(afterUrl) !== projectId || afterPath.endsWith("/tools")) {
+      throw new Error("BLOCKED_VIDEO_NAV_TARGET: điều hướng rời project hoặc mở trang Tools.");
+    }
+    return {
+      result: { content: [{ type: "text", text: "DOM đã xác minh và mở đúng mục Video trong project Flow đang chọn." }] },
+      resolvedTarget: { label: "Video", role: "link", reference: "dom:verified-flow-video-navigation" },
+    };
+  }
+
   async execute(request) {
     const operation = normalizeOperation(request.operation || "probe");
     const toolName = operationTool(operation);
@@ -496,6 +699,7 @@ class BrowserOsMcp {
     let page = await this.ensurePage(request.url || undefined);
     let result;
     let interactionRecovery = null;
+    let resolvedTarget = null;
     if (operation === "navigate") {
       result = await this.tool("navigate", { page, action: "url", url: safeUrl(request.url) });
     } else if (operation === "snapshot") {
@@ -519,27 +723,51 @@ class BrowserOsMcp {
     } else if (operation === "download") {
       result = await this.tool("download", { page, ref: safeText(request.elementRef, "elementRef", 80) });
     } else if (operation === "click") {
-      const ref = safeText(request.elementRef, "elementRef", 80);
-      try {
-        result = await this.tool("act", { page, kind: "click", ref });
-        const toolError = operationErrorText(result);
-        if (toolError && isKnownMaterialClickCover(toolError)) {
+      const requestedLabel = safeText(request.element, "element", 120);
+      const freshSnapshot = await this.tool("snapshot", { page });
+      if (freshSnapshot?.isError) throw new Error(operationErrorText(freshSnapshot));
+      const requested = normalizeControlLabel(requestedLabel);
+      const matchingTargets = extractUiRefs(contentText(freshSnapshot))
+        .filter((item) => normalizeControlLabel(item.label) === requested);
+      if (matchingTargets.length === 0) {
+        if (requested !== "video") {
+          throw new Error(`BLOCKED_STALE_FLOW_REF: không còn control có label chính xác “${requestedLabel}” trong snapshot mới.`);
+        }
+        const currentUrl = await this.pageUrl(page);
+        const fallback = await this.clickFlowVideoNavigation(page, currentUrl);
+        result = fallback.result;
+        resolvedTarget = fallback.resolvedTarget;
+      } else {
+        if (matchingTargets.length > 1) {
+          throw new Error(`BLOCKED_AMBIGUOUS_FLOW_TARGET: có nhiều control cùng label “${requestedLabel}” trong snapshot mới.`);
+        }
+        const target = matchingTargets[0];
+        if (!["button", "link", "menuitem", "option", "tab", "checkbox", "radio", "switch"].includes(target.role)) {
+          throw new Error(`BLOCKED_NONINTERACTIVE_FLOW_TARGET: label “${target.label}” có role “${target.role}”.`);
+        }
+        const ref = target.reference;
+        resolvedTarget = { label: target.label, role: target.role, reference: ref };
+        try {
+          result = await this.tool("act", { page, kind: "click", ref });
+          const toolError = operationErrorText(result);
+          if (toolError && isKnownMaterialClickCover(toolError)) {
+            result = await this.tool("act", { page, kind: "press", ref, key: "Enter" });
+            interactionRecovery = "enter_after_benign_material_overlay";
+          }
+        } catch (error) {
+          if (!isKnownMaterialClickCover(error)) throw error;
+          // Material's focus indicator is part of the same link/button. Enter
+          // activates that semantic control without guessing a coordinate.
           result = await this.tool("act", { page, kind: "press", ref, key: "Enter" });
           interactionRecovery = "enter_after_benign_material_overlay";
         }
-      } catch (error) {
-        if (!isKnownMaterialClickCover(error)) throw error;
-        // Material's focus indicator is part of the same link/button. Enter
-        // activates that semantic control without guessing a coordinate or
-        // dismissing an unknown overlay.
-        result = await this.tool("act", { page, kind: "press", ref, key: "Enter" });
-        interactionRecovery = "enter_after_benign_material_overlay";
       }
     } else if (operation === "type") {
       const text = safeText(request.text, "text", 12_000).replace(/\r\n?/g, "\n");
-      result = await this.tool("act", { page, kind: "fill", ref: safeText(request.elementRef, "elementRef", 80), value: text });
+      const ref = safeText(request.elementRef, "elementRef", 80);
+      result = await this.tool("act", { page, kind: "fill", ref, value: text }, { timeoutMs: TYPE_TIMEOUT_MS });
       if (request.submit === true) {
-        result = await this.tool("act", { page, kind: "press", ref: safeText(request.elementRef, "elementRef", 80), key: "Enter" });
+        result = await this.tool("act", { page, kind: "press", ref, key: "Enter" }, { timeoutMs: TYPE_TIMEOUT_MS });
       }
     } else if (operation === "press_key") {
       result = await this.tool("act", { page, kind: "press", ref: safeText(request.elementRef, "elementRef", 80), key: safeText(request.key, "key", 64) });
@@ -547,7 +775,7 @@ class BrowserOsMcp {
       throw new Error(`BrowserOS operation chưa triển khai: ${operation}`);
     }
     const currentUrl = await this.pageUrl(page);
-    return { result, page, currentUrl, interactionRecovery };
+    return { result, page, currentUrl, interactionRecovery, resolvedTarget };
   }
 
   async saveScreenshot(result) {
@@ -563,7 +791,7 @@ class BrowserOsMcp {
   }
 }
 
-function summarize(result, currentUrl, screenshot, interactionRecovery = null) {
+function summarize(result, currentUrl, screenshot, interactionRecovery = null, resolvedTarget = null) {
   const content = Array.isArray(result?.content) ? result.content : [];
   const text = contentText(result);
   const uiRefs = extractUiRefs(text);
@@ -579,6 +807,7 @@ function summarize(result, currentUrl, screenshot, interactionRecovery = null) {
     currentUrl: currentUrl || null,
     ...(screenshot || {}),
     ...(interactionRecovery ? { interactionRecovery } : {}),
+    ...(resolvedTarget ? { resolvedTarget } : {}),
     detail: isError ? boundedDetail(text) : "",
   };
 }
@@ -598,6 +827,7 @@ async function main() {
       approved: arg("--approved") === "true",
       url: arg("--url"),
       elementRef: arg("--element-ref"),
+      element: arg("--element"),
       text: arg("--text"),
       submit: arg("--submit") === "true",
       key: arg("--key"),
@@ -608,7 +838,15 @@ async function main() {
     const result = executed.result || {};
     const operationResult = operation === "snapshot"
       ? summarize({ ...result, content: [{ type: "text", text: `- Page URL: ${executed.currentUrl || ""}\n${contentText(result)}` }] }, executed.currentUrl, screenshot)
-      : summarize(result, executed.currentUrl, screenshot, executed.interactionRecovery);
+      : summarize(result, executed.currentUrl, screenshot, executed.interactionRecovery, executed.resolvedTarget);
+    const flowPageVerified = operation !== "probe"
+      && !operationResult.isError
+      && Boolean(executed.page)
+      && isFlowUrl(executed.currentUrl);
+    if (operation !== "probe" && !operationResult.isError && !flowPageVerified) {
+      operationResult.isError = true;
+      operationResult.detail = "BLOCKED_NON_FLOW_BROWSEROS_TAB: current page URL is not a verified Google Flow URL.";
+    }
     report = {
       status: operationResult.isError ? "blocked" : "ready",
       operation,
@@ -622,9 +860,7 @@ async function main() {
       tools: browser.tools,
       toolName: operation === "probe" ? null : operationTool(normalizeOperation(operation)),
       approved: arg("--approved") === "true",
-      // Endpoint health is not proof that a Flow tab is attached. Only a
-      // successful page-scoped operation earns browserSessionAttached=true.
-      browserSessionAttached: operation !== "probe" && !operationResult.isError && !!executed.page,
+      browserSessionAttached: flowPageVerified,
       browserActionsPerformed: operation !== "probe" && !operationResult.isError,
       networkCallsMade: operation !== "probe" && !operationResult.isError,
       operationResult,
@@ -634,7 +870,7 @@ async function main() {
           ? "BrowserOS MCP endpoint đã sẵn sàng; dùng granular tools, không dùng run để tránh lỗi structuredContent của build hiện tại."
           : executed.interactionRecovery
             ? `BrowserOS ${operation} gặp lớp phủ Material nội bộ; đã kích hoạt bằng Enter trên cùng control và nhận diff xác nhận.`
-          : `BrowserOS ${operation} đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.`,
+            : `BrowserOS ${operation} đã hoàn tất; app không lưu cookie/token và chỉ giữ summary UI cần cho workflow.`,
       process: null,
     };
   } catch (error) {

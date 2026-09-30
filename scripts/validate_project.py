@@ -37,7 +37,7 @@ INVENTORY_KEYS = (
     "examples",
     "desktopAppFiles",
 )
-IGNORED_DIRS = {".git", "__pycache__", ".pytest_cache", "node_modules", "target", ".cargo-target-audit", "dist", "outputs", ".auto3dvideo"}
+IGNORED_DIRS = {".git", "__pycache__", ".pytest_cache", "node_modules", "target", ".cargo-target-audit", ".cargo-target-fix-cdp", "dist", "outputs", ".auto3dvideo", ".artifacts", "vendor"}
 
 
 def is_local_secret_file(path: Path) -> bool:

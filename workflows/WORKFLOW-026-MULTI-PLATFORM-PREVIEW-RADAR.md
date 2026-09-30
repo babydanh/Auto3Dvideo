@@ -7,7 +7,7 @@ Read public discovery cards from selected short-video platforms through the conf
 ## Bounded run
 
 - Input: `projectId`, one to nine allowlisted platform ids and `maxResults` from 1 to 200 per platform.
-- Engine selection happens before web work: configured `obscura.exe` uses fixed public routes with concurrency 3; otherwise configured BrowserOS/Node uses one visible tab in selection order.
+- Engine selection happens before web work: configured `obscura.exe` uses fixed public routes as single-page fetch jobs with an explicit network-idle settle window and concurrency 3; otherwise configured BrowserOS/Node uses one visible tab in selection order.
 - Obscura does not receive cookies, stealth flags, proxy flags or user-supplied URLs. BrowserOS may use the user's already-open public/session page only as a fallback for platforms that Obscura did not return valid cards for, and still stops for login/CAPTCHA.
 - Each route gets the requested card cap. BrowserOS fallback keeps at most eight bounded scrolls per route; Obscura stdout is parsed into a sanitized report and raw page output is not stored as report evidence.
 - The native process timeout is 240 seconds for Obscura and 360 seconds for BrowserOS. A missing report, timeout or non-zero worker result cannot become success.

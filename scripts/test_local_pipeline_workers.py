@@ -224,6 +224,66 @@ class LocalScriptWorkerTests(unittest.TestCase):
         self.assertEqual(script["requestedShotCount"], 12)
         self.assertEqual(script["requestedDurationSeconds"], 60.0)
 
+    def test_flow_cinematic_directives_are_recorded_and_grounded(self):
+        request = base_request()
+        request["topic"] = "Tạo video cinematic 3D gồm 8 shot; dùng /groundlevel và /filmlook cho chủ thể chính."
+        values = {
+            "TITLE": "Chuỗi shot điện ảnh",
+            "HOOK": "Một chuyển động mở ra cả thế giới.",
+            "NARRATION_1": "Mở đầu bằng góc nhìn thấp.",
+            "SCREEN_1": "Góc máy thấp",
+            "NARRATION_2": "Kết thúc bằng chất phim nhất quán.",
+            "SCREEN_2": "Chất phim",
+        }
+        script = SCRIPT_WORKER.validate_script(request, values)
+        directives = script["segments"][0]["flowDirectives"]
+        self.assertIn("/groundlevel", directives)
+        self.assertIn("/filmlook", directives)
+        self.assertTrue(all(command in SCRIPT_WORKER.flow_directive_vocabulary() for command in directives))
+        self.assertIn("FLOW CINEMATIC COMMANDS", script["segments"][0]["visualPrompt"])
+
+    def test_cinematic_video_prompt_skill_enriches_each_shot(self):
+        request = base_request()
+        request["topic"] = "Tạo video cinematic 3D gồm 6 shot về một thành phố cyberpunk lúc trời mưa."
+        values = {
+            "TITLE": "Thành phố neon",
+            "HOOK": "Một thành phố thức dậy dưới ánh đèn neon.",
+            "NARRATION_1": "Mưa biến những con phố thành các dải sáng chuyển động.",
+            "SCREEN_1": "Thành phố neon",
+            "NARRATION_2": "Một chuyển động nhỏ hé lộ nhịp sống phía sau lớp kính.",
+            "SCREEN_2": "Nhịp sống phía sau ánh sáng",
+        }
+        script = SCRIPT_WORKER.validate_script(request, values)
+        first = script["segments"][0]
+        self.assertIn("cinematic-video-prompt:", script["promptVersion"])
+        for marker in ("[SHOT SIZE + ANGLE]", "[SPECIFIC ACTION]", "[CAMERA MOVEMENT]", "[STYLE + COLOR]", "[MOOD]", "[TECHNICAL]"):
+            self.assertIn(marker, first["visualPrompt"])
+        self.assertIn("slow dolly in", first["cameraIntent"])
+        self.assertNotIn("orbit", first["cameraIntent"])
+        second = script["segments"][1]
+        self.assertIn("slow pan right", second["cameraIntent"])
+        self.assertNotIn("push-in", second["cameraIntent"])
+
+    def test_copied_worker_loads_role_skill_pack_from_workspace_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "configs").mkdir()
+            (root / "configs" / "role-skills.cinematic-3d.json").write_text(
+                json.dumps({
+                    "schemaVersion": "1.0.0",
+                    "skillPackId": "test-cinematic-pack",
+                    "version": "test",
+                    "roles": {"cinematic_prompt_enricher": {"instruction": "test"}},
+                }),
+                encoding="utf-8",
+            )
+            copied_worker = root / ".auto3dvideo" / "tools" / "local_script_worker.py"
+            copied_worker.parent.mkdir(parents=True)
+            with patch.object(SCRIPT_WORKER, "__file__", str(copied_worker)):
+                pack, skill_hash = SCRIPT_WORKER.load_role_skill_pack()
+            self.assertEqual(pack["skillPackId"], "test-cinematic-pack")
+            self.assertEqual(len(skill_hash), 64)
+
     def test_explicit_contract_rejects_stale_eight_shot_thirty_second_request(self):
         request = base_request()
         request["topic"] = "Tạo video dài khoảng 60 giây, gồm 12 shot liên kết."

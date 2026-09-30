@@ -29,10 +29,10 @@
       "name": "Storyboard và shot plan",
       "purpose": "Biến script thành beat/shot có timing, entity anchor, visual intent và prompt hình ảnh có căn cứ.",
       "locale": "multi",
-      "body": "Script: {{script}}. Visual mode: {{visual_mode}}. Entity bible: {{entity_bible}}. Hãy tạo shot plan theo beat liên tục. Mỗi shot phải có narration_span, claim_id, visual_intent, setting, entities, required_visual_elements, positive_prompt, negative_prompt, expected_asset_path và continuity_anchor. Chữ, số và logo chính xác phải được tạo bằng lớp phủ cố định, không phụ thuộc ảnh AI.",
+      "body": "Script: {{script}}. Visual mode: {{visual_mode}}. Entity bible: {{entity_bible}}. Hãy tạo shot plan theo beat liên tục. Mỗi shot phải có narration_span, claim_id, visual_intent, setting, entities, required_visual_elements, positive_prompt, negative_prompt, expected_asset_path, continuity_anchor và flow_directives. flow_directives chỉ được chọn từ allowlist prompt cinematic của Flow (góc máy, khung hình, chuyển động, hành động, tốc độ, ánh sáng, nét, chất phim và màu); mỗi shot chọn ít token phù hợp, ghi cả token nguyên văn lẫn diễn giải tự nhiên. Đây là từ vựng prompt, không phải lệnh UI/browser. Chữ, số và logo chính xác phải được tạo bằng lớp phủ cố định, không phụ thuộc ảnh AI.",
       "inputKeys": ["script", "visual_mode", "entity_bible"],
-      "outputContract": ["beats", "shots", "continuity_anchors", "visual_proof", "expected_assets"],
-      "guardrails": ["Mỗi claim phải có visual proof hoặc được đánh dấu không trực quan.", "Entity lặp lại phải giữ anchor bất biến trừ khi script nói rõ thay đổi.", "Không chèn tên người thật/IP vào prompt nếu chưa có quyền.", "Không đưa raw command, upload, publish hoặc credential field vào output." ]
+      "outputContract": ["beats", "shots", "continuity_anchors", "visual_proof", "flow_directives", "expected_assets"],
+      "guardrails": ["Mỗi claim phải có visual proof hoặc được đánh dấu không trực quan.", "Entity lặp lại phải giữ anchor bất biến trừ khi script nói rõ thay đổi.", "Không chèn tên người thật/IP vào prompt nếu chưa có quyền.", "flow_directives phải nằm trong allowlist và không được coi là thao tác UI.", "Không đưa raw command, upload, publish hoặc credential field vào output." ]
     },
     {
       "templateId": "asset-candidates-v1",

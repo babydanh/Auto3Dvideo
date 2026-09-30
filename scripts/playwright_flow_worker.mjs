@@ -2,6 +2,12 @@ import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
 import { dirname, resolve, sep } from "node:path";
 import { readFile, writeFile, mkdir, readdir, stat, rename } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import {
+  flowExactMediaMessage,
+  isSafeFlowMediaIdArgument,
+  verifyFlowIngredientChip,
+} from "./flow_exact_media.mjs";
 
 const MAX_PROMPT_CHARS = 12000;
 const ACTION_TIMEOUT_MS = 15000;
@@ -51,6 +57,16 @@ function safePrompt(value) {
 function safeId(value, field, pattern) {
   const text = safeText(value, field, 96);
   if (!pattern.test(text)) throw new Error(`${field} không đúng định dạng`);
+  return text;
+}
+
+// A request that names the media to act on is checked against the same card
+// contract the discovery route, the session schema and the Rust parser use, so
+// a card that could be discovered and saved is never refused here for length.
+// The one non-card value is the newest-media sentinel the download route sends.
+function safeMediaIdArgument(value) {
+  const text = safeText(value, "mediaId", 256);
+  if (!isSafeFlowMediaIdArgument(text)) throw new Error("mediaId không đúng định dạng");
   return text;
 }
 
@@ -120,6 +136,10 @@ function loadPlaywright(moduleRoot) {
 
 function normalizeLabel(value, limit = 160) {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, limit);
+}
+
+function isExactDownloadLabel(value) {
+  return /^(?:download|download media|download image|download video|tải xuống|tải ảnh|tải video)$/i.test(normalizeLabel(value));
 }
 
 function safeUiLabel(value) {
@@ -274,9 +294,10 @@ async function firstVisible(locator) {
 }
 
 async function findPromptEditor(page) {
-  const exact = await firstVisible(page.locator("flow-rich-text-editor.prompt-input div.ProseMirror[contenteditable='true']"));
-  if (exact) return exact;
-  return firstVisible(page.locator("[contenteditable='true']"));
+  // Never fall back to an arbitrary contenteditable: Flow's Agent/chat pane
+  // exposes a visually similar editor and would accept the revision as a
+  // conversation message instead of the image composer prompt.
+  return firstVisible(page.locator("flow-rich-text-editor.prompt-input div.ProseMirror[contenteditable='true']"));
 }
 
 async function controlName(locator) {
@@ -318,7 +339,7 @@ async function findBatchDownloadButton(batch) {
     if (!(await candidate.isVisible().catch(() => false))) continue;
     if (!(await candidate.isEnabled().catch(() => false))) continue;
     const label = (await controlName(candidate)).toLowerCase();
-    if (/download|save|export|tải xuống|lưu|xuất/.test(label)) found.push({ candidate, label });
+    if (isExactDownloadLabel(label)) found.push({ candidate, label });
   }
   if (found.length !== 1) {
     throw new Error(found.length === 0 ? "Batch đúng shot/revision chưa có nút Download hiển thị" : "Batch có nhiều nút tải xuống; không tự đoán");
@@ -334,7 +355,7 @@ async function findVisibleDownloadControl(scope) {
     if (!(await candidate.isVisible().catch(() => false))) continue;
     if (!(await candidate.isEnabled().catch(() => false))) continue;
     const label = (await controlName(candidate)).toLowerCase();
-    if (/download|save|export|tải xuống|lưu|xuất/.test(label)) found.push({ candidate, label });
+    if (isExactDownloadLabel(label)) found.push({ candidate, label });
   }
   if (found.length > 1) throw new Error("Flow đang hiển thị nhiều nút tải; không tự đoán");
   return found[0] ?? null;
@@ -348,7 +369,7 @@ async function findVisibleMenuDownloadControl(page) {
     if (!(await candidate.isVisible().catch(() => false))) continue;
     if (!(await candidate.isEnabled().catch(() => false))) continue;
     const label = (await controlName(candidate)).toLowerCase();
-    if (/download|save|export|tải xuống|lưu|xuất/.test(label)) found.push({ candidate, label });
+    if (isExactDownloadLabel(label)) found.push({ candidate, label });
   }
   if (found.length > 1) throw new Error("Menu ảnh đang hiển thị nhiều nút tải; không tự đoán");
   return found[0] ?? null;
@@ -369,6 +390,14 @@ async function findExactVisibleMenuItem(page, pattern) {
 }
 
 async function findFreshImageDownloadButton(page, mediaId) {
+  const pageText = normalizeLabel(await page.locator("body").innerText().catch(() => ""), 12_000).toLowerCase();
+  if (/items? moved to trash|moved to trash|delete permanently|\btrashed\b/.test(pageText)) {
+    throw new Error("FLOW_DESTRUCTIVE_OVERLAY_VISIBLE: Flow đang ở màn hình Trash/Delete; dừng mọi click để bảo vệ asset. Hãy bấm Undo/Back thủ công rồi chạy resume.");
+  }
+  if (mediaId === "__newest__" && /\/edit\/[^/?#]+/i.test(page.url())) {
+    const direct = await findVisibleDownloadControl(page);
+    if (direct) return { ...direct, sourceMediaId: null, route: "detail-toolbar-download-media" };
+  }
   const tiles = page.locator("flow-grid-tile-container");
   const tileCount = Math.min(await tiles.count(), 128);
   let tile = null;
@@ -376,12 +405,12 @@ async function findFreshImageDownloadButton(page, mediaId) {
     const candidate = tiles.nth(index);
     const image = candidate.locator("img").first();
     if (!(await image.isVisible().catch(() => false))) continue;
-    if ((await image.getAttribute("data-media-id").catch(() => null)) === mediaId) {
+    if (mediaId === "__newest__" || (await image.getAttribute("data-media-id").catch(() => null)) === mediaId) {
       tile = candidate;
-      break;
+      if (mediaId !== "__newest__") break;
     }
   }
-  if (!tile) throw new Error("Không tìm thấy tile ảnh mới theo media ID; không tải card lịch sử");
+  if (!tile) throw new Error(mediaId === "__newest__" ? "Không tìm thấy tile media mới nhất; không tải card lịch sử" : "Không tìm thấy tile ảnh mới theo media ID; không tải card lịch sử");
   await tile.scrollIntoViewIfNeeded();
   await tile.hover();
   await page.waitForTimeout(250);
@@ -389,45 +418,10 @@ async function findFreshImageDownloadButton(page, mediaId) {
   // "Download batch" (ZIP), which is not the individual image requested by
   // this media-id-bound action.
   const direct = await findVisibleDownloadControl(tile);
-  if (direct && !/download\s*batch/i.test(direct.label)) {
-    return { ...direct, sourceMediaId: mediaId, route: "tile-hover" };
+  if (direct && !/download\s*batch/i.test(direct.label) && isExactDownloadLabel(direct.label)) {
+    return { ...direct, sourceMediaId: mediaId === "__newest__" ? await tile.locator("img").first().getAttribute("data-media-id").catch(() => null) : mediaId, route: mediaId === "__newest__" ? "newest-tile-hover" : "tile-hover" };
   }
-
-  const more = tile.getByRole("button", { name: /more options|more|tùy chọn|thêm/i }).first();
-  if (await more.isVisible().catch(() => false) && await more.isEnabled().catch(() => false)) {
-    await more.click();
-    await page.waitForTimeout(180);
-    const downloadMenu = await findExactVisibleMenuItem(page, /^download$/i);
-    if (downloadMenu) {
-      await downloadMenu.candidate.click();
-      await page.waitForTimeout(180);
-      const originalSize = await findExactVisibleMenuItem(page, /^(?:1K\s*)?original size$/i);
-      if (originalSize) return { ...originalSize, sourceMediaId: mediaId, route: "more-options-1k-original" };
-      await page.keyboard.press("Escape").catch(() => {});
-    }
-    await page.keyboard.press("Escape").catch(() => {});
-  }
-
-  // Some Flow layouts open a lightbox when the image itself is opened. Prefer
-  // its scoped Download control before falling back to a custom context menu.
-  await tile.locator("img").first().click().catch(() => tile.click().catch(() => {}));
-  await page.waitForTimeout(250);
-  const dialog = page.getByRole("dialog").last();
-  if (await dialog.isVisible().catch(() => false)) {
-    const dialogDownload = await findVisibleDownloadControl(dialog);
-    if (dialogDownload) return { ...dialogDownload, sourceMediaId: mediaId, route: "image-viewer" };
-  }
-
-  // Right-click is only a discovery fallback. Native Chrome menus are not
-  // automatable through CDP, but Flow's own context menu is and can expose
-  // the same Download item without guessing a coordinate.
-  await tile.click({ button: "right" }).catch(() => {});
-  await page.waitForTimeout(180);
-  const contextDownload = await findVisibleMenuDownloadControl(page);
-  if (contextDownload) return { ...contextDownload, sourceMediaId: mediaId, route: "context-menu" };
-  await page.keyboard.press("Escape").catch(() => {});
-  if (await dialog.isVisible().catch(() => false)) await page.keyboard.press("Escape").catch(() => {});
-  throw new Error("Tile ảnh mới chưa có nút Download hiển thị");
+  throw new Error("FLOW_DOWNLOAD_CONTROL_NOT_EXPOSED: tile đúng media chưa có nút Download trực tiếp; không mở More options, lightbox hoặc context menu để tránh click nhầm Trash/Delete");
 }
 
 async function findExactBatch(page, shotId, revisionId, runId) {
@@ -476,6 +470,95 @@ async function attachExactImageForAnimation(page, shotId, revisionId, runId) {
     throw new Error("Flow chưa xác nhận ingredient ảnh đúng media ID sau Animate");
   }
   return { editorFound: true, referenceAttached, sourceMediaId };
+}
+
+// Every visible ingredient chip is described by the media identity the
+// composer itself exposes, so an explicit binding can require that the only
+// chip present is the one it confirmed. The scan is bounded, and a composer
+// with more chips than the bound allows is refused outright: reading only the
+// first entries would report "one exact chip" for a composer that is actually
+// holding a second, different ingredient nobody looked at.
+const MAX_FLOW_INGREDIENT_CHIPS = 16;
+
+async function readFlowIngredientChips(page) {
+  const chips = page.locator("flow-image-ingredient-chip");
+  const totalCount = await chips.count().catch(() => 0);
+  if (totalCount > MAX_FLOW_INGREDIENT_CHIPS) {
+    throw new Error(flowExactMediaMessage("ingredient_scan_truncated"));
+  }
+  const described = [];
+  for (let index = 0; index < totalCount; index += 1) {
+    const chip = chips.nth(index);
+    if (!(await chip.isVisible().catch(() => false))) continue;
+    const image = chip.locator("img").first();
+    described.push({
+      mediaId: await image.getAttribute("data-media-id").catch(() => null)
+        || await chip.getAttribute("data-media-id").catch(() => null)
+        || "",
+      source: await image.getAttribute("src").catch(() => null) || "",
+    });
+  }
+  return described;
+}
+
+// The exact-media route proves a media ID is unique by counting every tile
+// wearing it, so a grid larger than the bound is a grid it cannot see all of.
+// Reading the first 128 would call a single visible match "unique" on a page
+// that may hold a second copy just past the cut, so the scan is refused.
+const MAX_FLOW_MEDIA_TILES = 128;
+
+async function countFlowMediaTiles(tiles) {
+  const total = await tiles.count().catch(() => 0);
+  if (total > MAX_FLOW_MEDIA_TILES) {
+    throw new Error(flowExactMediaMessage("media_scan_truncated"));
+  }
+  return total;
+}
+
+// An explicitly bound shot is attached from its own media ID only. Shot and
+// revision labels, history, and "the only visible tile" are all refused, so a
+// confirmed binding can never silently become a different image.
+async function attachConfirmedMediaForAnimation(page, mediaId) {
+  const tiles = page.locator("flow-grid-tile-container");
+  const tileCount = await countFlowMediaTiles(tiles);
+  let tile = null;
+  let matches = 0;
+  for (let index = 0; index < tileCount; index += 1) {
+    const candidate = tiles.nth(index);
+    const mediaIdValue = await candidate.locator("img").first().getAttribute("data-media-id").catch(() => null);
+    if (mediaIdValue !== mediaId) continue;
+    matches += 1;
+    if (!tile) tile = candidate;
+  }
+  if (matches === 0) throw new Error(flowExactMediaMessage("media_absent"));
+  if (matches > 1) throw new Error(flowExactMediaMessage("media_duplicate"));
+  if (!(await tile.isVisible().catch(() => false))) throw new Error(flowExactMediaMessage("media_not_visible"));
+
+  const before = verifyFlowIngredientChip(
+    { editorFound: Boolean(await findPromptEditor(page)), chips: await readFlowIngredientChips(page) },
+    mediaId,
+    { explicit: true },
+  );
+  if (before.ready) {
+    return { editorFound: true, referenceAttached: true, sourceMediaId: before.sourceMediaId || mediaId, chipCount: 1 };
+  }
+  const existingChips = await readFlowIngredientChips(page);
+  if (existingChips.length > 0) throw new Error(flowExactMediaMessage(before.reason));
+
+  await tile.scrollIntoViewIfNeeded();
+  await tile.hover();
+  const more = tile.getByRole("button", { name: "More options", exact: true });
+  if (!(await more.isVisible().catch(() => false))) throw new Error("Image tile đúng media ID chưa hiện More options");
+  await more.click();
+  const animate = page.getByRole("menuitem", { name: "Animate", exact: true });
+  if (!(await animate.isVisible().catch(() => false))) throw new Error("Flow chưa hiện menu Animate cho image tile");
+  await animate.click();
+  await page.waitForTimeout(700);
+  const editor = await findPromptEditor(page);
+  const chips = await readFlowIngredientChips(page);
+  const after = verifyFlowIngredientChip({ editorFound: Boolean(editor), chips }, mediaId, { explicit: true });
+  if (!after.ready) throw new Error(flowExactMediaMessage(after.reason));
+  return { editorFound: true, referenceAttached: true, sourceMediaId: after.sourceMediaId || mediaId, chipCount: chips.length };
 }
 
 async function imageFiles(root) {
@@ -584,6 +667,10 @@ async function runAction(page, cdpSession, spec, downloadDir) {
     const runId = safeId(spec.runId, "runId", /^[a-z0-9][a-z0-9-]{2,80}$/);
     const editor = await findPromptEditor(page);
     if (!editor) throw new Error("Không tìm thấy ô prompt image composer trong Flow");
+    // A real image composer must expose its own generation control before we
+    // type. This prevents the Agent/chat editor from receiving a prompt when
+    // Flow has silently returned to the conversation route.
+    await findUniqueButton(page, /start generation|generate image|generate|tạo ảnh/i, generationScore);
     await editor.fill(prompt);
     const acceptedText = await editor.innerText().catch(() => "");
     const accepted = acceptedText.includes("SHOT_ID:") && acceptedText.includes("REVISION_ID:") && acceptedText.includes(`RUN_ID: ${runId}`);
@@ -608,9 +695,24 @@ async function runAction(page, cdpSession, spec, downloadDir) {
     };
   }
   if (mode === "animate_image") {
+    const runId = safeId(spec.runId, "runId", /^[a-z0-9][a-z0-9-]{2,80}$/);
+    const mediaId = spec.mediaId ? safeMediaIdArgument(spec.mediaId) : null;
+    if (mediaId) {
+      const attached = await attachConfirmedMediaForAnimation(page, mediaId);
+      return {
+        status: "ready",
+        operation: "playwright_animate_confirmed_flow_media",
+        mediaId,
+        referenceAttached: attached.referenceAttached,
+        sourceMediaId: attached.sourceMediaId,
+        editorFound: attached.editorFound,
+        chipCount: attached.chipCount,
+        explicitMedia: true,
+        message: "Đã mở Animate từ đúng card media đã xác nhận thủ công và xác nhận ingredient đúng media ID trong video composer; chưa bấm Generate.",
+      };
+    }
     const shotId = safeId(spec.shotId, "shotId", /^[A-Za-z0-9_-]{3,96}$/);
     const revisionId = safeId(spec.revisionId, "revisionId", /^[A-Za-z0-9_.-]{3,96}$/);
-    const runId = safeId(spec.runId, "runId", /^[a-z0-9][a-z0-9-]{2,80}$/);
     const attached = await attachExactImageForAnimation(page, shotId, revisionId, runId);
     return {
       status: "ready",
@@ -627,7 +729,7 @@ async function runAction(page, cdpSession, spec, downloadDir) {
     const shotId = safeId(spec.shotId, "shotId", /^[A-Za-z0-9_-]{3,96}$/);
     const revisionId = safeId(spec.revisionId, "revisionId", /^[A-Za-z0-9_.-]{3,96}$/);
     const runId = safeId(spec.runId, "runId", /^[a-z0-9][a-z0-9-]{2,80}$/);
-    const mediaId = spec.mediaId ? safeId(spec.mediaId, "mediaId", /^[A-Za-z0-9_.:-]{3,96}$/) : null;
+    const mediaId = spec.mediaId ? safeMediaIdArgument(spec.mediaId) : null;
     const selected = mediaId
       ? await findFreshImageDownloadButton(page, mediaId)
       : await findBatchDownloadButton(await findExactBatch(page, shotId, revisionId, runId));
@@ -700,15 +802,21 @@ async function main() {
   }
 }
 
-main().catch(async (error) => {
-  const outputPath = arg("--output");
-  const report = {
-    schemaVersion: "1.0.0",
-    status: "blocked",
-    operation: "playwright_flow_worker",
-    message: boundedError(error),
-  };
-  if (outputPath) await writeReport(resolve(outputPath), report);
-  process.stderr.write(JSON.stringify(report) + "\n");
-  process.exitCode = 2;
-});
+// The worker is a CLI entry point, but its per-mode actions are also exercised
+// directly by focused tests, so it only runs when invoked as a script.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch(async (error) => {
+    const outputPath = arg("--output");
+    const report = {
+      schemaVersion: "1.0.0",
+      status: "blocked",
+      operation: "playwright_flow_worker",
+      message: boundedError(error),
+    };
+    if (outputPath) await writeReport(resolve(outputPath), report);
+    process.stderr.write(JSON.stringify(report) + "\n");
+    process.exitCode = 2;
+  });
+}
+
+export { attachConfirmedMediaForAnimation, runAction };

@@ -25,9 +25,18 @@ Turn a structured brief into safe, repeatable AI-assisted assets and shots. The 
 
 Prompts are stored as versioned content. The system tracks what changed between versions and prevents hidden provider defaults from becoming unrecorded behavior. Exact UI text, prices, scores, names and legal claims should be generated in a deterministic overlay or editor layer rather than trusted to a video model.
 
+For Google Flow cinematic shots, the planner may add a bounded `flowDirectives` list. These `/...` values are creative prompt annotations, not actions to click or type into the browser UI. The compiled provider prompt includes the allowlisted token and a plain-language explanation, and the script validator rejects unknown or duplicate values before generation.
+
 ## Shot-level generation
 
 Generate short shots, preserve the best accepted reference, and use extension/reference features only when the provider supports them. The narrative visual plan must be compiled before generation: every beat has an explicit narration span, visual claim, required visual evidence, grounded positive/negative prompt, expected output path and review state. Persistent entities keep immutable identity anchors across beats. The runner records every attempt, including rejected outputs, without overwriting the accepted version.
+
+The desktop Google Flow shot runner asks once for an explicit batch credit cap:
+the first shot's fresh visible unit price multiplied by the planned shot count.
+Before every paid click it re-reads the live composer, settings and price. It
+stops before the next Generate if the settings change, the price is unknown or
+the cumulative visible-price estimate would exceed the approved cap. A click
+with uncertain submission status is never retried automatically.
 
 ## Voice emotion planning
 

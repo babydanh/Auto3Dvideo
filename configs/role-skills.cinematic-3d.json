@@ -1,19 +1,23 @@
 {
   "schemaVersion": "1.0.0",
   "skillPackId": "cinematic-3d-role-skills",
-  "version": "2026-09-12.1",
+  "version": "2026-09-22.1",
   "roles": {
     "topic_director": {
       "instruction": "Tách chủ đề thành một mục tiêu hình ảnh rõ ràng, một nhân vật/chủ thể chính, một thế giới có quy luật và một chuỗi nguyên nhân-kết quả. Phân biệt dữ kiện cần nguồn với hư cấu.",
       "output": ["topic", "audience", "objective", "world_bible", "character_bible"]
     },
     "storyboard_shot_planner": {
-      "instruction": "Mỗi shot là một đơn vị video độc lập có shot_id, duration, story beat, subject, environment, action, camera, lens, lighting, continuity và acceptance checks. Không lặp một ảnh cho nhiều shot; beat chỉ là nhịp bên trong shot.",
-      "output": ["shot_id", "duration", "story_beat", "action", "continuity"]
+      "instruction": "Mỗi shot là một đơn vị video độc lập có shot_id, duration, story beat, subject, environment, action, camera, lens, lighting, continuity, flow_directives và acceptance checks. Với mỗi shot chọn token từ allowlist FLOW cinematic prompt, không bịa token và không coi token là lệnh UI; luôn ghi cả diễn giải tự nhiên. Không lặp một ảnh cho nhiều shot; beat chỉ là nhịp bên trong shot.",
+      "output": ["shot_id", "duration", "story_beat", "action", "continuity", "flow_directives"]
     },
     "shot_prompt_designer": {
-      "instruction": "Viết prompt theo thứ tự identity anchor → world/scale → action/cause-and-effect → composition/screen direction → camera/lens/movement → lighting/material/atmosphere → reference IDs/hashes → acceptance checks → negative constraints. Dùng câu ngắn, cụ thể, tránh danh sách mỹ từ chung chung.",
-      "output": ["positive_prompt", "negative_prompt", "reference_assets", "acceptance_checks"]
+      "instruction": "Viết prompt theo thứ tự identity anchor → world/scale → action/cause-and-effect → composition/screen direction → camera/lens/movement → FLOW cinematic directives exact token + diễn giải → lighting/material/atmosphere → reference IDs/hashes → acceptance checks → negative constraints. Dùng câu ngắn, cụ thể, tránh danh sách mỹ từ chung chung.",
+      "output": ["positive_prompt", "negative_prompt", "reference_assets", "flow_directives", "acceptance_checks"]
+    },
+    "cinematic_prompt_enricher": {
+      "instruction": "Áp dụng cinematic-video-prompt-skill theo dạng có cấu trúc: mỗi shot chọn đúng một shot size + góc máy, một hành động chính và tối đa một chuyển động camera; thêm ánh sáng khớp thời tiết/thời điểm, style + color + mood cùng hướng, rồi mới thêm technical output. Không nhồi mỹ từ, không ghép các cặp mâu thuẫn như golden hour với heavy downpour, không dùng camera movement kép trong một shot.",
+      "output": ["shot_size", "angle", "main_action", "camera_movement", "lighting", "style", "color", "mood", "technical"]
     },
     "continuity_prompt_guard": {
       "instruction": "Giữ nguyên silhouette, species, tỷ lệ, màu/marking, world scale, palette, time of day, screen direction, landmark và motion direction giữa các shot. Mọi thay đổi phải là continuity event được ghi rõ.",
@@ -33,6 +37,7 @@
     }
   },
   "researchSources": [
+    {"url": "https://github.com/Rylaispirit/cinematic-video-prompt-skill", "use": "cinematic shot-size/angle, camera movement, lighting, composition, style, color and mood vocabulary adapted into the local shot prompter", "licenseNote": "MIT; adapted as bounded prompt guidance, not executed as code"},
     {"url": "https://github.com/akirakai/awesome-nano-banana", "use": "structured concise image-edit prompts, iterative identity-preserving edits", "licenseNote": "CC-BY-SA 4.0 README; inspiration only"},
     {"url": "https://github.com/YouMind-OpenLab/awesome-nano-banana-pro-prompts", "use": "prompt examples and preview-oriented composition patterns", "licenseNote": "review repository license before copying content; inspiration only"},
     {"url": "https://github.com/Poly-Haven/polyhavenassets", "use": "Blender asset browser transport for Poly Haven environments/materials/HDRIs", "licenseNote": "asset-specific terms and attribution still require review"},

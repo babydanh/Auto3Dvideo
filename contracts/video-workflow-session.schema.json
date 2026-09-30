@@ -33,6 +33,102 @@
     "referenceAssetPaths": {"type": "array", "maxItems": 8, "items": {"type": "string", "minLength": 1}},
     "geminiAssetPaths": {"type": "array", "maxItems": 8, "items": {"type": "string", "minLength": 1}},
     "comfyuiAssetPaths": {"type": "array", "maxItems": 32, "items": {"type": "string", "minLength": 1}},
-    "blenderPreview": {"type": ["object", "null"]}
+    "blenderPreview": {"type": ["object", "null"]},
+    "canvasGraph": {"$ref": "#/$defs/canvasGraph"},
+    "shotReferenceBindings": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {"$ref": "#/$defs/shotReferenceBinding"}
+    }
+  },
+  "$defs": {
+    "canvasGraph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "sessionId", "nodes", "edges", "viewport"],
+      "properties": {
+        "version": {"type": "integer", "const": 1},
+        "sessionId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"},
+        "nodes": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "kind", "segmentId", "x", "y"],
+                "properties": {
+                  "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"},
+                  "kind": {"const": "shot"},
+                  "segmentId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"},
+                  "x": {"type": "number", "minimum": -10000, "maximum": 10000},
+                  "y": {"type": "number", "minimum": -10000, "maximum": 10000}
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["id", "kind", "assetId", "x", "y"],
+                "properties": {
+                  "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"},
+                  "kind": {"const": "asset"},
+                  "assetId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"},
+                  "x": {"type": "number", "minimum": -10000, "maximum": 10000},
+                  "y": {"type": "number", "minimum": -10000, "maximum": 10000}
+                }
+              }
+            ]
+          }
+        },
+        "edges": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "from", "to"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"},
+              "from": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"},
+              "to": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"}
+            }
+          }
+        },
+        "viewport": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y", "zoom"],
+          "properties": {
+            "x": {"type": "number", "minimum": -10000, "maximum": 10000},
+            "y": {"type": "number", "minimum": -10000, "maximum": 10000},
+            "zoom": {"type": "number", "minimum": 0.25, "maximum": 4}
+          }
+        }
+      }
+    },
+    "shotReferenceBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["segmentId", "referenceSetId", "assignmentId", "assetId", "assetSha256", "role"],
+      "properties": {
+        "segmentId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"},
+        "referenceSetId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"},
+        "assignmentId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"},
+        "assetId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$"},
+        "assetSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "role": {"type": "string", "enum": ["identity", "composition", "pose", "camera", "style", "start_frame", "end_frame", "negative"]},
+        "flowProjectId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,159}$"},
+        "flowMediaId": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,255}$"},
+        "confirmedAt": {"type": "string", "format": "date-time"},
+        "confirmationKind": {"const": "manual_visual"}
+      },
+      "dependentRequired": {
+        "flowProjectId": ["flowMediaId", "confirmedAt", "confirmationKind"],
+        "flowMediaId": ["flowProjectId", "confirmedAt", "confirmationKind"],
+        "confirmedAt": ["flowProjectId", "flowMediaId", "confirmationKind"],
+        "confirmationKind": ["flowProjectId", "flowMediaId", "confirmedAt"]
+      }
+    }
   }
 }

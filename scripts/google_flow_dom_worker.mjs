@@ -133,13 +133,19 @@ function promptEditorExpression() {
     };
     const editor = editors.find(visible);
     if (!editor) return { found: false, reason: 'Không tìm thấy Flow prompt editor ProseMirror trong composer.' };
+    const generationControlFound = [...document.querySelectorAll('button, [role="button"]')].some((node) => {
+      if (!visible(node)) return false;
+      const label = (node.getAttribute('aria-label') || node.getAttribute('title') || node.innerText || node.textContent || '').replace(/\\s+/g, ' ').trim();
+      return /^(?:start generation|generate image|tạo ảnh)$/i.test(label) || /start generation|generate image|tạo ảnh/i.test(label) && !/chat|assistant|video/i.test(label);
+    });
+    if (!generationControlFound) return { found: false, generateButtonFound: false, reason: 'Flow đang ở Agent/chat hoặc output detail; chưa thấy control Generate của image composer.' };
     editor.focus();
     const selection = window.getSelection();
     const range = document.createRange();
     range.selectNodeContents(editor);
     selection.removeAllRanges();
     selection.addRange(range);
-    return { found: true, selected: true, composer: 'flow-rich-text-editor.prompt-input' };
+    return { found: true, selected: true, generateButtonFound: true, generateButtonEnabled: true, composer: 'flow-rich-text-editor.prompt-input' };
   })()`;
 }
 
@@ -278,11 +284,19 @@ function inspectComposerExpression() {
     const editor = findVisible('flow-rich-text-editor.prompt-input div.ProseMirror[contenteditable="true"]');
     const composer = findVisible('flow-rich-text-editor.prompt-input');
     const modelPicker = findVisible('button[aria-label="Image generation default model"]');
+    const generationControl = roots.flatMap((root) => [...root.querySelectorAll('button, [role="button"]')]).find((node) => {
+      if (!visible(node)) return false;
+      const label = (node.getAttribute('aria-label') || node.getAttribute('title') || node.innerText || node.textContent || '').replace(/\\s+/g, ' ').trim();
+      return /^(?:start generation|generate image|tạo ảnh)$/i.test(label) || /start generation|generate image|tạo ảnh/i.test(label) && !/chat|assistant|video/i.test(label);
+    });
+    const generationButtonEnabled = Boolean(generationControl && !generationControl.disabled && generationControl.getAttribute('aria-disabled') !== 'true');
     const bodyText = (document.body?.innerText || '').replace(/\\s+/g, ' ').trim();
     return {
       composerFound: Boolean(editor || composer),
       promptEditorFound: Boolean(editor),
-      imageModeFound: Boolean(modelPicker || editor || /Nano Banana|What do you want to create|Bạn muốn thay đổi gì/i.test(bodyText)),
+      generateButtonFound: Boolean(generationControl),
+      generateButtonEnabled: generationButtonEnabled,
+      imageModeFound: Boolean(modelPicker || (editor && generationControl) || /Nano Banana|What do you want to create|Bạn muốn thay đổi gì/i.test(bodyText)),
       modelPickerFound: Boolean(modelPicker),
       editorTextLength: editor ? (editor.innerText || '').trim().length : 0,
     };
@@ -500,18 +514,19 @@ async function main() {
       const value = inspected?.result?.value || {};
       const report = {
         schemaVersion: "1.0.0",
-        status: value.composerFound && value.promptEditorFound ? "ready" : "blocked",
+        status: value.composerFound && value.promptEditorFound && value.generateButtonFound ? "ready" : "blocked",
         operation: "dom_inspect_composer",
         projectUrl,
         targetUrl: target.url,
         composerFound: Boolean(value.composerFound),
         promptEditorFound: Boolean(value.promptEditorFound),
+        generateButtonFound: Boolean(value.generateButtonFound),
         imageModeFound: Boolean(value.imageModeFound),
         modelPickerFound: Boolean(value.modelPickerFound),
         editorTextLength: value.editorTextLength || 0,
-        message: value.composerFound && value.promptEditorFound
-          ? "DOM Flow đã xác nhận image composer và editor prompt thật; không cần Vision planner để định tuyến bước tiếp theo."
-          : "DOM Flow chưa xác nhận editor prompt image thật; không gõ vào chat.",
+        message: value.composerFound && value.promptEditorFound && value.generateButtonFound
+          ? "DOM Flow đã xác nhận image composer, editor prompt và control Generate thật; control có thể disabled khi prompt còn trống."
+          : "DOM Flow chưa xác nhận đủ editor prompt image + control Generate thật; không gõ vào chat.",
       };
       await writeReport(outputPath, report);
       process.stdout.write(JSON.stringify({ status: report.status, operation: report.operation, composerFound: report.composerFound, promptEditorFound: report.promptEditorFound, outputPath }) + "\n");

@@ -204,6 +204,13 @@ pub fn nanobanana_tool_name() -> String {
     value(&context, "AUTO3DVIDEO_NANOBANANA_TOOL").unwrap_or_else(|| "generate_image".to_string())
 }
 
+pub fn google_flow_mcp_server_entry() -> String {
+    let context = load_context();
+    value(&context, "AUTO3DVIDEO_GOOGLE_FLOW_MCP_SERVER_ENTRY").unwrap_or_else(|| {
+        r"D:\Duancanhan\Auto3Dvideo\vendor\google-flow-mcp\dist\index.js".to_string()
+    })
+}
+
 /// Model used only for the bounded BrowserMCP action planner. The planner
 /// receives a fresh accessibility snapshot plus screenshot and can propose one typed action;
 /// BrowserMCP execution remains behind the Rust ref/target guards.

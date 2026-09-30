@@ -6,6 +6,180 @@ Added a Vietnamese-first `Voice Studio` tab for VieNeu-TTS v3 Turbo. The tab sta
 
 Voice Studio is a configuration and preview surface, not a legal clearance system or a free-form emotion mixer. VieNeu v3 Turbo style prompts are not treated as supported emotion controls; cue behavior remains experimental and requires listening review. Preset/reference voice rights, AI disclosure, platform policy and final delivery remain human-review responsibilities.
 
+### Google Flow shot automation hardening — 2026-09-28
+
+Added a native shot-layout canvas with stable segment identity, local-only shot-reference assignment, and saved canvas state separate from script order. Added bounded Google Flow image-card discovery, SQLite-backed reference preflight, exact media-ID attachment, and fail-closed verification of the selected ingredient immediately before prompt entry and Generate. Shot prompts now sanitize brief-derived local paths and provider image tags; split-shot inspector previews cover every paid part. Reference fingerprints and checkpoint provenance prevent a changed assignment from silently resubmitting a shot. Existing budget, rights, review and credit-cap gates remain in force. No provider request or paid generation was used.
+
+Focused Node suites, desktop build, Rust formatting and full Rust tests passed (148 passed, 4 ignored). Native WebView2 drop, DPI mapping, durable assignment/save-reopen, and live Flow DOM identity remain unverified; native acceptance requires human review.
+
+### Desktop modularization, first slice — 2026-09-27
+
+Moved the workspace node canvas into `desktop/src/features/workspace/ProjectWorkspaceCanvas.tsx`, with its own node model and a narrow, structural prop contract. Moved the saved video-session list/save/delete Tauri commands into `desktop/src-tauri/src/video_workflow_sessions.rs`; `invoke_handler!` still registers the same command names, and command payloads and session persistence remain unchanged. No Axum server or dependency was added.
+
+`pnpm run build` passed (Vite warned that the 643.93 kB JavaScript chunk exceeds its 500 kB threshold). `cargo fmt --manifest-path desktop/src-tauri/Cargo.toml -- --check` passed; `cargo test --manifest-path desktop/src-tauri/Cargo.toml video_session_` passed 2 focused tests; the project validator passed with 458 registered files. Vite preview smoke verified the empty-workspace state and its local project-form callback; it had no Tauri backend. No provider requests or credit spend occurred.
+
+`App.tsx` and `lib.rs` remain large; this is the first feature-boundary extraction, not completion of the full modularization plan.
+
+### Desktop modularization, second slice — 2026-09-27
+
+Moved reference-set input validation and the list/create/update/archive/restore/assign/detach Tauri commands from `lib.rs` into `desktop/src-tauri/src/reference_sets.rs`. `invoke_handler!` registers the same command identifiers through the module; frontend invoke strings, DTOs, database behavior, audit events and project/asset ownership checks remain unchanged. No schema, dependency or provider-call changes.
+
+`pnpm run build` passed with the existing 643.93 kB chunk warning. `cargo fmt --manifest-path desktop/src-tauri/Cargo.toml -- --check` passed; `cargo test --manifest-path desktop/src-tauri/Cargo.toml reference_` passed 8 tests (123 filtered); the project validator passed with 459 registered files. Browser smoke rendered the workflow page but had no Tauri backend, so command invocation was not exercised through UI. No provider requests or credit spend occurred.
+
+`lib.rs` remains 20,120 lines; this is the second bounded extraction, not completion of modularization.
+
+### Desktop modularization, third slice — 2026-09-27
+
+Moved `AssetReferencePanel` into `desktop/src/features/assets/AssetReferencePanel.tsx` and its `AssetView`, draft and reference-set view types into `assetTypes.ts`. `App.tsx` now imports the feature while retaining project state, Tauri callbacks and page composition; existing styles remain in `App.css`. UI props, rights states, approval actions and command behavior are unchanged.
+
+`pnpm run build` passed with the existing 643.93 kB chunk warning. The project validator passed with 461 registered files (100 JSON, 17 YAML; semantic YAML validation unavailable). Vite browser smoke rendered the extracted panel with empty fixture data and verified its empty states; the preview had no Tauri backend and no callback or project write was exercised. No provider requests or credit spend occurred.
+
+`App.tsx` remains 11,373 lines; this is the third bounded extraction, not completion of modularization.
+
+### Desktop modularization, fourth slice — 2026-09-27
+
+Moved `AssetPackReviewPanel` and its Asset Pack TypeScript view types into `desktop/src/features/assets/`; `App.tsx` retains state, data loading and mutation callbacks. Moved Asset Pack Rust DTOs, parsing/review/Blender-binding helpers and all five Tauri commands into `desktop/src-tauri/src/asset_packs.rs`; command identifiers and handler payloads are unchanged. Shared process/path/database helpers stay in `lib.rs`; existing UI styles stay in `App.css`.
+
+`pnpm run build` passed with the 643.93 kB chunk warning. `cargo fmt --check` passed; the migration test passed, and the focused Asset Pack checklist test proves the 64/65 acceptance-check boundary. Browser smoke rendered empty and populated review states and confirmed the Blender gate stays disabled for an unapproved item. The preview had no Tauri backend; no callbacks, project writes, Blender or provider actions were performed.
+
+`python scripts/validate_project.py --project .` passed (`AUTO3DVIDEO_PROJECT_VALID`, 463 manifest and physical files, 100 JSON, 17 YAML). Semantic YAML validation was unavailable; external tools were not run.
+
+`App.tsx` is 11,170 lines and `lib.rs` is 18,661 lines; modularization is not complete.
+
+### Desktop modularization, fifth slice — 2026-09-27
+
+Moved `SubtitleStudioPanel` and subtitle document/report types into `desktop/src/features/subtitles/`; moved the shared `ProcessRunSummary` DTO into `desktop/src/processTypes.ts` to avoid a feature-to-App type dependency. `App.tsx` retains project state, file dialogs and Tauri callbacks. `App.css` and the existing `subtitle.rs` command module are unchanged.
+
+`pnpm run build` passed with the existing 643.93 kB chunk warning. Vite browser smoke rendered empty and populated states; the empty state gated probing/loading until inputs were present, and a local-fixture split produced two timed cues and a draft document. The preview captured the edit in a harness callback only; no Tauri command, project file write, provider or worker ran.
+
+`python scripts/validate_project.py --project .` passed (`AUTO3DVIDEO_PROJECT_VALID`, 466 manifest and physical files, 100 JSON, 17 YAML; environment template validation passed). Semantic YAML validation was unavailable; external tools were not run.
+
+`App.tsx` is 10,983 lines. This is the fifth bounded extraction; additional screens and Rust command families remain.
+
+
+### Desktop modularization, sixth slice — 2026-09-27
+
+Moved `PreviewLibraryPanel`, preview view models, URL/card parsing and display helpers into `desktop/src/features/preview/`. `App.tsx` retains project state, worker calls, callbacks and page composition; preview CSS and behavior are unchanged.
+
+`pnpm run build` passed (`tsc && vite build`); Vite reported a 643.93 kB JavaScript chunk above the 500 kB warning threshold. Vite browser smoke rendered the Preview Library empty state, platform filters and disabled scan action without a selected project. The preview had no Tauri backend; no worker, project mutation, provider request or generation ran.
+
+`python scripts/validate_project.py --project .` passed (`AUTO3DVIDEO_PROJECT_VALID`, 469/469 files, 100 JSON, 17 YAML; environment-template validation passed). The run first identified the existing `desktop/src-tauri/src/project_jobs.rs` missing from `MANIFEST.json`; that source is now registered. Semantic YAML validation was unavailable; external tools were not run.
+
+`App.tsx` is 10,580 lines. The Preview Library is the first bounded frontend extraction from the remaining architecture slices.
+
+### Desktop modularization, seventh slice — 2026-09-27
+
+Moved `PromptStudioPanel` and its `PromptPreset` / `PromptPresetDraft` view types into `desktop/src/features/prompts/`. Added a feature-owned activity callback contract; `App.tsx` retains preset loading/mutations, workspace activity recording, brief application and page composition. Existing Prompt Studio styles and behavior are unchanged.
+
+`pnpm run build` passed (`tsc && vite build`) with the existing 643.93 kB JavaScript chunk warning. Vite browser smoke rendered the empty preset state and editable draft under Quản lý nâng cao. No Tauri backend was available; no save/apply action, project write, provider request or generation ran. Browser runtime errors were empty.
+
+`python scripts/validate_project.py --project .` passed (`AUTO3DVIDEO_PROJECT_VALID`, 471/471 files, 100 JSON, 17 YAML; environment-template validation passed). Semantic YAML validation was unavailable; external tools were not run.
+
+`App.tsx` is 10,380 lines; the broader modularization plan remains in progress.
+
+### Desktop modularization, remaining slices — 2026-09-28
+
+Moved the remaining workflow screens, feature view types, state hooks and feature-owned Tauri adapters under `desktop/src/features/`. `App.tsx` now keeps app-wide bootstrap/status queries, shared refresh coordination, project/navigation state and page composition; feature reads and Google Flow account connection live with their owners. Moved all remaining Tauri command bodies and private feature helpers from `lib.rs` into Rust feature modules. `lib.rs` has no `#[tauri::command]` implementations; shared bootstrap, state, migrations, execution/database helpers and existing tests remain. Existing command names/payloads, contracts, schemas, rights gates and process safety are unchanged.
+
+`pnpm run build` passed (`tsc && vite build`); Vite reported a 674.00 kB JavaScript chunk above the 500 kB warning threshold. `cargo fmt -- --check` passed; `cargo test` passed 128 tests with 4 ignored external-tool cases. Vite smoke rendered all 13 navigation routes with no browser runtime errors; its preview had no Tauri backend and performed no provider, generation, project mutation or worker action. The repository validator passed with 534 manifest and physical files (100 JSON, 17 YAML); semantic YAML validation was unavailable and external tools were not executed.
+
+`App.tsx` is 664 lines and `lib.rs` is 2,641 lines. This completes PLAN-027's named feature ownership slices; the remaining shell and bootstrap responsibilities are intentionally shared.
+
+### Desktop Google Flow video route — 2026-09-26
+
+The primary one-prompt video action uses the attached BrowserMCP session, navigates to the saved Flow project ID and verifies the live target and video composer before typing any shot prompt. The live DOM must expose the selected model, aspect ratio, resolution, duration and one unambiguous price; the app then estimates `price × planned shot count` and requests one approval for a hard batch cap before prompt entry. It rechecks project, composer, settings and price before each prompt and Generate; changed settings, missing price or cap overflow blocks before that shot. Each accepted output must be new, downloaded, FFprobed and imported before the next shot. No automatic retry or publishing.
+
+Flow project destinations are saved by display name and ID in a list scoped to
+the selected Auto3Dvideo project. This remains a local saved list, not Flow
+account discovery; it neither creates a remote project nor starts generation.
+
+The selected saved project already exposes a Video composer. Live DOM inspection
+confirmed the unchanged `Omni 1.1 Flash`, 16:9, 720p, 8-second selection and
+12-credit unit price. Media-heavy project snapshots previously saturated
+BrowserOS refs with gallery controls; snapshots now prioritize composer, price
+and download refs, while same-project DOM evidence verifies the selected
+settings. The settings inspector waits for evidence without toggling an
+already-open menu.
+
+The resumed preflight unexpectedly auto-accepted the embedded WebView's native
+`window.confirm` and made one Generate click. Auto3Dvideo recorded a 12-credit
+estimate, then stopped because its inspector found ambiguous matching outputs.
+No clip was downloaded, imported or composed. The actual Google Flow charge and
+output status are unverified. No retry was made. The budget gate now uses an
+explicit in-app approval dialog before any future batch can proceed.
+
+The video input/Generate path uses a typed Tauri action backed by BrowserOS DOM evidence, validates the exact saved Flow project, `Omni 1.1 Flash`, live unit price and full approved batch cap, and binds output to run/shot/revision before download. Ambiguous output, changed settings, uncertain clicks or timeouts stop without retry. Batch approval now uses explicit in-app Approve/Cancel controls; no native `window.confirm` can authorize provider spend.
+
+Output reconciliation recognizes Flow's image-backed video posters only when
+the card exposes video model/resolution/duration/aspect metadata and exact
+run/shot/revision identity. Unrelated image cards are excluded; ambiguous video
+outputs still stop without retry.
+
+The Flow video worker now restores temporary Download accessibility labels
+before preparing a fresh BrowserOS ref, and cleans them after the action.
+Regression coverage includes legacy markers without saved label metadata.
+The code change itself triggers no Google Flow request or credit spend.
+
+Interrupted batches now persist their run identity and pre-Generate shot/revision
+credit estimates in local storage scoped to the Auto3Dvideo project, Flow
+project, workflow session and source-prompt hash. Resume checks exact run/shot/
+revision output before continuing; it imports only a unique match, skips
+already-imported clips and blocks if a prior Generate has no verifiable output
+instead of repeating a paid action. Remaining shots require explicit batch
+approval; the cumulative estimate covers this checkpointed run only, not
+uncheckpointed/provider usage. Checkpoints clear only after FFprobe confirms
+composition; actual provider charges remain unverified.
+
+Batch resume now selects the saved workflow with the most imported videos for
+the exact Auto3Dvideo project, session and Flow run when discovery created a
+new empty workflow. Imported video identity must include the exact run, shot,
+revision and input hash; missing or cross-run evidence cannot authorize another
+Generate. The same run's unimported output is reconciled before any new shot.
+
+Video and image composition accept canonical uppercase `SHOT-###` identifiers
+through the same ASCII identity validator used by Flow actions, while still
+rejecting path syntax. FFmpeg can now receive the identifiers emitted by the UI.
+
+For legacy shot plans that repeat the whole brief under a generic role
+contract, each paid Flow prompt now uses only that shot's numbered source
+description plus the source subject, opening context, style and continuity.
+This generic fallback avoids sending stale dinosaur-template text instead of
+the user's project-specific shot plan; no generation or provider cost is
+incurred by the change.
+
+Flow composition now trims every imported clip to its planned shot duration
+before concatenation and rejects the output unless FFprobe confirms the
+requested total duration. This keeps the 12-by-5-second storyboard at 60
+seconds even when Flow's available generation duration is 8 seconds.
+
+The batch approval popup is app-owned, accessible and explicitly canceled or
+approved by the user. Cancel/Escape resolves the waiting run before prompt entry.
+
+The Flow edit-route safety allowlist now accepts the exact Vietnamese “Đã chỉnh sửa xong” completion control as well as “Done editing”. Unknown and destructive controls remain blocked. This guard fix triggers no Flow request or credit spend.
+
+### 2026-09-27 checkpointed Flow video import recovery
+
+Restarted imports can reuse an existing Flow video only when the request has
+valid run/shot/revision/input-hash identity and source/destination size and
+SHA-256 match. Conflicting files remain untouched and fail closed. New files
+are created without overwriting; copy/hash or FFprobe rejection rolls back only
+the file created by that import. Reused outputs are still FFprobed before they
+are recorded in the resumed workflow. A focused Rust regression covers exact
+reuse and same-size mismatch preservation. This local fix starts no Flow
+generation and performs no publishing.
+
+### Windows Flow worker output encoding — 2026-09-24
+
+Fixed gflow-cli generation and interactive-login worker stdout to emit ASCII-escaped JSON, preserving Vietnamese success and failure messages under legacy Windows code pages. Added cp1252 regression coverage for both report and error output. No generation was started by this fix.
+
+### Google Flow auth preflight diagnostics — 2026-09-24
+
+Failed `gflow auth status` probes now remain fail-closed but return `GFLOW_AUTH_UNVERIFIED` with the CLI's safe diagnostic instead of misreporting every probe error as missing login. Rust surfaces structured worker failure JSON on non-zero exits while retaining credential redaction. The no-generation login worker now reports only allowlisted auth event fields and error classes on failure; raw browser/CLI output is withheld. A retry emitted no safe structured diagnostic, so the underlying login issue remains unresolved. No generation was started and no credits were spent.
+
+### BrowserOS live target resolution — 2026-09-24
+
+BrowserOS clicks now resolve the requested exact accessible label from a fresh same-session snapshot and use that snapshot's unique interactive ref; stale refs are not reused. Recycled page IDs outside Google Flow are blocked without clicking or opening another tab, and attachment status requires a verified Flow URL rather than generic UI refs. Mocked click/origin regressions pass. A live non-generation `Trang chủ` click resolved from a fresh snapshot and completed; no paid generation was attempted.
+
 Added `Subtitle Studio` to the Windows desktop UI. The new local editor probes a user-provided video with FFprobe, loads SRT/VTT through a bounded Python worker, edits cue text and millisecond timestamps, supports add/delete/split/merge and find/replace, warns on overlap/end-time/CPS/line length, exports a new SRT/VTT sidecar and burns subtitles into a new MP4 copy through the native direct supervisor. Added `subtitle-document.schema.json`, `subtitle_worker.py` coverage, native `subtitle.rs` commands, workspace containment, output overwrite protection, SHA-256/FFprobe evidence and the Subtitle Studio plan. Source video is never overwritten; automatic transcription/translation providers are not silently called, and TikTok/Douyin/YouTube scraping, watermark removal and auto-publish remain disabled.
 
 
@@ -52,6 +226,7 @@ Added the validated planning-pack release evidence, root navigation, manifest in
 ## 0.2.0-plan — 2026-08-22
 
 Established the local-first Windows desktop architecture, research index, workflow fixtures, JSON contracts, automation job graph, 3D/Blender path, ComfyUI integration boundary, FFmpeg delivery path, human review gates, rights/provenance model, agent protocol and implementation backlog.
+
 
 ## Future releases
 

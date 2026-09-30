@@ -34,6 +34,8 @@ Topic Profile quyết định recipe mặc định, visual mode, chiến lược
 
 Trong UI, trường **Prompt nội dung bổ sung** chỉ là dữ liệu người dùng nhập cho phiên preview. Nó được hiển thị lại trước khi compile và không được coi là system instruction. Từ ngữ có thể ảnh hưởng đến quyền, publish, credential hoặc process execution phải bị chặn hoặc chuyển thành `NEEDS_REVIEW`.
 
+Prompt per-shot được enrich bởi `cinematic_prompt_enricher`, một adaptation có giới hạn từ [cinematic-video-prompt-skill](https://github.com/Rylaispirit/cinematic-video-prompt-skill) (MIT). Adapter chỉ bổ sung vocabulary và thứ tự khối điện ảnh: shot size/góc máy, subject/action, setting, lighting, một camera movement, style/color, mood và technical output. Nó không được phép tạo command, gọi provider, bỏ qua identity/continuity/reference/rights gate hoặc biến reference media thành source asset.
+
 ## Profile mẫu
 
 Catalog hiện có sáu profile: khoa học/giải thích, lịch sử/tài liệu, truyện/kể chuyện, sản phẩm/demo, gameplay/hướng dẫn và cinematic 3D. Các profile đều yêu cầu provenance, loại candidate lệch chủ đề và review của người dùng. Profile không có nghĩa là mọi asset hay claim trong chủ đề được phép sử dụng.

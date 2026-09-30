@@ -69,6 +69,10 @@ const ALLOWLIST: &[AllowlistedExecutable] = &[
         binary_name: "python.exe",
     },
     AllowlistedExecutable {
+        id: "gflow",
+        binary_name: "gflow.exe",
+    },
+    AllowlistedExecutable {
         id: "yt-dlp",
         binary_name: "yt-dlp.exe",
     },
@@ -153,7 +157,8 @@ fn validate_argument(value: &str, index: usize) -> Result<(), String> {
 fn validate_environment(environment: &BTreeMap<String, String>) -> Result<Vec<String>, String> {
     let mut keys = Vec::with_capacity(environment.len());
     for (key, value) in environment {
-        if !key.starts_with("AUTO3DVIDEO_")
+        let google_flow_runtime_key = key == "FLOW_MCP_CDP_URL";
+        if !key.starts_with("AUTO3DVIDEO_") && !google_flow_runtime_key
             || key.len() > 128
             || !key.chars().all(|character| {
                 character.is_ascii_uppercase() || character.is_ascii_digit() || character == '_'
@@ -295,6 +300,17 @@ mod tests {
             "secret-value".to_string(),
         );
         assert!(plan_process_dry_run(spec).is_err());
+    }
+
+    #[test]
+    fn accepts_local_google_flow_cdp_runtime_key() {
+        let mut spec = valid_spec();
+        spec.environment.insert(
+            "FLOW_MCP_CDP_URL".to_string(),
+            "http://127.0.0.1:9222".to_string(),
+        );
+        let plan = plan_process_dry_run(spec).expect("local Flow CDP runtime key is allowlisted");
+        assert_eq!(plan.environment_keys, vec!["FLOW_MCP_CDP_URL"]);
     }
 }
 

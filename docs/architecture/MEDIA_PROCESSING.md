@@ -29,7 +29,7 @@ Every worker produces versioned media plus a manifest with recipe ID, worker ver
 |---|---|---|
 | `probe` | Media file | Duration, stream, codec, frame rate, dimensions and audio metadata |
 | `normalize` | Heterogeneous clip | Project-standard intermediate |
-| `concat` | Ordered clips | Draft or master video |
+| `concat` | Ordered clips | Draft or master video; trim each clip to its requested timeline duration and validate the final duration with FFprobe |
 | `mux` | Video + audio | Synchronized media |
 | `subtitle` | Video + SRT/VTT | Burned or sidecar captions |
 | `thumbnail` | Video/frame | PNG/JPEG thumbnail |

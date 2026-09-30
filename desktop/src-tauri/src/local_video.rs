@@ -1223,7 +1223,7 @@ fn validate_segment_keys(
     segment: &serde_json::Map<String, Value>,
     index: usize,
 ) -> Result<(), String> {
-    const ALLOWED: [&str; 18] = [
+    const ALLOWED: [&str; 19] = [
         "segmentId",
         "assetId",
         "narration",
@@ -1241,12 +1241,126 @@ fn validate_segment_keys(
         "continuityNotes",
         "negativePrompt",
         "sceneMode",
+        "flowDirectives",
         "beats",
     ];
     if let Some(unknown) = segment.keys().find(|key| !ALLOWED.contains(&key.as_str())) {
         return Err(format!(
             "script.segments[{index}].{unknown} không được phép"
         ));
+    }
+    Ok(())
+}
+
+const FLOW_CINEMATIC_DIRECTIVES: [&str; 88] = [
+    "/groundlevel",
+    "/birdseye",
+    "/skyview",
+    "/straightdown",
+    "/firstperson",
+    "/secondview",
+    "/openingshot",
+    "/focusswap",
+    "/fullscene",
+    "/vastview",
+    "/closecrop",
+    "/tightframe",
+    "/extremeclose",
+    "/thirdgrid",
+    "/innerframe",
+    "/midpoint",
+    "/allclear",
+    "/pushin",
+    "/pullback",
+    "/followshot",
+    "/circleshot",
+    "/hheld",
+    "/glidecam",
+    "/liftup",
+    "/settledown",
+    "/sprintmode",
+    "/strollmode",
+    "/spinreveal",
+    "/unveil",
+    "/firstlook",
+    "/lastlook",
+    "/weightless",
+    "/dropshot",
+    "/timestretch",
+    "/fastforward",
+    "/hypershot",
+    "/timestop",
+    "/speedshift",
+    "/matrixtime",
+    "/speedblur",
+    "/sunsetglow",
+    "/duskhour",
+    "/neonpulse",
+    "/darkmood",
+    "/softbox",
+    "/edgelight",
+    "/shadowform",
+    "/spotbeam",
+    "/lightrays",
+    "/glowbehind",
+    "/nightcity",
+    "/glowskin",
+    "/softbackdrop",
+    "/crispsubject",
+    "/macroeyes",
+    "/headtotoe",
+    "/blurback",
+    "/isolatefocus",
+    "/gazepoint",
+    "/coresharp",
+    "/darkedges",
+    "/layerstack",
+    "/dropdetail",
+    "/precisefocus",
+    "/lightshapes",
+    "/burstzoom",
+    "/spinblur",
+    "/filmlook",
+    "/singletone",
+    "/oldfilm",
+    "/duotone",
+    "/grayscale",
+    "/amberlook",
+    "/icylook",
+    "/highcontrast",
+    "/brightbalance",
+    "/colorpop",
+    "/mutedtone",
+    "/gradeflat",
+    "/orangeteal",
+    "/boldcolor",
+    "/purebw",
+    "/neonwash",
+    "/softdots",
+    "/sunflare",
+    "/edgefade",
+    "/rainbowsplit",
+    "/digitalglitch",
+];
+
+fn validate_flow_directives(value: &Value, index: usize) -> Result<(), String> {
+    let directives = value
+        .as_array()
+        .filter(|items| (1..=8).contains(&items.len()))
+        .ok_or_else(|| {
+            format!("script.segments[{index}].flowDirectives phải có từ 1 đến 8 lệnh")
+        })?;
+    let mut seen = std::collections::HashSet::new();
+    for (directive_index, directive) in directives.iter().enumerate() {
+        let command = directive
+            .as_str()
+            .filter(|value| FLOW_CINEMATIC_DIRECTIVES.contains(value))
+            .ok_or_else(|| format!("script.segments[{index}].flowDirectives[{directive_index}] không nằm trong allowlist"))?;
+        if !seen.insert(command) {
+            return Err(format!(
+                "script.segments[{index}].flowDirectives bị trùng lệnh"
+            ));
+        }
     }
     Ok(())
 }
@@ -1482,6 +1596,9 @@ fn validate_local_script(script: &Value, require_approved: bool) -> Result<Value
             .as_object()
             .ok_or_else(|| format!("script.segments[{index}] phải là object"))?;
         validate_segment_keys(segment, index)?;
+        if let Some(flow_directives) = segment.get("flowDirectives") {
+            validate_flow_directives(flow_directives, index)?;
+        }
         if let Some(beats) = segment.get("beats") {
             validate_segment_beats(beats, index)?;
         }
@@ -2878,8 +2995,8 @@ mod native_e2e_tests {
             .join("native-local-video-e2e-artifacts")
             .join(&run_id);
         fs::create_dir_all(&root).expect("evidence workspace");
-        let connection = Connection::open_in_memory().expect("in-memory database");
-        apply_migrations(&connection).expect("migrations");
+        let mut connection = Connection::open_in_memory().expect("in-memory database");
+        apply_migrations(&mut connection).expect("migrations");
         let project_id = "project-native-e2e";
         let timestamp = now_string();
         connection
@@ -2903,7 +3020,6 @@ mod native_e2e_tests {
         let state = AppState {
             database: Mutex::new(connection),
             cancellation_tokens: Mutex::new(HashMap::new()),
-            cloud_generation_enabled: AtomicBool::new(false),
         };
         let review = generate_local_video_script_inner(
             project_id.to_string(),
@@ -3035,8 +3151,8 @@ mod native_e2e_tests {
             .join("native-space-25d-e2e-artifacts")
             .join(&run_id);
         fs::create_dir_all(root.join("approved")).expect("approved script directory");
-        let connection = Connection::open_in_memory().expect("in-memory database");
-        apply_migrations(&connection).expect("migrations");
+        let mut connection = Connection::open_in_memory().expect("in-memory database");
+        apply_migrations(&mut connection).expect("migrations");
         let project_id = "project-space-25d-e2e";
         let timestamp = now_string();
         connection
@@ -3060,7 +3176,6 @@ mod native_e2e_tests {
         let state = AppState {
             database: Mutex::new(connection),
             cancellation_tokens: Mutex::new(HashMap::new()),
-            cloud_generation_enabled: AtomicBool::new(false),
         };
         let script_path = "approved/script.json";
         let script = serde_json::json!({
@@ -3183,8 +3298,8 @@ mod native_e2e_tests {
             &fs::read(root.join(script_path)).expect("licensed approved script"),
         )
         .expect("licensed approved script JSON");
-        let connection = Connection::open_in_memory().expect("in-memory database");
-        apply_migrations(&connection).expect("migrations");
+        let mut connection = Connection::open_in_memory().expect("in-memory database");
+        apply_migrations(&mut connection).expect("migrations");
         let project_id = "project-licensed-footage-e2e";
         let timestamp = now_string();
         connection
@@ -3208,7 +3323,6 @@ mod native_e2e_tests {
         let state = AppState {
             database: Mutex::new(connection),
             cancellation_tokens: Mutex::new(HashMap::new()),
-            cloud_generation_enabled: AtomicBool::new(false),
         };
         let report = render_approved_local_video_with_state(
             project_id.to_string(),
@@ -3297,8 +3411,8 @@ mod lifecycle_tests {
         let root =
             std::env::temp_dir().join(format!("auto3dvideo-lifecycle-test-{}", now_id("run")));
         fs::create_dir_all(root.join("render")).expect("lifecycle workspace");
-        let connection = Connection::open_in_memory().expect("in-memory database");
-        apply_migrations(&connection).expect("migrations");
+        let mut connection = Connection::open_in_memory().expect("in-memory database");
+        apply_migrations(&mut connection).expect("migrations");
         connection
             .execute(
                 "INSERT INTO projects(project_id, name, locale, workspace_root, policy_profile, created_at, updated_at) VALUES (?1, 'Lifecycle test', 'vi-VN', ?2, 'safe-local', ?3, ?3)",
@@ -3308,7 +3422,6 @@ mod lifecycle_tests {
         let state = AppState {
             database: Mutex::new(connection),
             cancellation_tokens: Mutex::new(HashMap::new()),
-            cloud_generation_enabled: AtomicBool::new(false),
         };
         let lifecycle = begin_local_video_lifecycle(
             &state,

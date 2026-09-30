@@ -112,3 +112,7 @@ UI nên có một tab `Storyboard Studio` với các cột: beat, narration, dur
 ## Lộ trình
 
 Slice A là schema + prompt preview + storyboard editor không gọi mạng. Slice B nối deterministic `space-25d`, licensed footage và Subtitle/Voice Studio. Slice C thêm provider adapter cho image/video/3D với budget gate và receipt. Slice D thêm Blender true-3D route nếu người dùng cài/configure Blender; không cài tự động.
+
+## Bổ sung đã triển khai — cinematic prompt enrichment
+
+`cinematic_prompt_enricher` đã được gắn vào local script worker bằng adaptation bounded của repo MIT [`Rylaispirit/cinematic-video-prompt-skill`](https://github.com/Rylaispirit/cinematic-video-prompt-skill). Prompt mỗi shot hiện ghi rõ shot size/góc máy, một hành động chính, một camera movement, lighting tương thích, style/color/mood và technical output; skill chỉ là vocabulary/compiler guidance, không thay thế provider adapter, continuity, rights hoặc human review gate.
