@@ -19,14 +19,14 @@ Không copy `node_modules`, source BrowserMCP standalone, credential hoặc file
 | Thành phần | Mục đích | Cách kiểm tra |
 |---|---|---|
 | Windows 10/11 x64 | Native Tauri desktop | `winver` |
-| WebView2 Runtime | WebView của Tauri | kiểm tra Apps/Installed apps |
+| WebView2 Runtime | WebView của Tauri | [tải WebView2](https://developer.microsoft.com/microsoft-edge/webview2/) · kiểm tra Apps/Installed apps |
 | Node.js LTS | Vite, pnpm, worker `.mjs` | [nodejs.org](https://nodejs.org/) · `node --version` |
-| pnpm 12.4.2 hoặc tương thích lockfile v9 | cài dependency frontend theo `desktop/pnpm-lock.yaml` | `pnpm --version` |
+| pnpm 9.x | cài dependency frontend theo `desktop/pnpm-lock.yaml` (`lockfileVersion: '9.0'`; package không pin `packageManager`) | `pnpm --version` |
 | Rust stable + Cargo | compile/test Tauri backend | [rustup.rs](https://rustup.rs/) · `rustc --version`, `cargo --version` |
-| Visual Studio C++ Build Tools + Windows SDK | link native Tauri trên Windows | `where.exe cl.exe` |
+| Visual Studio C++ Build Tools + Windows SDK | link native Tauri trên Windows | [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) · `where.exe cl.exe` |
 | Python 3.12+ thật | planner/worker `.py` của repo; phải chạy được `--version` | [python.org](https://www.python.org/downloads/) · `python --version` |
 
-Máy hiện tại đã được xác minh có MSVC tại `C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools`. Máy mới phải cài Visual Studio **Build Tools** workload **Desktop development with C++**, Windows 10/11 SDK và WebView2; không cần cài Visual Studio IDE. Antigravity chỉ là IDE/agent workspace, không cung cấp `cl.exe` hoặc linker native.
+Máy hiện tại đã được xác minh có MSVC tại `C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools`. Máy mới cài Visual Studio **Build Tools** workload **Desktop development with C++**, Windows 10/11 SDK và WebView2 Runtime; có thể tải từ [Visual Studio downloads](https://visualstudio.microsoft.com/downloads/) và [WebView2](https://developer.microsoft.com/microsoft-edge/webview2/). Không cần cài Visual Studio IDE. Antigravity chỉ là IDE/agent workspace, không cung cấp `cl.exe` hoặc linker native.
 
 Trước mọi lệnh build native, nạp môi trường MSVC trong đúng process PowerShell:
 
@@ -52,18 +52,18 @@ Không cần thêm dấu nháy quanh path; app tự bỏ dấu nháy ngoài nế
 & 'C:\Users\<user>\AppData\Local\Programs\Python\Python312\python.exe' --version
 ```
 
-Sau đó vào **Cài đặt → Tools**, lưu lại đúng executable path và bấm **Probe**. App sẽ bỏ qua venv stale và chọn fallback local hợp lệ nếu có; fallback chỉ đủ cho worker chuẩn thư viện, còn VieNeu/TTS cần Python 3.12 cùng dependency của worker.
+Sau đó vào **Cài đặt → Cấu hình môi trường chạy**, nhập và **Lưu** đúng executable path, rồi bấm **Kiểm tra**. App sẽ bỏ qua venv stale và chọn fallback local hợp lệ nếu có; fallback chỉ đủ cho worker chuẩn thư viện. Video local cần Pillow; Voice Studio cần PyTorch, OmniVoice và model/tokenizer đã cài vào đúng Python.
 
 ## 3. Cài core dependency và chạy app
 
-Mở PowerShell tại repo:
+Mở **Developer PowerShell for VS 2022** tại repo (hoặc PowerShell đã nạp `VsDevCmd.bat` như mục trên) để chạy lệnh native:
 
 ```powershell
 Set-Location D:\Duancanhan\Auto3Dvideo
 
 # Nếu pnpm chưa có và Node có Corepack:
 corepack enable
-corepack prepare pnpm@12.4.2 --activate
+corepack prepare pnpm@9 --activate
 
 Set-Location .\desktop
 pnpm install --frozen-lockfile
@@ -80,7 +80,7 @@ pnpm tauri dev
 
 Muốn chỉ xem UI trên browser thì dùng `pnpm dev`, nhưng BrowserOS/FFmpeg/Blender native command chỉ được kiểm tra trong bản Tauri desktop.
 
-Để tạo bản release:
+Để tạo bản release, vẫn dùng **Developer PowerShell for VS 2022** hoặc môi trường đã nạp `VsDevCmd.bat`:
 
 ```powershell
 Set-Location D:\Duancanhan\Auto3Dvideo\desktop
@@ -91,26 +91,27 @@ Installer được tạo dưới `desktop/src-tauri/target/release/bundle/`. Kh�
 
 ## 4. BrowserMCP / BrowserOS neo — chỉ cài khi cần Flow web
 
-### BrowserMCP package
+### Package BrowserMCP fallback (optional)
 
-Nguồn upstream được plan sử dụng là [browsermcp/mcp](https://github.com/browsermcp/mcp). App dùng package phân phối `@browsermcp/mcp`, không vendor source vào repo.
+The desktop video route defaults to the BrowserOS neo backend. Install `@browsermcp/mcp` only if explicitly switching to the fallback with `AUTO3DVIDEO_BROWSER_BACKEND=browsermcp`; the default route does not require the standalone BrowserMCP npm server.
 
-Bản đã được probe trong project là `@browsermcp/mcp` **0.1.3**. Cài ở ngoài repo:
+The fallback package version previously probed by this project is `@browsermcp/mcp` **0.1.3**. Install it outside the repository:
 
 ```powershell
 New-Item -ItemType Directory -Force D:\Auto3DvideoTools\browsermcp | Out-Null
 Set-Location D:\Auto3DvideoTools\browsermcp
 pnpm init
 pnpm add @browsermcp/mcp@0.1.3
+$env:AUTO3DVIDEO_BROWSER_BACKEND = 'browsermcp'
 ```
 
-Nếu nâng version, agent phải chạy lại probe protocol/tools và cập nhật evidence; không tự coi `@latest` là tương thích. Có thể đổi package root bằng biến môi trường không nhạy cảm:
+If upgrading this fallback, re-probe the runtime protocol/tools. Set `AUTO3DVIDEO_BROWSERMCP_ROOT` only when the package root differs from `D:\Auto3DvideoTools\browsermcp`:
 
 ```powershell
 $env:AUTO3DVIDEO_BROWSERMCP_ROOT = 'D:\Auto3DvideoTools\browsermcp'
 ```
 
-Node mặc định được app tìm ở `C:\Program Files\nodejs\node.exe`.
+The configured Node executable must be available to the app; the default is `C:\Program Files\nodejs\node.exe`.
 
 ### BrowserOS neo và extension
 
@@ -126,11 +127,11 @@ Nếu máy dùng endpoint 9010:
 $env:AUTO3DVIDEO_BROWSEROS_MCP_ENDPOINT = 'http://127.0.0.1:9010/mcp'
 ```
 
-Cài/pin BrowserMCP Chrome extension chính thức, mở Google Flow trong profile riêng, đăng nhập thủ công và bấm **Connect**. App chỉ probe/snapshot theo approval; không nhận cookie/token, không tự login, CAPTCHA, thanh toán, upload, Generate hoặc publish.
+Open Google Flow in the selected BrowserOS profile, sign in manually and press **Connect** in the extension. The desktop One-Prompt video route uses this connected session; it may type prompts and click **Generate** only after an explicit visible-price batch-cap approval. Setup/probe does not generate media. The app does not automate login, CAPTCHA or payment, and it does not upload subject images for you.
 
 Profile Chrome Flow mặc định trong runbook là `D:\Auto3DvideoTools\chrome-flow-cdp-profile`.
 
-### Google Flow MCP thử nghiệm cho Antigravity và desktop Tauri
+### Standalone Google Flow MCP for Antigravity (optional; separate from desktop video)
 
 Repo thử nghiệm đã clone tại:
 
@@ -151,29 +152,28 @@ npm run setup:antigravity
 
 Sau đó trong Antigravity chọn **Settings → Customizations → Installed MCP Servers → Refresh**. Trong Brave thường, load unpacked extension tại `D:\Duancanhan\Auto3Dvideo\vendor\google-flow-mcp\extension`, mở `https://flow.google.com/?pli=1`, rồi dùng luồng `Connect my Google Flow account`. Sau khi sửa extension, phải bấm **Reload** ở `brave://extensions` trước khi bấm **Connect Flow**; chỉ tiếp tục khi `flow_list_accounts` báo account đã `connected` và có `defaultAccountId`.
 
-Không chạy `npx playwright install chromium` và không gọi `flow_generate_*` nếu chưa có yêu cầu tạo media/duyệt credit. Desktop Tauri đã có adapter trực tiếp: nút **Tạo ảnh Google Flow · Nano Banana Pro** và **Tự làm toàn bộ** gọi worker MCP, lưu output theo `RUN_ID/SHOT_ID` rồi nhập vào Asset Library. Nhánh BrowserOS DOM cũ chỉ còn cho phiên/debug tương thích; one-click desktop không dùng nhánh đó và không có thao tác xoá gallery.
+This vendored Google Flow MCP project is a separate Antigravity experiment; it is not the desktop One-Prompt video route. The current desktop path calls `check_browsermcp_session` and uses BrowserOS neo by default (`AUTO3DVIDEO_BROWSER_BACKEND` defaults to BrowserOS). It may enter prompts and click Generate only after the app obtains user approval for the visible-price batch cap. The **Kết nối Google Flow** action uses the separate gflow-cli profile and does not replace the connected BrowserOS session.
 
-Adapter desktop yêu cầu MCP có ít nhất một account Flow ở trạng thái `connected` và có `defaultAccountId`. Nếu `flow_list_accounts` trả `[]`, hãy load extension, đăng nhập Google Flow và hoàn tất **Connect my Google Flow account** trước khi bấm Generate. App sẽ chặn với nguyên nhân cụ thể, giữ các asset đã có và không tự tạo lại/xoá shot cũ.
+Verify the active session with **Browser Handoff → Kiểm tra kết nối Chrome**. In the shot canvas, local reference assignment does not upload an image; import the same image into the saved Flow project manually, visually match its card and save the exact Flow media ID before running shots. Missing/ambiguous media or price evidence blocks before prompt entry/Generate.
 
-Probe runtime và protocol:
+Local no-credit checks (these do not connect to Flow or spend credits):
 
 ```powershell
 Set-Location D:\Duancanhan\Auto3Dvideo
-node scripts/test_browsermcp_runtime_worker.mjs `
-  --worker D:\Duancanhan\Auto3Dvideo\scripts\browsermcp_runtime_worker.mjs `
-  --server-entry D:\Auto3DvideoTools\browsermcp\node_modules\@browsermcp\mcp\dist\index.js `
-  --output-dir outputs\browsermcp-smoke
-
-node scripts/test_browsermcp_stdio_protocol.mjs `
-  --server-entry D:\Auto3DvideoTools\browsermcp\node_modules\@browsermcp\mcp\dist\index.js
+node scripts/test_browseros_mcp_runtime_worker.mjs
+node scripts/test_flow_shot_provenance.mjs
 ```
+
+The tests validate the local BrowserOS protocol and shot-reference gates only. They do not prove that the signed-in Flow UI will work on every account, upload media, or perform a live Generate.
 
 ## 5. Công cụ media/3D tùy workflow
 
 | Công cụ | Khi nào cần | Nguồn / cách cung cấp |
 |---|---|---|
 | Blender CLI | true 3D scene/render | [blender.org/download](https://www.blender.org/download/); cấu hình `blender.exe` trong Settings |
-| FFmpeg + FFprobe | media fixture, subtitle, mux/probe | [ffmpeg.org/download](https://ffmpeg.org/download.html); cấu hình cả `ffmpeg.exe` và `ffprobe.exe` |
+| FFmpeg + FFprobe | local 2.5D/Flow MP4, subtitle, mux/probe | [ffmpeg.org/download](https://ffmpeg.org/download.html); cấu hình cả `ffmpeg.exe` và `ffprobe.exe` |
+| Pillow + PyTorch + OmniVoice | local 2.5D video và narration | Dùng cùng Python 3.12+ đã cấu hình trong Settings. `python -m pip install Pillow`; chọn PyTorch wheel đúng CPU/GPU tại [pytorch.org](https://pytorch.org/get-started/locally/), cài OmniVoice theo [hướng dẫn upstream](https://github.com/k2-fsa/OmniVoice#installation), rồi dùng **Voice Studio → Cài model OmniVoice** để tải model và tokenizer vào workspace cache. |
+| BrowserOS neo / BrowserMCP | Flow video theo shot trong desktop | Chỉ cần khi dùng paid Flow route; xem mục 4 phía trên và root [README.md](README.md). |
 | ComfyUI | local image/video graph | [Comfy-Org/ComfyUI](https://github.com/Comfy-Org/ComfyUI); chỉ cần khi chạy graph local, endpoint mặc định `http://127.0.0.1:8188` |
 | yt-dlp.exe | creator/playlist metadata hoặc download có rights gate | [yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp); app không tự cài, không truyền cookie |
 | Obscura | preview radar public scrape ưu tiên | binary ngoài repo tại `D:\Auto3DvideoTools\obscura-source\target\release\obscura.exe`; nếu thiếu thì route này blocked/fallback theo policy |
@@ -190,6 +190,8 @@ python scripts/test_migration.py --project .
 python scripts/test_process_spec.py
 python scripts/test_tool_readiness.py
 python scripts/test_browser_handoff_worker.py
+node scripts/test_browseros_mcp_runtime_worker.mjs
+node scripts/test_flow_shot_provenance.mjs
 
 Set-Location .\desktop\src-tauri
 cargo fmt -- --check

@@ -1,8 +1,0 @@
-1
-00:00:00,000 --> 00:00:15,000
-Cực quang xuất hiện khi điện trường hoặc từ trường mạnh tương tác với bề mặt kim loại, làm chuyển dời năng lượng quang học của các electron, tạo ra hiệu ứng quang điện tử và tín hiệu sóng cực kiểu cho các ứng dụng quang học và viễn thám.
-
-2
-00:00:15,000 --> 00:00:30,000
-Cực quang là ánh sáng mỏng như sợi nhựa gãy khi ánh sáng đi qua hai vật cản, tạo ra những đường sáng rực rỡ và biến màu xanh thành nhiều màu rực rỡ.
-

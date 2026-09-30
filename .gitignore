@@ -45,3 +45,7 @@ Thumbs.db
 *.rmeta
 .artifacts/
 
+# Local session data can contain user media, browser state or audio.
+.auto3dvideo/
+__pycache__/
+

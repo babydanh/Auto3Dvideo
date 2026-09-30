@@ -1,16 +1,16 @@
 # Auto3Dvideo Studio — Desktop Shell
 
-This folder contains the first runnable desktop implementation for Auto3Dvideo. It is a Tauri 2 + React/TypeScript shell with a Rust/Tokio control-plane direction and SQLite-backed local metadata. The current slice implements a Vietnamese-first dashboard, project creation, recipe catalog, provider catalog, job history and a deterministic mock job command.
+This folder contains the Tauri 2 + React/TypeScript desktop app and Rust/Tokio control plane. Besides project, recipe and queue UI, the current desktop exposes two actual video paths: a local 2.5D/OmniVoice/FFmpeg export and a separate price-gated BrowserOS/Google Flow shot workflow. Mock jobs and mock-delivery commands remain non-generative.
 
 ## Run the UI
 
 ```powershell
-cd D:\\Duancanhan\\Auto3Dvideo\\desktop
-pnpm install
+# Run from this desktop folder.
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-The browser preview intentionally falls back to sample data when the Tauri backend is not present. The desktop development command is:
+The browser preview intentionally falls back to sample data when the Tauri backend is not present. Native startup uses `pnpm tauri dev` from **Developer PowerShell for VS 2022** or a shell with the MSVC environment loaded:
 
 ```powershell
 pnpm tauri dev
@@ -18,21 +18,19 @@ pnpm tauri dev
 
 ## Current native commands
 
-The Rust side exposes narrow typed commands for app snapshot, health, projects, jobs, recipe catalog, provider catalog and `preview_process`. `enqueue_mock_job` writes a completed mock job to the local SQLite database; it does not call cloud APIs or execute Blender, ComfyUI, FFmpeg, OBS or browser capture. `preview_process` validates an allowlisted executable ID, structured arguments, workspace-relative paths, bounded timeout, environment-key policy and expected outputs, then returns a dry-run plan with `processStarted=false`; it never spawns a child process.
+The Rust side exposes typed project, recipe, provider, BrowserMCP, local-video and subtitle commands. `enqueue_mock_job` only writes mock state; `preview_process` remains a dry-run. The separate `render_approved_local_video` command runs a bounded local 2.5D renderer, OmniVoice TTS, FFmpeg and FFprobe to produce a real MP4. The BrowserOS Flow path runs one approved shot at a time, imports matching clips and `compose_browser_flow_outputs` normalizes/joins them into a final MP4. Neither mock jobs nor project recipes imply provider execution.
 
 The database is created in the Tauri application data directory and initialized from `src-tauri/migrations/0001_initial.sql`. Media files are not stored in SQLite.
 
-## Voice Studio / VieNeu-TTS
+## Voice Studio / OmniVoice
 
-Open the Vietnamese-first `Voice Studio` tab after selecting a project. Choose a VieNeu preset, set the bounded temperature between `0.6` and `1.2`, select an experimental cue such as `[cười]`, `[thở dài]` or `[hắng giọng]`, and create a local WAV preview. When a script is available, the right-hand scene list lets you assign a cue to each segment. The chosen settings are carried into an approved local video render.
+The local render path uses `k2-fsa/OmniVoice` plus the `eustlb/higgs-audio-v2-tokenizer`. Configure the Python executable in **Cài đặt → Cấu hình môi trường chạy**; install PyTorch and the OmniVoice package into that same Python. The **Kiểm tra local** action checks package, PyTorch, device and model cache. **Cài model OmniVoice** explicitly downloads model/tokenizer into the workspace cache; it does not install missing Python packages. Normal synthesis sets `networkCallsAllowed=false`.
 
-The current VieNeu v3 Turbo integration does not expose a free-form emotion mixer, pitch slider or speed slider. The `style` prompt is not treated as a supported control. A reference audio path is optional, but it must be workspace-relative and requires explicit consent; cloning is disabled by default and must not be used to impersonate another person. VieNeu readiness must be green and the model must already exist in the configured local cache; synthesis does not download a model or call a cloud API.
-
-The source contract is `../contracts/video-script.schema.json`, where `voiceSettings` stores the preset, temperature, cue map, clone flags and optional reference path. The runtime still requires human listening review for pronunciation, emotion cues, rights, AI disclosure and final delivery.
+Voice cloning requires a workspace-local reference audio file and `cloneConsent=true`; use only audio with documented rights and consent. The script's `voiceSettings` contract—preset, temperature, cue/emotion maps, clone flags and reference audio path—is defined in [`video-script.schema.json`](../contracts/video-script.schema.json). Every generated narration WAV requires human listening review for pronunciation, timing, quality and rights before delivery.
 
 ## Process safety boundary
 
-The process contract is [`../contracts/process-spec.schema.json`](../contracts/process-spec.schema.json), with implementation in `src-tauri/src/process_executor.rs`. P0 allowlists `blender`, `ffmpeg`, `ffprobe`, `node`, `obs` and `python` identifiers, rejects shell-style credential markers and absolute or parent-traversal paths, and only permits `AUTO3DVIDEO_*` environment keys. This is validation and planning only; binary-path resolution, process-tree termination, timeout enforcement, output probing and durable worker supervision remain future work after native compilation is available.
+`preview_process` remains validation-only and returns `processStarted=false`. Separate typed commands for local video, Flow composition and subtitle export use allowlisted executable IDs, fixed argument arrays, workspace-relative paths, bounded timeouts, expected outputs and media probes. They do not expose a generic shell or accept arbitrary user commands. See [`process-spec.schema.json`](../contracts/process-spec.schema.json) and the end-to-end instructions in [`../README.md`](../README.md).
 
 ## Configuration boundary
 
@@ -40,7 +38,7 @@ Provider credentials are not part of this subproject. Use the root `.env.example
 
 ## Build prerequisites
 
-Node.js, pnpm, Rust and WebView2 are installed or expected. Windows Tauri builds also require the Microsoft C++ build tools and Windows SDK. The current attached machine has Rust, WebView2 and Visual Studio Build Tools/MSVC configured under `D:\VSBuildTools`; `pnpm build`, `cargo test --lib` and the native development path have been verified. A packaged installer build should still be run separately when a release artifact is required.
+Windows native development requires Node.js/Corepack, pnpm 9.x for lockfile v9.0, Rust stable, WebView2, Visual Studio 2022 C++ build tools and the Windows SDK. Local 2.5D export additionally needs Python 3.12+ configured with Pillow, FFmpeg/FFprobe, and the OmniVoice package/model; Google Flow additionally needs a connected BrowserOS/BrowserMCP tab and an explicitly approved credit cap. `pnpm run build` checks the frontend only; `pnpm tauri dev` is the native app path. Follow the root [`README.md`](../README.md) for installation and both video workflows. A successful frontend build does not prove native startup or a live paid Flow run.
 
 ## Recommended IDE setup
 
@@ -54,8 +52,8 @@ Trong editor, mỗi cue có thể sửa trực tiếp nội dung, thời điểm
 
 `Xuất sidecar` tạo một file SRT hoặc WebVTT mới theo đường dẫn workspace-relative và không ghi đè file đã tồn tại. `Burn-in vào bản sao MP4` chạy FFmpeg qua native direct supervisor, tạo file MP4 mới và giữ video gốc nguyên vẹn. Sau khi xuất, người dùng vẫn phải mở video, kiểm tra chữ, timing, font, safe area, tiếng Việt và quyền xử lý trước delivery.
 
-Subtitle Studio hiện là editor deterministic cho SRT/VTT. Tự động nghe video để tạo transcript hoặc dịch sang ngôn ngữ khác cần provider STT/LLM đã cấu hình; app không tự tải video TikTok/Douyin/YouTube, không xóa watermark và không tự publish. Contract của document nằm tại `../contracts/subtitle-document.schema.json`, worker local là `../../scripts/subtitle_worker.py` và native command nằm tại `src-tauri/src/subtitle.rs`.
+Subtitle Studio hiện là editor deterministic cho SRT/VTT. Tự động nghe video để tạo transcript hoặc dịch sang ngôn ngữ khác cần provider STT/LLM đã cấu hình; app không tự tải video TikTok/Douyin/YouTube, không xóa watermark và không tự publish. Contract của document nằm tại `../contracts/subtitle-document.schema.json`, worker local là `../scripts/subtitle_worker.py` và native command nằm tại `src-tauri/src/subtitle.rs`.
 
 ## Google Flow video shots
 
-Select a saved Google Flow project and connect the signed-in BrowserOS tab before running a video shot plan. The app keeps the current Flow model/settings unchanged, requires a visible unit credit price, and asks for one explicit batch cap before entering any prompt. It submits one shot at a time, binds each result to its run/shot/revision IDs, downloads only from that matching video card, and imports a newly created video file after validation. Timeouts, ambiguous results or uncertain clicks stop without retrying Generate. Generated clips still require human review for creative quality, rights, safety and platform policy; generation does not publish or establish monetization rights.
+Select the saved Google Flow project and connect its signed-in BrowserOS/BrowserMCP session before running the One-Prompt workflow. The runner keeps current Flow model/settings, requires visible price evidence and one explicit batch cap, verifies each shot's exact reference media ID, stops before prompt/Generate if evidence is missing, imports matching shot clips, then FFmpeg/FFprobe-composes `<workspace>/outputs/sessions/<sessionId>/browser-flow/downloads/compose/<runId>-final.mp4`. Unlabelled images (for example Nano Banana cards) need an explicit card-to-shot binding in the canvas. This live provider path can spend credits; generated outputs still require human review and never publish automatically. See the root `README.md` for the setup checklist.

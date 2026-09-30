@@ -1,3 +1,0 @@
-file 'D:/Duancanhan/Auto3Dvideo/.auto3dvideo/pipeline/local-video-1787628076900760800/scenes/clips/scene-00.mp4'
-file 'D:/Duancanhan/Auto3Dvideo/.auto3dvideo/pipeline/local-video-1787628076900760800/scenes/clips/scene-01.mp4'
-file 'D:/Duancanhan/Auto3Dvideo/.auto3dvideo/pipeline/local-video-1787628076900760800/scenes/clips/scene-02.mp4'

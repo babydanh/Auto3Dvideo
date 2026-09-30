@@ -13,7 +13,7 @@ The project is intentionally **automation-first**. A user should be able to subm
 
 ## Current status
 
-This repository contains the planning pack plus the first P0 Tauri 2 desktop implementation. The current slice is a Vietnamese-first dashboard with SQLite initialization, provider/recipe catalogs, bounded job controls, durable execution-attempt inspection, a deterministic in-process mock supervisor, a direct no-shell external supervisor and explicit local software fixtures. FFmpeg/FFprobe can run a fixed synthetic media fixture directly or through a durable job attempt with output evidence and restart reconciliation. Settings can probe configured local binary versions, check a loopback-only ComfyUI health endpoint and run a deterministic Blender `.blend` fixture when `blender.exe` is configured. The Review surface can compile the three-beat `NarrativeVisualPlan` fixture without spawning a provider, exposing narration spans, visual proof, entity anchors, expected assets and grounded prompts before generation. General user-media worker execution, ComfyUI workflow submission, cloud provider calls and publishing remain disabled. It does not yet claim to be a production-ready desktop application, a universal AI model gateway, a monetization guarantee or a copyright/compliance certification.
+This repository contains a Windows-first Tauri 2 desktop studio and its planning pack. Current runnable outputs include a local, bounded 2.5D + OmniVoice + FFmpeg MP4 path and a separate per-shot Google Flow path that uses a connected BrowserMCP session, mapped subject images and explicit credit approval before downloading/composing clips. The generic recipe queue and mock-delivery tools remain non-generative fixtures; they do not render a finished AI/3D video. All generated media still requires human creative, rights, safety, accessibility and platform review before delivery or publishing.
 
 ## Navigation
 
@@ -51,9 +51,9 @@ Begin with [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md), then read the [`a
 
 The stack is based on a separation of concerns observed in the official Tauri, ComfyUI, Blender, OpenTimelineIO, DaVinci Resolve and Kdenlive materials [1] [2] [3] [4] [5] [6].
 
-## Quick start for the planned MVP
+## Development quick start: fixtures are not generated videos
 
-The first implementation should be able to run a fixture workflow without requiring a paid cloud model. The current mock-delivery command creates only `metadata.json`, `review-checklist.md` and a checksummed manifest under the ignored `outputs/` directory; it does not create a video or run a worker. In the desktop Recipe Catalog, **Tạo queued job an toàn** exercises the queue-first path: it validates the project/recipe and persists `queued` state, but it does not claim a worker, spawn a process or call a provider:
+These project checks validate contracts, plans and deterministic fixtures. `build_mock_delivery.py` writes metadata and a checksummed manifest, not a video; **Tạo queued job an toàn** persists queue state without starting a worker or contacting a provider. To create an actual MP4, use the Windows video setup below.
 
 ```powershell
 # Root planning and migration checks
@@ -77,12 +77,105 @@ python scripts/estimate_cost.py --seconds 5 --usd-per-second 0.00 --attempts 1 -
 
 # Frontend preview
 cd desktop
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 
 # Full Tauri desktop development, after MSVC/Windows SDK is installed
 pnpm tauri dev
 ```
+
+## Thiết lập Windows để tạo video thật
+
+Có hai đường ra video khác nhau:
+
+- **Không Gian 2.5D Cục Bộ**: tạo MP4 thật bằng cảnh 2.5D, giọng OmniVoice cục bộ và FFmpeg. Không cần Blender hay credit tạo video; model TTS cần tải/cài một lần.
+- **Google Flow — One-Prompt**: tạo clip cho từng shot bằng tài khoản Flow đã đăng nhập, sau đó app tải, kiểm tra và ghép thành MP4. Đây là đường có thể tốn credit; cần duyệt ngân sách trước khi chạy.
+
+### 1. Cài toolchain Windows
+
+Cần Windows 10/11 x64, Node.js LTS + Corepack, pnpm 9.x (lockfile `9.0`), Rust stable, Python 3.12+ cho render cục bộ, Visual Studio 2022 Build Tools với workload **Desktop development with C++**, Windows SDK và WebView2 Runtime. `desktop/package.json` chưa khai báo `packageManager`; pnpm 9 là nhánh khớp lockfile. Chạy lệnh Tauri trong **Developer PowerShell for VS 2022** hoặc môi trường đã nạp `VsDevCmd.bat`; chỉ cài pnpm là chưa đủ để build app native.
+
+Từ repository root:
+
+```powershell
+corepack enable
+corepack prepare pnpm@9 --activate
+Set-Location .\desktop
+pnpm install --frozen-lockfile
+pnpm run build
+pnpm tauri dev
+```
+
+`pnpm dev` chỉ mở browser preview, có thể dùng sample data và không có Tauri commands; hãy dùng `pnpm tauri dev` để chạy các worker native. `pnpm run build` kiểm tra frontend, không thay thế native build.
+
+Kiểm tra toolchain:
+
+```powershell
+node --version
+pnpm --version
+rustc --version
+cargo --version
+python --version
+ffmpeg -version
+ffprobe -version
+```
+
+### 2. Cấu hình đường video 2.5D cục bộ
+
+1. Trong app, chọn/tạo project có workspace trên máy. Mở **Cài đặt → Cấu hình môi trường chạy**; nhập `python.exe`, `ffmpeg.exe`, `ffprobe.exe`, bấm **Lưu** cho từng tool rồi **Kiểm tra**. Dùng đúng cùng một Python cho cài package và chạy worker.
+2. Cài Pillow để render frame 2.5D:
+
+   ```powershell
+   python -m pip install Pillow
+   ```
+
+3. Với TTS, cài bộ `torch` + `torchaudio` phù hợp CPU/GPU bằng [bộ chọn chính thức của PyTorch](https://pytorch.org/get-started/locally/), rồi cài OmniVoice vào đúng Python đã cấu hình:
+
+   ```powershell
+   python -m pip install omnivoice
+   ```
+
+   `python` trong lệnh phải là interpreter đã lưu trong Settings; nếu `python` trên PATH trỏ sang bản khác, gọi trực tiếp executable path đã cấu hình. Cài theo [hướng dẫn upstream](https://github.com/k2-fsa/OmniVoice#installation); repo không pin wheel vì phụ thuộc phần cứng/driver.
+4. Mở **Voice Studio**, bấm **Kiểm tra local**. Nếu thiếu package hoặc PyTorch, sửa Python/path trước. Khi package đã sẵn sàng, bấm **Cài model OmniVoice**: thao tác riêng này tải model `k2-fsa/OmniVoice` và tokenizer `eustlb/higgs-audio-v2-tokenizer` vào cache của workspace; cần mạng và dung lượng trống. Kiểm tra lại đến khi trạng thái local sẵn sàng.
+5. Mở mục **Quy trình video** trên thanh điều hướng. Chọn **Không Gian 2.5D Cục Bộ**; lựa chọn **AI 3D Cloud** hiện chưa nối renderer và sẽ chặn, không tạo video.
+6. Nhập/chọn chủ đề, bấm **Tự động tạo kịch bản phân cảnh**, rồi đọc và sửa kịch bản, lời thoại, claims và từng shot. Nếu bật/configure gateway LLM ngoài thì bước viết kịch bản có thể gọi provider; để chạy local không gọi provider, không cấu hình gateway key.
+7. Chỉ sau khi duyệt nội dung mới bấm **Tự xuất video MP4 hoàn chỉnh**. Nút này duyệt các segment cho lần render local. Worker chạy local 2.5D + TTS + FFmpeg/FFprobe; nếu tool/model thiếu hoặc probe sai, job dừng với lỗi thay vì coi là thành công.
+
+Output được ghi trong workspace của project:
+
+```text
+<project-workspace>/.auto3dvideo/pipeline/<runId>/master.mp4
+<project-workspace>/.auto3dvideo/pipeline/<runId>/narration.wav
+<project-workspace>/.auto3dvideo/pipeline/<runId>/captions.srt
+<project-workspace>/.auto3dvideo/pipeline/<runId>/manifest.json
+```
+
+Đây là hoạt họa 2.5D, không phải render Blender/3D chân thực. Manifest giữ trạng thái review; xem/nghe MP4, WAV, caption và rights/provenance trước delivery. Không publish dựa trên việc job báo thành công.
+
+### 3. Cấu hình đường Google Flow cho video theo shot
+
+Đây là đường tạo video bằng Flow, khác với renderer local và có thể tiêu credit.
+
+1. Làm theo [setup BrowserMCP/BrowserOS](setup.md) và [BrowserMCP handoff runbook](docs/operations/BROWSER_MCP_HANDOFF_RUNBOOK.md): mở Auto3Dvideo trước, mở Google Flow trong đúng profile, đăng nhập thủ công, Connect extension, rồi kiểm tra **Browser Handoff → Kiểm tra kết nối Chrome** đến khi hiện kết nối. Nút **Kết nối Google Flow** dùng profile gflow-cli riêng; nó không thay cho BrowserOS/BrowserMCP session mà video runner kiểm tra.
+2. Trong One-Prompt, lưu và chọn project Flow có sẵn bằng Project ID từ URL `/project/<id>` (**Lưu và chọn**), rồi bấm **Chọn Omni 1.1 Flash trong Flow**. Chọn model không nhập prompt, không bấm Generate và không trừ credit. Khi chủ động chạy Flow, mở **Mô hình & API**, tìm mục **Gọi cloud**; nếu trạng thái **ĐANG KHÓA**, bấm **Bật Cloud/API** (khi đã bật, nút đổi thành **Tắt Cloud/API**). Việc bật chỉ cho phép các lần gọi provider tiếp theo; chúng có thể tiêu credit và vẫn bị chặn bởi gate duyệt giá.
+3. Gán ảnh chủ thể cho từng shot; app không tải ảnh lên Flow thay bạn:
+   - Nếu ảnh chỉ đang có trong Flow, tải ảnh xuống bằng giao diện Flow rồi import file vào **Asset Library** của project; giữ rights ở `pending` đến khi xác minh.
+   - Chọn shot, bấm **Choose image for selected shot** hoặc chọn ảnh đã import rồi **Assign selected image**. Bấm **Check local reference**. Đây mới là binding local, chưa phải attachment trong Flow.
+   - Trong Flow, import chính ảnh đó bằng ingredient import của Flow (nếu chưa có card). Bấm **Read Flow image cards** trong canvas, xem trước local image và Flow card cạnh nhau, chọn đúng card có media ID cần gán.
+   - Tick **I compared both images above and they are the same image**, rồi bấm **Save this Flow card as the shot's start frame**. App lưu đúng media ID; việc xác nhận là so sánh bằng mắt, không phải pixel/hash proof.
+   - Card có nhãn shot có thể được nhận diện tự động. Card Nano Banana không nhãn cần gán như trên; card không selectable, mơ hồ hoặc thiếu sẽ chặn shot, không đoán và không fallback text-only.
+4. Chạy **Run one-prompt workflow** chỉ sau khi review prompt/model, mỗi shot, rights và giá hiển thị. Duyệt hard cap tổng batch `giá mỗi shot × số shot` trước khi chạy. Nếu Flow project, BrowserMCP session, giá hoặc ảnh reference không xác định được thì không nhập prompt/không bấm Generate cho shot đó.
+5. App chạy từng shot, tải output đúng card, kiểm tra bằng FFprobe rồi ghép theo thứ tự. Output:
+
+   ```text
+   <project-workspace>/outputs/sessions/<sessionId>/browser-flow/downloads/compose/<runId>-final.mp4
+   ```
+
+   Clip nguồn nằm cùng thư mục `downloads/`; xem đường dẫn chính xác trong Activity nếu session hiện tại dùng nhánh workflow legacy. Flow output vẫn cần xem/nghe lại, kiểm tra quyền, continuity, caption và disclosure AI; không có publish tự động.
+
+**Không nhầm với fixture:** các lệnh `build_mock_delivery.py`, `run_workflow.py --dry-run` và nút **Tạo queued job an toàn** không tạo video. Hướng dẫn kiến trúc rộng hơn về ComfyUI/Blender trong file workflow là kế hoạch/recipe riêng, không phải lối tắt thay cho hai đường chạy thực ở trên.
+
+The repository's broader free/local production architecture remains a separate planning target:
 
 The free/local path is:
 
@@ -95,9 +188,9 @@ structured brief
   → Kdenlive or DaVinci manual review
 ```
 
-For a full topic-to-3D path, use [`example-cinematic-3d-topic-to-frame-captioned.yaml`](workflows/example-cinematic-3d-topic-to-frame-captioned.yaml). It connects topic research, director planning, reference assets, Blender scene/render, voice, STT/forced alignment, frame-locked captions, FFmpeg composition, quality gate and delivery evidence. The canonical caption timing is [`frame-caption-plan.schema.json`](contracts/frame-caption-plan.schema.json): integer `startFrame`/`endFrame` at the project FPS. SRT/VTT are derived sidecars, not the source of truth.
+[`example-cinematic-3d-topic-to-frame-captioned.yaml`](workflows/example-cinematic-3d-topic-to-frame-captioned.yaml) describes a larger topic-to-3D workflow; do not treat that YAML example as a turnkey run unless every provider, Blender, caption and delivery stage is installed and enabled.
 
-Cloud AI video generation is an optional adapter. Free web credits are limited and do not represent unlimited commercial production capacity. The current FFmpeg path has a typed dry-run/readiness report, a direct synthetic local fixture and a durable fixed-argument fixture job with post-probe output evidence. The general job-linked media plan remains behind the external safe executor gate. The desktop Settings panel stores allowlisted local executable references in SQLite and checks file/PATH metadata without executing tools or probing network; explicit Probe actions execute only an app-selected `--version` command through the supervisor. The readiness report shows an explicit general external-worker gate that remains disabled even though the native build now passes. Settings can run a read-only worker preflight, probe FFmpeg/FFprobe/Python/Blender and check only a local ComfyUI health endpoint without submitting a workflow. Jobs can preview a per-attempt launch plan, run the fixed FFmpeg fixture attempt and inspect durable lease, process, cancellation, reconciliation and output evidence. The P0 native boundary includes `enqueue_pending_job`, `prepare_pending_attempt`, `start_mock_attempt`, `run_ffmpeg_fixture_attempt`, `list_job_attempts` and `list_attempt_outputs`: queued jobs can be created, pending attempt rows and expected outputs are validated transactionally, the in-process mock worker claims a lease with `processStarted=false`, and the explicit FFmpeg fixture claims an `external_process` attempt and persists its terminal result. The **Audit local** panel reads bounded event metadata from SQLite without exposing payload JSON or credential values. The worker-plan compiler still expands the local-free workflow into pending stage/attempt evidence and keeps general process, network, paid-generation and publishing side effects disabled.
+The generic provider catalog is not a universal generator. Google Flow is a separate, price-gated browser workflow; the local Topic Workflow is a bounded 2.5D/OmniVoice/FFmpeg pipeline. The general job-linked media plan remains behind the external safe-executor gate, while fixed fixtures and mock delivery stay non-generative. All video outputs retain human review and rights obligations.
 
 ## Multi-provider configuration
 
@@ -162,9 +255,9 @@ Slice này **chưa chạy Qwen3-VL, OCR, Whisper/STT hoặc semantic object/acti
 
 Trong Tauri, chọn project → mở **Video Vision** → chọn video local → giữ sample FPS và max frame mặc định nếu chưa benchmark → bấm **Phân tích video local** → mở JSON evidence để review → handoff sang shot planner. Input social URL, scraping, watermark removal và tái sử dụng footage không nằm trong workflow này.
 
-## BrowserMCP Web Handoff — dùng Google web có kiểm soát
+## BrowserMCP Web Handoff pack — gói bàn giao thủ công, tách khỏi luồng One-Prompt
 
-Tab **Browser Handoff** dùng repo/distribution [`browsermcp/mcp`](https://github.com/browsermcp/mcp) theo hướng handoff pack local. Nó nhận một shot Blender MP4 hoặc keyframe PNG nằm trong workspace, tính SHA-256, ghi `handoff.json` và `prompt.txt`, sau đó hiển thị các bước kết nối Chrome/BrowserMCP. P0 không tự clone/build standalone GitHub source, không tự login, không đọc cookie/token, không upload, không bấm Generate và không import file download.
+Tab **Browser Handoff** hỗ trợ tạo local handoff pack từ shot Blender MP4 hoặc keyframe PNG trong workspace theo hướng tích hợp [`browsermcp/mcp`](https://github.com/browsermcp/mcp): tính SHA-256, ghi `handoff.json` và `prompt.txt`, rồi hiển thị các bước kết nối. Quy trình pack này không tự clone/build repo, login, đọc cookie/token, upload media, click Generate hoặc import download.
 
 ```powershell
 python scripts/test_browser_handoff_worker.py
@@ -172,7 +265,7 @@ python scripts/test_browser_handoff_worker.py
 
 Trong Tauri, chọn project → mở **Browser Handoff** → chọn shot/reference → chỉnh prompt → bấm **Tạo handoff pack local**. Sau đó cài BrowserMCP server/extension theo [tài liệu chính thức](https://docs.browsermcp.io/setup-server), mở Google web bằng tab riêng, tự login và tự kiểm tra file/prompt. Upload, Generate và Import là các approval độc lập; Google AI Pro trên web không tự biến thành developer API quota hoặc cam kết miễn phí.
 
-Standalone repository hiện dùng stdio MCP và có workspace dependencies; vì vậy app không nhúng source đó như một binary nội bộ. Native Tauri chỉ chạy helper Python local qua supervisor để chuẩn bị pack. Một runtime BrowserMCP thật sẽ được nối ở slice sau, sau khi user duyệt cài Node/package/extension và kiểm tra upload capability.
+Repo `google-flow-mcp` độc lập dùng giao thức stdio MCP, chỉ là thử nghiệm riêng cho Antigravity. Native app dùng helper Python để tạo handoff pack thủ công; code path One-Prompt desktop mặc định nối BrowserOS neo/BrowserMCP như hướng dẫn Windows ở trên. Tương thích với session Flow thật còn phụ thuộc tài khoản đã đăng nhập và cần người dùng tự xác minh; không nhầm với nút đăng nhập gflow-cli riêng.
 
 ## Mechanism Explainer — event-based 2D/2.5D/pseudo-3D
 
@@ -185,4 +278,4 @@ python scripts/mechanism_explainer_worker.py --plan outputs/cement-mechanism-dem
 python scripts/test_mechanism_explainer_worker.py
 ```
 
-Worker không tải video social, không gọi cloud, không nhận shell command trong plan và không đánh dấu claim/rights là đã duyệt. True 3D sẽ đi qua Blender adapter riêng khi người dùng đã cài và cấu hình Blender; narration VieNeu/cloud TTS là stage riêng, có model/provider, consent, cost và human-review gate.
+Worker không tải video social, không gọi cloud, không nhận shell command trong plan và không đánh dấu claim/rights là đã duyệt. True 3D sẽ đi qua Blender adapter riêng khi người dùng đã cài và cấu hình Blender. Voice rendering là stage riêng: Voice Studio hiện dùng OmniVoice local; legacy VieNeu hoặc cloud TTS chỉ dùng khi workflow tương ứng được cấu hình rõ, với consent, cost và human-review gate.

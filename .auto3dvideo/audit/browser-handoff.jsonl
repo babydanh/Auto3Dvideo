@@ -1,4 +1,0 @@
-{"event":"browser_flow.discovery","fromState":"discovery_running","handoffId":"flow-workflow-1789657714161513100","projectId":"project-default","schemaVersion":"1.0.0","timestamp":"1789657744","toState":"ready"}
-{"event":"browser_flow.discovery","fromState":"discovery_running","handoffId":"flow-workflow-1789657747353928500","projectId":"project-default","schemaVersion":"1.0.0","timestamp":"1789657773","toState":"ready"}
-{"event":"browser_flow.discovery","fromState":"discovery_running","handoffId":"flow-workflow-1789661465477231100","projectId":"project-default","schemaVersion":"1.0.0","timestamp":"1789661516","toState":"ready"}
-{"event":"browser_flow.discovery","fromState":"discovery_running","handoffId":"flow-workflow-1789662075551579100","projectId":"project-default","schemaVersion":"1.0.0","timestamp":"1789662098","toState":"ready"}
