@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "templates": [
+    {
+      "templateId": "coding-25d-v1",
+      "version": "1.0.0",
+      "name": "Bài giảng kỹ thuật Coding 2.5D",
+      "purpose": "Mẫu brief cho người dùng; runtime guardrails nằm trong scripts/coding_lesson.py, không nạp JSON này làm code.",
+      "locale": "vi-VN",
+      "body": "Tạo video Coding 2.5D về {{topic}} cho {{audience}}. Mục tiêu: {{content_goal}}. Thời lượng {{duration_seconds}} giây. Input cụ thể: {{example_input}}. Nêu assumptions và input/output trước khi giải. Trình bày trực giác, baseline, invariant, trace từng bước và kết quả. Code Python đọc được; highlight đúng dòng tương ứng state. Với algorithm, hiển thị mảng/con trỏ/hash map/queue, kiểm tra edge cases và phân biệt average/worst-case complexity. Với system design, hiển thị request/response có hướng, trạng thái cache/store, failure/recovery, consistency, idempotency và trade-off; không bịa throughput. Kết thúc bằng recap và câu hỏi tự kiểm tra. Không đổi input hoặc chủ đề để khớp mẫu; nếu không hỗ trợ, báo rõ. Không tự thực thi code, tải asset, chi tiền hoặc publish. Nội dung cần người dùng review.",
+      "inputKeys": ["topic", "audience", "content_goal", "duration_seconds", "example_input"],
+      "outputContract": ["codingLesson", "segments", "teachingScene", "states", "complexity", "checks"],
+      "guardrails": ["Code chỉ là text hiển thị.", "State phải có ID/index hợp lệ và thể hiện trace thật.", "Không coi prompt là chứng nhận correctness hoặc quyền sử dụng.", "Không dùng một chỉ số hai lần trong Two Sum.", "Không tuyên bố exactly-once end-to-end chỉ vì có queue."]
+    }
+  ]
+}

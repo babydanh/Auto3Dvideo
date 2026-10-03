@@ -35,6 +35,8 @@ export type LocalVideoPipelineReport = {
   runId: string;
   jobId: string;
   attemptId: string;
+  visualMode: string;
+  audioMode: string;
   scriptPath: string;
   sceneManifestPath: string;
   audioPath: string;

@@ -1,10 +1,22 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import type { LocalScriptDocument, LocalScriptReviewReport, LocalScriptSegment } from "../shared/scriptTypes";
+import type { CodingAudioMode, LocalScriptDocument, LocalScriptReviewReport, LocalScriptSegment, LocalVisualMode } from "../shared/scriptTypes";
 import { displayWorkspaceActivityState } from "../shared/workspaceActivityTypes";
 import type { WorkspaceActivityEvent } from "../shared/workspaceActivityTypes";
 import type { LocalVideoPipelineReport, PromptTemplate, TopicProfile } from "./topicTypes";
 import type { VoiceSettings } from "../voice/voiceTypes";
 import { useEffect, useState } from "react";
+import { CodingLessonReview, CodingSceneReview } from "./codingSceneReview";
+
+const CODING_PRESETS: { label: string; topic: string }[] = [
+  { label: "1. Two Sum", topic: "LeetCode Two Sum: tìm hai chỉ số có tổng bằng target bằng bảng tra cứu, tra trước rồi chèn sau. Giảng thuật toán theo từng bước." },
+  { label: "2. Binary Search", topic: "LeetCode Binary Search: tìm kiếm nhị phân trên mảng đã sắp xếp, giải thích thuật toán và biến lo/hi mỗi vòng lặp." },
+  { label: "3. Sliding Window", topic: "LeetCode Longest Substring Without Repeating Characters: sliding window trên chuỗi, giải thích thuật toán và bất biến cửa sổ không lặp ký tự." },
+  { label: "4. BFS trên đồ thị", topic: "Breadth-First Search trên đồ thị: BFS đánh dấu node ngay khi enqueue để mỗi node chỉ được thăm một lần. Giảng thuật toán." },
+  { label: "5. Cache-aside", topic: "System design cache-aside: read path miss → đọc database → ghi cache TTL → hit, kèm caveat stale và invalidation." },
+  { label: "6. Token bucket", topic: "System design token-bucket rate limiter: không cấp phép request khi hết token, giải thích concurrency, refill và phạm vi scope." },
+  { label: "7. Message queue", topic: "System design message queue: at-least-once delivery với consumer idempotent, dedup key và transaction cho database effect." },
+  { label: "8. URL shortener", topic: "System design URL shortener: sinh mã duy nhất, redirect 301/302 và cách xử lý va chạm mã." },
+];
 
 export function TopicWorkflowPanel({
   profiles,
@@ -47,6 +59,8 @@ export function TopicWorkflowPanel({
 }) {
   const [scriptDraft, setScriptDraft] = useState<LocalScriptDocument | null>(null);
   const [selectedRenderEngine, setSelectedRenderEngine] = useState<string>("ai-3d-cloud");
+  const [codingAudioMode, setCodingAudioMode] = useState<CodingAudioMode>("caption-only");
+  const codingScript = Boolean(scriptDraft?.codingLesson) || Boolean(scriptDraft?.segments.some((segment) => segment.teachingScene));
   const [selectedShotIndex, setSelectedShotIndex] = useState(0);
   const [reviewPreview, setReviewPreview] = useState<"composer" | null>(null);
   const [approvedShotIds, setApprovedShotIds] = useState<string[]>([]);
@@ -122,12 +136,24 @@ export function TopicWorkflowPanel({
       setApprovedShotIds(scriptDraft.segments.map((segment) => segment.segmentId));
     }
     if (selectedRenderEngine === "ai-3d-cloud") {
-      onActivity({ stage: "provider.validate", tool: "AI provider", state: "blocked", message: "AI 3D Cloud chưa được nối provider trong pipeline hiện tại; chưa gửi request.", nextAction: "Cấu hình adapter/provider thật rồi chạy lại." });
+      const reason = codingScript
+        ? "Bài coding chỉ dựng được bằng engine 2.5D cục bộ; AI 3D Cloud chưa được nối provider và không nhận dữ liệu teachingScene."
+        : "AI 3D Cloud chưa được nối provider trong pipeline hiện tại; chưa gửi request.";
+      onActivity({ stage: "provider.validate", tool: "AI provider", state: "blocked", message: reason, nextAction: "Chọn engine 2.5D cục bộ rồi chạy lại." });
       setConsoleOpen(true);
       return;
     }
+    if (selectedRenderEngine === "coding-25d" && !codingScript) {
+      onActivity({ stage: "run.validate", tool: "Workspace", state: "blocked", message: "Kịch bản hiện tại không có dữ liệu bài giảng coding (codingLesson/teachingScene) nên engine coding-25d sẽ bị từ chối.", nextAction: "Chọn một mẫu bài coding ở Bước 1 rồi tạo lại kịch bản." });
+      setConsoleOpen(true);
+      return;
+    }
+    // A coding lesson keeps coding-25d end to end; never relabel it as space-25d.
+    const visualMode: LocalVisualMode = codingScript ? "coding-25d" : "space-25d";
+    const audioMode: CodingAudioMode = codingScript ? codingAudioMode : "narrated";
+    logActivity(`Chế độ xuất: ${visualMode} · audio ${audioMode}`);
     onRenderApprovedLocalVideo(
-      { ...scriptDraft, approvalStatus: "approved", voiceSettings, visualMode: "space-25d" },
+      { ...scriptDraft, approvalStatus: "approved", voiceSettings, visualMode, audioMode },
       localScriptReview.scriptPath
     );
   }
@@ -259,6 +285,30 @@ export function TopicWorkflowPanel({
               </button>
             </div>
             </details>
+            <details className="topic-suggestions" style={{ marginTop: "8px" }}>
+              <summary>⌨️ Mẫu bài coding — thuật toán & thiết kế hệ thống</summary>
+              <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
+                {CODING_PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    className="secondary-button compact-button"
+                    style={{ fontSize: "11px", color: "var(--cyan)", borderColor: "var(--border-strong)" }}
+                    onClick={() => {
+                      onTopicChange(preset.topic);
+                      onProfileChange("science-explainer");
+                      setSelectedRenderEngine("coding-25d");
+                      setCodingAudioMode("caption-only");
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+              <small style={{ display: "block", marginTop: "8px", color: "var(--muted)", fontSize: "12px", lineHeight: 1.45 }}>
+                Mẫu chọn sẵn engine Video Giảng Dạy Lập Trình 2.5D và chế độ caption-only. Bài coding chỉ dựng được bằng engine cục bộ.
+              </small>
+            </details>
           </div>
           <div>
             <label style={{ fontSize: "13px", fontWeight: 600, display: "block", marginBottom: "6px" }}>Thể loại nội dung:</label>
@@ -280,7 +330,7 @@ export function TopicWorkflowPanel({
         {/* BỘ CHỌN CÔNG NGHỆ DỰNG VIDEO (RENDER ENGINE) */}
         <div>
           <label style={{ fontSize: "13px", fontWeight: 600, display: "block", marginBottom: "8px" }}>Công nghệ kết xuất hình ảnh / Scene:</label>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }} role="radiogroup" aria-label="Công nghệ kết xuất hình ảnh / Scene">
             {[
               {
                 id: "space-25d",
@@ -296,30 +346,43 @@ export function TopicWorkflowPanel({
                 desc: "Tạo cảnh hoạt hình 3D điện ảnh chân thực từ prompt phân cảnh.",
                 badgeColor: "#a855f7",
               },
+              {
+                id: "coding-25d",
+                title: "Giảng Dạy Lập Trình 2.5D",
+                tag: "Offline · Pillow + FFmpeg · 1280×720",
+                desc: "Mảng, đồ thị kiến trúc, highlight dòng code và trace từng trạng thái từ dữ liệu teachingScene.",
+                badgeColor: "var(--blue)",
+              },
             ].map((engine) => {
               const active = selectedRenderEngine === engine.id;
               return (
-                <div
+                <button
                   key={engine.id}
-                  onClick={() => setSelectedRenderEngine(engine.id)}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => {
+                    setSelectedRenderEngine(engine.id);
+                    if (engine.id === "coding-25d") setCodingAudioMode("caption-only");
+                  }}
                   style={{
                     cursor: "pointer",
+                    textAlign: "left",
+                    font: "inherit",
+                    color: "inherit",
                     padding: "14px",
                     borderRadius: "8px",
                     border: active ? "2px solid var(--cyan)" : "1px solid var(--border)",
-                    background: active ? "rgba(143,232,218,0.08)" : "rgba(0,0,0,0.25)",
+                    background: active ? "var(--panel-raised)" : "var(--panel-soft)",
                     display: "flex",
                     flexDirection: "column",
                     gap: "6px",
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <strong style={{ fontSize: "14px", color: active ? "var(--cyan)" : "#fff" }}>{engine.title}</strong>
-                    <input type="radio" checked={active} readOnly />
-                  </div>
+                  <strong style={{ fontSize: "14px", color: active ? "var(--cyan)" : "var(--text)" }}>{engine.title}</strong>
                   <span style={{ fontSize: "11px", fontWeight: 600, color: engine.badgeColor }}>{engine.tag}</span>
                   <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)", lineHeight: 1.4 }}>{engine.desc}</p>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -337,6 +400,45 @@ export function TopicWorkflowPanel({
               >
                 ⚙️ Cấu hình API Key
               </button>
+            </div>
+          )}
+
+          {(selectedRenderEngine === "coding-25d" || codingScript) && (
+            <div className="coding-engine-note">
+              <div>
+                <strong>Chế độ âm thanh của bài coding</strong>
+                <div style={{ marginTop: "8px" }}>
+                  <span style={{ display: "block", marginBottom: "6px", color: "var(--muted-bright)", fontSize: "12px" }}>
+                    Bài coding mặc định chỉ có phụ đề. Chọn "Có giọng đọc" chỉ khi OmniVoice đã cài và profile sẵn sàng.
+                  </span>
+                  <div className="coding-audio-options" role="radiogroup" aria-label="Chế độ âm thanh của bài coding">
+                    <label className={`coding-audio-option ${codingAudioMode === "caption-only" ? "selected" : ""}`}>
+                      <input
+                        type="radio"
+                        name="coding-audio-mode"
+                        checked={codingAudioMode === "caption-only"}
+                        onChange={() => setCodingAudioMode("caption-only")}
+                      />
+                      <span>
+                        <strong>Chỉ phụ đề (caption-only)</strong>
+                        Không gọi OmniVoice, không ghi file audio. Video vẫn có đủ khung hình và dòng thời gian.
+                      </span>
+                    </label>
+                    <label className={`coding-audio-option ${codingAudioMode === "narrated" ? "selected" : ""}`}>
+                      <input
+                        type="radio"
+                        name="coding-audio-mode"
+                        checked={codingAudioMode === "narrated"}
+                        onChange={() => setCodingAudioMode("narrated")}
+                      />
+                      <span>
+                        <strong>Có giọng đọc (narrated)</strong>
+                        Chạy OmniVoice như các video khác. Nếu chưa cài OmniVoice, lệnh sẽ dừng và báo lỗi, không tạo audio giả.
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -387,6 +489,12 @@ export function TopicWorkflowPanel({
               />
             </div>
           </div>
+
+          {scriptDraft.codingLesson ? (
+            <div className="coding-lesson-review" aria-label="Mục tiêu và giả định của bài coding">
+              <CodingLessonReview lesson={scriptDraft.codingLesson} />
+            </div>
+          ) : null}
 
           {/* Danh sách từng phân cảnh */}
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -550,15 +658,25 @@ export function TopicWorkflowPanel({
           </div>
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px", paddingTop: "12px", borderTop: "1px solid var(--border)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "var(--muted)" }}>
-              <span>🎙️ Đang dùng: <strong>{voiceSettings.referenceAudioPath ? "Giọng thu âm của bạn" : voiceSettings.presetVoice}</strong></span>
-              <span>· Cảm xúc: <strong>{voiceSettings.temperature.toFixed(2)}</strong></span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center", fontSize: "13px", color: "var(--muted)" }}>
+              {scriptDraft.codingLesson ? (
+                <div className="coding-export-summary">
+                  <span className="coding-kind-badge">{selectedRenderEngine === "coding-25d" ? "coding-25d" : "coding-25d · cần engine coding"}</span>
+                  <span>· Audio: <strong style={{ color: "var(--text)" }}>{selectedRenderEngine === "coding-25d" && codingAudioMode === "caption-only" ? "chỉ phụ đề" : "có giọng đọc"}</strong></span>
+                  <span>· Claim: <strong style={{ color: "var(--orange)" }}>cần người kiểm tra</strong></span>
+                </div>
+              ) : (
+                <>
+                  <span>🎙️ Đang dùng: <strong>{voiceSettings.referenceAudioPath ? "Giọng thu âm của bạn" : voiceSettings.presetVoice}</strong></span>
+                  <span>· Cảm xúc: <strong>{voiceSettings.temperature.toFixed(2)}</strong></span>
+                </>
+              )}
             </div>
 
             <button
               type="button"
               className="primary-button"
-              style={{ background: "#10b981", borderColor: "#10b981", padding: "10px 24px", fontSize: "15px", fontWeight: 700 }}
+              style={{ background: "var(--green)", borderColor: "var(--green)", color: "var(--bg)", padding: "10px 24px", fontSize: "15px", fontWeight: 700 }}
               disabled={loading}
               onClick={approveAndRender}
             >
@@ -573,8 +691,17 @@ export function TopicWorkflowPanel({
         {scriptDraft?.segments[selectedShotIndex] ? (() => { const segment = scriptDraft.segments[selectedShotIndex]; const prompt = segment.visualPrompt || "Chưa có visual prompt — hãy tạo storyboard hoặc nhập prompt."; return <>
           <div className="shot-review-status"><span className="review-dot" /> {approvedShotIds.includes(segment.segmentId) ? "Shot approved" : "Prompt ready"} <strong>{segment.durationSeconds.toFixed(1)}s</strong></div>
           <div className="shot-review-card"><span className="review-label">Narration</span><p>{segment.narration || "Chưa có lời dẫn"}</p></div>
+          {segment.teachingScene ? (
+            <div className="shot-review-card">
+              <span className="review-label">Teaching scene · dữ liệu dựng video</span>
+              <CodingSceneReview scene={segment.teachingScene} />
+            </div>
+          ) : (
+            <>
           <div className="shot-review-card"><span className="review-label">Visual prompt · 5 lớp</span><textarea value={prompt} onChange={(event) => updateSegment(selectedShotIndex, { visualPrompt: event.target.value })} rows={12} /><small>Subject · action · camera · lighting · render/style</small></div>
           <div className="shot-review-card shot-details-card"><span className="review-label">Shot details · dữ liệu cho AI/provider</span><label>Subject<input value={segment.subject ?? ""} onChange={(event) => updateSegment(selectedShotIndex, { subject: event.target.value })} placeholder="Nhân vật/vật thể chính, nhận diện và chất liệu" /></label><label>Action<input value={segment.action ?? ""} onChange={(event) => updateSegment(selectedShotIndex, { action: event.target.value })} placeholder="Hành động và nhịp chuyển động theo thời gian" /></label><label>Camera / lens<input value={segment.cameraIntent ?? ""} onChange={(event) => updateSegment(selectedShotIndex, { cameraIntent: event.target.value })} placeholder="Wide 28mm, slow dolly-in, left-to-right" /></label><label>Lighting / look<input value={segment.lightingIntent ?? ""} onChange={(event) => updateSegment(selectedShotIndex, { lightingIntent: event.target.value })} placeholder="Volumetric blue rim light, high contrast" /></label><label>Continuity anchors<textarea rows={2} value={segment.continuityNotes ?? ""} onChange={(event) => updateSegment(selectedShotIndex, { continuityNotes: event.target.value })} placeholder="Giữ màu tàu, hướng camera, vị trí nhân vật giữa các shot" /></label><label>Negative constraints<textarea rows={2} value={segment.negativePrompt ?? ""} onChange={(event) => updateSegment(selectedShotIndex, { negativePrompt: event.target.value })} placeholder="No extra objects, no text, no logo, no morphing" /></label></div>
+            </>
+          )}
           <div className="shot-review-card"><span className="review-label">Pipeline status</span><div className="review-progress"><span>Shot plan</span><b>READY</b></div><div className="review-progress"><span>AI video provider</span><b className="blocked-text">CHƯA GỬI</b></div></div>
           <div className="shot-review-actions"><details className="preview-tools"><summary>Công cụ preview</summary><div className="preview-tools-buttons"><button type="button" className="secondary-button" onClick={() => setReviewPreview("composer")}>▶ Xem Composer</button></div></details></div>
           {reviewPreview === "composer" && <div className="shot-preview-box"><div className="shot-preview-box-heading"><span>SHOT COMPOSER PREVIEW</span><button type="button" onClick={() => setReviewPreview(null)}>×</button></div><div className="composer-preview-canvas"><span className="preview-grid-line line-a" /><span className="preview-grid-line line-b" /><span className="preview-object object-main" /><span className="preview-object object-small" /><span className="preview-camera">CAMERA · 35mm</span><small>Layout preview · camera / subject / depth</small></div></div>}
@@ -585,7 +712,7 @@ export function TopicWorkflowPanel({
       {localVideoReport && (
         <div style={{ background: "var(--panel-soft)", padding: "20px", borderRadius: "10px", border: "2px solid var(--cyan)", display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ background: "#10b981", color: "#fff", fontWeight: 700, borderRadius: "50%", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}>✓</span>
+            <span style={{ background: "var(--green)", color: "var(--bg)", fontWeight: 700, borderRadius: "50%", width: "24px", height: "24px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px" }}>✓</span>
             <strong style={{ fontSize: "16px", color: "#fff" }}>Video Đã Hoàn Thành! Bấm Play Để Xem</strong>
           </div>
 
@@ -610,7 +737,11 @@ export function TopicWorkflowPanel({
               </div>
               <div style={{ padding: "10px", background: "rgba(0,0,0,0.3)", borderRadius: "6px" }}>
                 <span style={{ color: "var(--muted)", display: "block" }}>Tệp âm thanh & phụ đề đính kèm:</span>
-                <span style={{ fontSize: "12px", color: "var(--muted)" }}>{localVideoReport.audioPath} · {localVideoReport.captionsPath}</span>
+                <span style={{ fontSize: "12px", color: "var(--muted)" }}>{localVideoReport.audioPath || "không có tệp audio (caption-only)"} · {localVideoReport.captionsPath}</span>
+              </div>
+              <div style={{ padding: "10px", background: "var(--panel-soft)", borderRadius: "6px", border: "1px solid var(--border-strong)" }}>
+                <span style={{ color: "var(--muted)", display: "block" }}>Chế độ đã dựng:</span>
+                <strong>{localVideoReport.visualMode} · {localVideoReport.audioMode === "caption-only" ? "chỉ phụ đề, không có audio" : "có giọng đọc"}</strong>
               </div>
               <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
                 <a

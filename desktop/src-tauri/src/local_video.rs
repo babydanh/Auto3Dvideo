@@ -8,6 +8,139 @@ const LOCAL_SPACE_25D_WORKER_SCRIPT: &str =
     include_str!("../../../scripts/local_space_25d_worker.py");
 const LOCAL_LICENSED_FOOTAGE_WORKER_SCRIPT: &str =
     include_str!("../../../scripts/local_licensed_footage_worker.py");
+const LOCAL_CODING_25D_WORKER_SCRIPT: &str =
+    include_str!("../../../scripts/local_coding_25d_worker.py");
+const CODING_LESSON_HELPER_SCRIPT: &str = include_str!("../../../scripts/coding_lesson.py");
+const FLOW_CINEMATIC_DIRECTIVES_SCRIPT: &str =
+    include_str!("../../../scripts/flow_cinematic_directives.py");
+
+const CODING_VISUAL_MODE: &str = "coding-25d";
+const CODING_FRAME_WIDTH: u32 = 1280;
+const CODING_FRAME_HEIGHT: u32 = 720;
+const SCENE_FRAME_WIDTH: u32 = 720;
+const SCENE_FRAME_HEIGHT: u32 = 1280;
+const LOCAL_FRAME_RATE: u32 = 30;
+const RENDER_PROBE_ENTRIES: &str = "format=duration:stream=codec_type,codec_name,width,height,r_frame_rate,avg_frame_rate,sample_rate,channels";
+
+/// Audio mode declared by a script. Coding lessons default to caption-only so a
+/// local render never claims synthesized speech it did not produce.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ScriptAudioMode {
+    CaptionOnly,
+    Narrated,
+}
+
+impl ScriptAudioMode {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::CaptionOnly => "caption-only",
+            Self::Narrated => "narrated",
+        }
+    }
+}
+
+fn is_coding_visual_mode(visual_mode: Option<&str>) -> bool {
+    visual_mode == Some(CODING_VISUAL_MODE)
+}
+
+/// Narration stays the default for existing visual modes; only coding-25d
+/// falls back to caption-only when the planner omits an explicit audioMode.
+fn script_audio_mode(script: &Value) -> Result<ScriptAudioMode, String> {
+    match script.get("audioMode") {
+        None | Some(Value::Null) => Ok(if is_coding_visual_mode(
+            script.get("visualMode").and_then(Value::as_str),
+        ) {
+            ScriptAudioMode::CaptionOnly
+        } else {
+            ScriptAudioMode::Narrated
+        }),
+        Some(value) => match value.as_str() {
+            Some("caption-only") => Ok(ScriptAudioMode::CaptionOnly),
+            Some("narrated") => Ok(ScriptAudioMode::Narrated),
+            _ => Err("script.audioMode chỉ nhận narrated hoặc caption-only".to_string()),
+        },
+    }
+}
+
+/// Native frame geometry per visual mode. Coding renders 1280x720 so code and
+/// scene labels stay readable; every pre-existing mode keeps 720x1280.
+fn scene_frame_size(visual_mode: Option<&str>) -> (u32, u32) {
+    if is_coding_visual_mode(visual_mode) {
+        (CODING_FRAME_WIDTH, CODING_FRAME_HEIGHT)
+    } else {
+        (SCENE_FRAME_WIDTH, SCENE_FRAME_HEIGHT)
+    }
+}
+
+fn rendered_video_expectation(
+    visual_mode: Option<&str>,
+    narrated: bool,
+) -> RenderedVideoExpectation {
+    let (width, height) = scene_frame_size(visual_mode);
+    RenderedVideoExpectation {
+        width: width as u64,
+        height: height as u64,
+        frame_rate: (LOCAL_FRAME_RATE as u64, 1),
+        audio_streams: usize::from(narrated),
+    }
+}
+
+/// Coding scripts intentionally carry no top-level `networkCallsMade` or
+/// `costStatus`, so delivery evidence is derived from the planner that actually
+/// produced the lesson instead of assuming a gateway call.
+fn coding_generation_evidence(script: &Value) -> Option<(bool, &'static str)> {
+    match script
+        .get("codingLesson")?
+        .get("planner")?
+        .as_str()?
+    {
+        "local-catalog" => Some((false, "local_catalog_no_generation_cost")),
+        "configured-gateway" => Some((true, "configured_gateway_cost_unreported")),
+        _ => None,
+    }
+}
+
+/// The coding planner helper must sit beside every embedded worker so
+/// `local_script_worker.py` and `local_coding_25d_worker.py` can import it.
+fn ensure_coding_lesson_helper(workspace: &Path) -> Result<String, String> {
+    ensure_worker(workspace, "coding_lesson.py", CODING_LESSON_HELPER_SCRIPT)
+}
+
+/// `local_script_worker.py` loads both application helpers from its own
+/// directory, so an arbitrary project workspace needs them deployed together.
+fn ensure_script_worker(workspace: &Path) -> Result<String, String> {
+    ensure_coding_lesson_helper(workspace)?;
+    ensure_worker(
+        workspace,
+        "flow_cinematic_directives.py",
+        FLOW_CINEMATIC_DIRECTIVES_SCRIPT,
+    )?;
+    ensure_worker(workspace, "local_script_worker.py", LOCAL_SCRIPT_WORKER_SCRIPT)
+}
+
+fn ensure_scene_worker(workspace: &Path, visual_mode: Option<&str>) -> Result<String, String> {
+    match visual_mode {
+        Some("licensed-footage-space") => ensure_worker(
+            workspace,
+            "local_licensed_footage_worker.py",
+            LOCAL_LICENSED_FOOTAGE_WORKER_SCRIPT,
+        ),
+        Some("space-25d") => ensure_worker(
+            workspace,
+            "local_space_25d_worker.py",
+            LOCAL_SPACE_25D_WORKER_SCRIPT,
+        ),
+        Some(CODING_VISUAL_MODE) => {
+            ensure_coding_lesson_helper(workspace)?;
+            ensure_worker(
+                workspace,
+                "local_coding_25d_worker.py",
+                LOCAL_CODING_25D_WORKER_SCRIPT,
+            )
+        }
+        _ => ensure_worker(workspace, "local_scene_worker.py", LOCAL_SCENE_WORKER_SCRIPT),
+    }
+}
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -16,6 +149,8 @@ pub struct LocalVideoPipelineReport {
     pub run_id: String,
     pub job_id: String,
     pub attempt_id: String,
+    pub visual_mode: String,
+    pub audio_mode: String,
     pub script_path: String,
     pub scene_manifest_path: String,
     pub audio_path: String,
@@ -235,7 +370,35 @@ fn omnivoice_profile_for_render(
     }))
 }
 
-fn validate_local_video_probe(probe: &Value, expected_duration: f64) -> Result<f64, String> {
+#[derive(Debug, Clone, Copy)]
+struct RenderedVideoExpectation {
+    width: u64,
+    height: u64,
+    frame_rate: (u64, u64),
+    audio_streams: usize,
+}
+
+fn probe_frame_rate(stream: &Value) -> Option<(u64, u64)> {
+    ["r_frame_rate", "avg_frame_rate"].iter().find_map(|key| {
+        stream
+            .get(*key)
+            .and_then(Value::as_str)
+            .and_then(|value| value.split_once('/'))
+            .and_then(|(numerator, denominator)| {
+                Some((numerator.parse().ok()?, denominator.parse().ok()?))
+            })
+            .filter(|(numerator, denominator)| *numerator > 0 && *denominator > 0)
+    })
+}
+
+/// FFprobe must prove the exact frame geometry, frame rate and stream layout a
+/// visual mode promised. Caption-only renders report zero audio streams instead
+/// of a synthetic track, so a missing narration file can never pass as success.
+fn validate_rendered_video_probe(
+    probe: &Value,
+    expected_duration: f64,
+    expectation: RenderedVideoExpectation,
+) -> Result<f64, String> {
     let streams = probe
         .get("streams")
         .and_then(Value::as_array)
@@ -248,27 +411,44 @@ fn validate_local_video_probe(probe: &Value, expected_duration: f64) -> Result<f
         .iter()
         .filter(|stream| stream.get("codec_type").and_then(Value::as_str) == Some("audio"))
         .collect::<Vec<_>>();
-    if video_streams.len() != 1 || audio_streams.len() != 1 {
-        return Err("MP4 phải có đúng một video stream và một audio stream".to_string());
+    if video_streams.len() != 1 {
+        return Err("MP4 phải có đúng một video stream".to_string());
     }
     let video = video_streams[0];
     if video.get("codec_name").and_then(Value::as_str) != Some("h264")
-        || video.get("width").and_then(Value::as_u64) != Some(720)
-        || video.get("height").and_then(Value::as_u64) != Some(1280)
+        || video.get("width").and_then(Value::as_u64) != Some(expectation.width)
+        || video.get("height").and_then(Value::as_u64) != Some(expectation.height)
     {
-        return Err("MP4 không đúng H.264 720x1280".to_string());
+        return Err(format!(
+            "MP4 không đúng H.264 {}x{}",
+            expectation.width, expectation.height
+        ));
     }
-    let audio = audio_streams[0];
-    let sample_rate = audio
-        .get("sample_rate")
-        .and_then(Value::as_str)
-        .and_then(|value| value.parse::<u64>().ok())
-        .or_else(|| audio.get("sample_rate").and_then(Value::as_u64));
-    if audio.get("codec_name").and_then(Value::as_str) != Some("aac")
-        || sample_rate != Some(48_000)
-        || audio.get("channels").and_then(Value::as_u64) != Some(1)
-    {
-        return Err("MP4 không đúng AAC 48 kHz mono".to_string());
+    if probe_frame_rate(video) != Some(expectation.frame_rate) {
+        return Err(format!(
+            "MP4 không đúng frame rate {}/{}",
+            expectation.frame_rate.0, expectation.frame_rate.1
+        ));
+    }
+    if audio_streams.len() != expectation.audio_streams {
+        return Err(format!(
+            "MP4 phải có đúng {} audio stream",
+            expectation.audio_streams
+        ));
+    }
+    if expectation.audio_streams == 1 {
+        let audio = audio_streams[0];
+        let sample_rate = audio
+            .get("sample_rate")
+            .and_then(Value::as_str)
+            .and_then(|value| value.parse::<u64>().ok())
+            .or_else(|| audio.get("sample_rate").and_then(Value::as_u64));
+        if audio.get("codec_name").and_then(Value::as_str) != Some("aac")
+            || sample_rate != Some(48_000)
+            || audio.get("channels").and_then(Value::as_u64) != Some(1)
+        {
+            return Err("MP4 không đúng AAC 48 kHz mono".to_string());
+        }
     }
     let duration = probe
         .get("format")
@@ -348,6 +528,76 @@ fn require_success(result: &ExternalProcessResult, label: &str) -> Result<Value,
         return Err(format!("{label} chưa thành công: {detail}"));
     }
     Ok(payload.unwrap_or_else(|| serde_json::json!({"status": "succeeded"})))
+}
+
+/// Builds the scene-worker request with the render's live cancellation token so
+/// a user cancel can stop a long frame render instead of leaving an orphan
+/// Python process behind.
+#[allow(clippy::too_many_arguments)]
+fn scene_process_request(
+    scene_worker: String,
+    script_relative: &str,
+    scene_relative: &str,
+    frame_width: &str,
+    frame_height: &str,
+    scene_manifest_relative: &str,
+    python_path: &Path,
+    workspace_root: &Path,
+    expected_frames: u64,
+    cancellation: &Arc<AtomicBool>,
+) -> ExternalProcessRequest {
+    ExternalProcessRequest {
+        spec: ProcessSpec {
+            executable_id: "python".to_string(),
+            args: vec![
+                scene_worker,
+                "--script".to_string(),
+                script_relative.to_string(),
+                "--output-dir".to_string(),
+                scene_relative.to_string(),
+                "--width".to_string(),
+                frame_width.to_string(),
+                "--height".to_string(),
+                frame_height.to_string(),
+            ],
+            working_directory: ".".to_string(),
+            environment: BTreeMap::new(),
+            timeout_seconds: scene_timeout_seconds(expected_frames),
+            expected_outputs: vec![scene_manifest_relative.to_string()],
+        },
+        executable_path: python_path.to_path_buf(),
+        absolute_working_directory: workspace_root.to_path_buf(),
+        output_root: workspace_root.to_path_buf(),
+        cancellation: Arc::clone(cancellation),
+    }
+}
+
+/// Scene cost grows with the frame count. The coding contract allows up to 5400
+/// frames, which needs minutes rather than the flat budget other modes use, so a
+/// fixed 180s deadline would kill legitimate renders. The budget still stays
+/// bounded so a stuck worker cannot run forever.
+fn scene_timeout_seconds(expected_frames: u64) -> u64 {
+    const BASE_SECONDS: u64 = 180;
+    const MAX_SECONDS: u64 = 1800;
+    // Four frames per second is a deliberately slow floor; measured local
+    // rendering is faster, and the cap keeps a runaway worker bounded.
+    BASE_SECONDS.saturating_add(expected_frames / 4).min(MAX_SECONDS)
+}
+
+/// Frames the validated script will ask the scene worker to render.
+fn expected_frame_count(script: &Value) -> u64 {
+    script
+        .get("segments")
+        .and_then(Value::as_array)
+        .map(|segments| {
+            segments
+                .iter()
+                .filter_map(|segment| segment.get("durationSeconds").and_then(Value::as_f64))
+                .map(|duration| duration * LOCAL_FRAME_RATE as f64)
+                .sum::<f64>()
+                .round() as u64
+        })
+        .unwrap_or(0)
 }
 
 // Deprecated compatibility code kept temporarily for source migration; it is
@@ -445,11 +695,7 @@ async fn run_local_video_mvp(
             &run_id,
         );
     }
-    let script_worker = ensure_worker(
-        &workspace_root,
-        "local_script_worker.py",
-        LOCAL_SCRIPT_WORKER_SCRIPT,
-    )?;
+    let script_worker = ensure_script_worker(&workspace_root)?;
     let script_process = run_external_process(ExternalProcessRequest {
         spec: ProcessSpec {
             executable_id: "python".to_string(),
@@ -478,27 +724,8 @@ async fn run_local_video_mvp(
     )
     .map_err(|error| format!("Script worker tạo JSON không hợp lệ: {error}"))?;
     let visual_mode = script.get("visualMode").and_then(Value::as_str);
-    let space_25d = visual_mode == Some("space-25d");
-    let licensed_footage = visual_mode == Some("licensed-footage-space");
-    let scene_worker = if licensed_footage {
-        ensure_worker(
-            &workspace_root,
-            "local_licensed_footage_worker.py",
-            LOCAL_LICENSED_FOOTAGE_WORKER_SCRIPT,
-        )?
-    } else if space_25d {
-        ensure_worker(
-            &workspace_root,
-            "local_space_25d_worker.py",
-            LOCAL_SPACE_25D_WORKER_SCRIPT,
-        )?
-    } else {
-        ensure_worker(
-            &workspace_root,
-            "local_scene_worker.py",
-            LOCAL_SCENE_WORKER_SCRIPT,
-        )?
-    };
+    let (frame_width, frame_height) = scene_frame_size(visual_mode);
+    let scene_worker = ensure_scene_worker(&workspace_root, visual_mode)?;
     let scene_process = run_external_process(ExternalProcessRequest {
         spec: ProcessSpec {
             executable_id: "python".to_string(),
@@ -509,9 +736,9 @@ async fn run_local_video_mvp(
                 "--output-dir".to_string(),
                 scene_relative.clone(),
                 "--width".to_string(),
-                "720".to_string(),
+                frame_width.to_string(),
                 "--height".to_string(),
-                "1280".to_string(),
+                frame_height.to_string(),
             ],
             working_directory: ".".to_string(),
             environment: BTreeMap::new(),
@@ -924,6 +1151,7 @@ async fn run_local_video_mvp(
         .get("costStatus")
         .and_then(Value::as_str)
         .unwrap_or("local_gateway_unreported");
+    let visual_mode_name = visual_mode.unwrap_or("static-card").to_string();
     let manifest = serde_json::json!({
         "schemaVersion": "1.0.0",
         "runId": run_id,
@@ -931,6 +1159,8 @@ async fn run_local_video_mvp(
         "scriptPath": script_relative,
         "sceneManifestPath": scene_manifest_relative,
         "audioPath": audio_relative,
+        "visualMode": visual_mode_name,
+        "audioMode": "narrated",
         "captionsPath": captions_relative,
         "videoPath": video_relative,
         "animationMode": scene_manifest
@@ -978,6 +1208,8 @@ async fn run_local_video_mvp(
         status: "succeeded".to_string(),
         run_id,
         job_id: String::new(),
+        visual_mode: visual_mode_name,
+        audio_mode: "narrated".to_string(),
         attempt_id: String::new(),
         script_path: script_relative,
         scene_manifest_path: scene_manifest_relative,
@@ -1223,7 +1455,7 @@ fn validate_segment_keys(
     segment: &serde_json::Map<String, Value>,
     index: usize,
 ) -> Result<(), String> {
-    const ALLOWED: [&str; 19] = [
+    const ALLOWED: [&str; 20] = [
         "segmentId",
         "assetId",
         "narration",
@@ -1243,6 +1475,7 @@ fn validate_segment_keys(
         "sceneMode",
         "flowDirectives",
         "beats",
+        "teachingScene",
     ];
     if let Some(unknown) = segment.keys().find(|key| !ALLOWED.contains(&key.as_str())) {
         return Err(format!(
@@ -1476,11 +1709,389 @@ fn voice_emotion_tag(value: Option<&Value>) -> Option<String> {
         .then(|| format!("[{}] ", code.to_ascii_uppercase()))
 }
 
+fn coding_text_list(
+    value: Option<&Value>,
+    field: &str,
+    max_items: usize,
+    max_chars: usize,
+) -> Result<(), String> {
+    let items = value
+        .and_then(Value::as_array)
+        .filter(|items| !items.is_empty() && items.len() <= max_items)
+        .ok_or_else(|| format!("script.codingLesson.{field} phải có từ 1 đến {max_items} mục"))?;
+    for (index, item) in items.iter().enumerate() {
+        let length = item
+            .as_str()
+            .map(str::trim)
+            .map_or(0, |text| text.chars().count());
+        if length == 0 || length > max_chars {
+            return Err(format!(
+                "script.codingLesson.{field}[{index}] phải là chuỗi 1..{max_chars} ký tự"
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Defensive structural check for the planner's coding lesson block. The
+/// renderer repeats these bounds in `coding_lesson.validate_coding_script`; this
+/// copy keeps the native boundary rejecting unknown or malformed data before a
+/// worker process is ever started.
+fn validate_coding_lesson(value: &Value) -> Result<(), String> {
+    let object = value
+        .as_object()
+        .ok_or_else(|| "script.codingLesson phải là JSON object".to_string())?;
+    const ALLOWED: [&str; 10] = [
+        "schemaVersion",
+        "track",
+        "topicKey",
+        "learningObjectives",
+        "assumptions",
+        "complexity",
+        "checks",
+        "sources",
+        "planner",
+        "promptVersion",
+    ];
+    if let Some(unknown) = object.keys().find(|key| !ALLOWED.contains(&key.as_str())) {
+        return Err(format!("script.codingLesson.{unknown} không được phép"));
+    }
+    if object.get("schemaVersion").and_then(Value::as_str) != Some("1.0.0") {
+        return Err("script.codingLesson.schemaVersion phải là 1.0.0".to_string());
+    }
+    if !matches!(
+        object.get("track").and_then(Value::as_str),
+        Some("algorithm" | "system-design")
+    ) {
+        return Err("script.codingLesson.track chỉ nhận algorithm hoặc system-design".to_string());
+    }
+    if !matches!(
+        object.get("planner").and_then(Value::as_str),
+        Some("local-catalog" | "configured-gateway")
+    ) {
+        return Err("script.codingLesson.planner chỉ nhận local-catalog hoặc configured-gateway".to_string());
+    }
+    if object.get("promptVersion").and_then(Value::as_str) != Some("coding-25d-v1") {
+        return Err("script.codingLesson.promptVersion phải là coding-25d-v1".to_string());
+    }
+    let topic_key = object
+        .get("topicKey")
+        .and_then(Value::as_str)
+        .filter(|value| {
+            !value.is_empty()
+                && value.len() <= 96
+                && value
+                    .chars()
+                    .all(|character| character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-')
+        })
+        .ok_or_else(|| "script.codingLesson.topicKey không hợp lệ".to_string())?;
+    let _ = topic_key;
+    // Every lesson list entry shares the same 500-character ceiling in the planner.
+    coding_text_list(object.get("learningObjectives"), "learningObjectives", 8, 500)?;
+    coding_text_list(object.get("assumptions"), "assumptions", 8, 500)?;
+    coding_text_list(object.get("checks"), "checks", 12, 500)?;
+    let complexity = object
+        .get("complexity")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty() && value.chars().count() <= 400)
+        .ok_or_else(|| "script.codingLesson.complexity không hợp lệ".to_string())?;
+    let _ = complexity;
+    if let Some(sources) = object.get("sources") {
+        let sources = sources
+            .as_array()
+            .filter(|items| items.len() <= 8)
+            .ok_or_else(|| "script.codingLesson.sources không được vượt quá 8 mục".to_string())?;
+        for (index, source) in sources.iter().enumerate() {
+            let valid = source
+                .as_str()
+                .filter(|value| value.starts_with("https://") && value.chars().count() <= 500)
+                .is_some();
+            if !valid {
+                return Err(format!(
+                    "script.codingLesson.sources[{index}] phải là URL HTTPS ngắn gọn"
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_code_lines(value: Option<&Value>) -> Result<usize, String> {
+    let lines = value
+        .and_then(Value::as_array)
+        .filter(|items| items.len() <= 14)
+        .ok_or_else(|| "teachingScene.code không được vượt quá 14 dòng".to_string())?;
+    for (index, line) in lines.iter().enumerate() {
+        let length = line
+            .as_str()
+            .map_or(usize::MAX, |text| text.chars().count());
+        if length > 120 {
+            return Err(format!(
+                "teachingScene.code[{index}] vượt quá 120 ký tự"
+            ));
+        }
+    }
+    Ok(lines.len())
+}
+
+fn validate_scene_nodes(value: Option<&Value>) -> Result<Vec<String>, String> {
+    let nodes = value
+        .and_then(Value::as_array)
+        .filter(|items| items.len() <= 12)
+        .ok_or_else(|| "teachingScene.nodes không được vượt quá 12 node".to_string())?;
+    let mut ids = Vec::with_capacity(nodes.len());
+    let mut cells = std::collections::HashSet::new();
+    for (index, node) in nodes.iter().enumerate() {
+        let node = node
+            .as_object()
+            .ok_or_else(|| format!("teachingScene.nodes[{index}] phải là object"))?;
+        const ALLOWED: [&str; 4] = ["id", "label", "column", "row"];
+        if let Some(unknown) = node.keys().find(|key| !ALLOWED.contains(&key.as_str())) {
+            return Err(format!("teachingScene.nodes[{index}].{unknown} không được phép"));
+        }
+        let id = node
+            .get("id")
+            .and_then(Value::as_str)
+            .filter(|value| {
+                !value.is_empty()
+                    && value.chars().count() <= 40
+                    && !value.chars().any(|character| character.is_whitespace() || character.is_control())
+            })
+            .ok_or_else(|| format!("teachingScene.nodes[{index}].id không hợp lệ"))?;
+        node.get("label")
+            .and_then(Value::as_str)
+            .filter(|value| !value.trim().is_empty() && value.chars().count() <= 48)
+            .ok_or_else(|| format!("teachingScene.nodes[{index}].label không hợp lệ"))?;
+        let column = node
+            .get("column")
+            .and_then(Value::as_u64)
+            .filter(|value| *value <= 3)
+            .ok_or_else(|| format!("teachingScene.nodes[{index}].column phải trong 0..3"))?;
+        let row = node
+            .get("row")
+            .and_then(Value::as_u64)
+            .filter(|value| *value <= 2)
+            .ok_or_else(|| format!("teachingScene.nodes[{index}].row phải trong 0..2"))?;
+        if !cells.insert((column, row)) {
+            return Err(format!(
+                "teachingScene.nodes[{index}] chiếm ô layout đã dùng ({column},{row})"
+            ));
+        }
+        ids.push(id.to_string());
+    }
+    let unique = ids.iter().collect::<std::collections::HashSet<_>>();
+    if unique.len() != ids.len() {
+        return Err("teachingScene.nodes có id trùng lặp".to_string());
+    }
+    Ok(ids)
+}
+
+fn validate_scene_edges(value: Option<&Value>, node_ids: &[String]) -> Result<usize, String> {
+    let edges = value
+        .and_then(Value::as_array)
+        .filter(|items| items.len() <= 24)
+        .ok_or_else(|| "teachingScene.edges không được vượt quá 24 cạnh".to_string())?;
+    for (index, edge) in edges.iter().enumerate() {
+        let edge = edge
+            .as_object()
+            .ok_or_else(|| format!("teachingScene.edges[{index}] phải là object"))?;
+        const ALLOWED: [&str; 3] = ["from", "to", "label"];
+        if let Some(unknown) = edge.keys().find(|key| !ALLOWED.contains(&key.as_str())) {
+            return Err(format!("teachingScene.edges[{index}].{unknown} không được phép"));
+        }
+        for endpoint in ["from", "to"] {
+            let target = edge
+                .get(endpoint)
+                .and_then(Value::as_str)
+                .filter(|value| node_ids.iter().any(|id| id == value))
+                .ok_or_else(|| {
+                    format!("teachingScene.edges[{index}].{endpoint} không có node tương ứng")
+                })?;
+            let _ = target;
+        }
+        edge.get("label")
+            .and_then(Value::as_str)
+            .filter(|value| value.chars().count() <= 48)
+            .ok_or_else(|| format!("teachingScene.edges[{index}].label không hợp lệ"))?;
+    }
+    Ok(edges.len())
+}
+
+fn validate_scene_state(
+    state: &Value,
+    index: usize,
+    code_line_count: usize,
+    node_ids: &[String],
+    edge_count: usize,
+) -> Result<(), String> {
+    let context = format!("teachingScene.states[{index}]");
+    let state = state
+        .as_object()
+        .ok_or_else(|| format!("{context} phải là object"))?;
+    const ALLOWED: [&str; 7] = [
+        "label",
+        "values",
+        "activeIndices",
+        "variables",
+        "activeLine",
+        "activeNodes",
+        "activeEdges",
+    ];
+    if let Some(unknown) = state.keys().find(|key| !ALLOWED.contains(&key.as_str())) {
+        return Err(format!("{context}.{unknown} không được phép"));
+    }
+    state
+        .get("label")
+        .and_then(Value::as_str)
+        .filter(|value| !value.trim().is_empty() && value.chars().count() <= 180)
+        .ok_or_else(|| format!("{context}.label không hợp lệ"))?;
+    let values = state
+        .get("values")
+        .and_then(Value::as_array)
+        .filter(|items| items.len() <= 16)
+        .ok_or_else(|| format!("{context}.values không được vượt quá 16 phần tử"))?;
+    for (value_index, value) in values.iter().enumerate() {
+        let bounded_integer = value
+            .as_i64()
+            .is_some_and(|value| (-1_000_000_000..=1_000_000_000).contains(&value));
+        // Sliding-window and string-matching lessons display characters, so a
+        // single printable character is a valid cell next to a bounded integer.
+        let single_character = value.as_str().is_some_and(|value| {
+            let mut characters = value.chars();
+            matches!(
+                (characters.next(), characters.next()),
+                (Some(character), None) if !matches!(character, '\n' | '\r' | '\0')
+            )
+        });
+        if !bounded_integer && !single_character {
+            return Err(format!(
+                "{context}.values[{value_index}] phải là số nguyên trong +/-1e9 hoặc ký tự đơn"
+            ));
+        }
+    }
+    if let Some(active) = state.get("activeIndices") {
+        let active = active
+            .as_array()
+            .filter(|items| items.len() <= 16)
+            .ok_or_else(|| format!("{context}.activeIndices không được vượt quá 16 mục"))?;
+        for (item_index, item) in active.iter().enumerate() {
+            if item
+                .as_u64()
+                .map_or(true, |value| value as usize >= values.len())
+            {
+                return Err(format!(
+                    "{context}.activeIndices[{item_index}] trỏ ngoài mảng values"
+                ));
+            }
+        }
+    }
+    if let Some(variables) = state.get("variables") {
+        let variables = variables
+            .as_array()
+            .filter(|items| items.len() <= 6)
+            .ok_or_else(|| format!("{context}.variables không được vượt quá 6 biến"))?;
+        for (item_index, variable) in variables.iter().enumerate() {
+            let variable = variable
+                .as_object()
+                .ok_or_else(|| format!("{context}.variables[{item_index}] phải là object"))?;
+            const ALLOWED: [&str; 2] = ["name", "value"];
+            if let Some(unknown) = variable.keys().find(|key| !ALLOWED.contains(&key.as_str())) {
+                return Err(format!(
+                    "{context}.variables[{item_index}].{unknown} không được phép"
+                ));
+            }
+            variable
+                .get("name")
+                .and_then(Value::as_str)
+                .filter(|value| !value.trim().is_empty() && value.chars().count() <= 24)
+                .ok_or_else(|| format!("{context}.variables[{item_index}].name không hợp lệ"))?;
+            variable
+                .get("value")
+                .and_then(Value::as_str)
+                .filter(|value| value.chars().count() <= 180)
+                .ok_or_else(|| format!("{context}.variables[{item_index}].value không hợp lệ"))?;
+        }
+    }
+    match state.get("activeLine") {
+        None | Some(Value::Null) => {}
+        Some(value) => {
+            if value.as_u64().map_or(true, |value| value as usize >= code_line_count) {
+                return Err(format!("{context}.activeLine trỏ ngoài teachingScene.code"));
+            }
+        }
+    }
+    if let Some(active) = state.get("activeNodes") {
+        let active = active
+            .as_array()
+            .filter(|items| items.len() <= 12)
+            .ok_or_else(|| format!("{context}.activeNodes không được vượt quá 12 mục"))?;
+        for (item_index, item) in active.iter().enumerate() {
+            let known = item
+                .as_str()
+                .is_some_and(|value| node_ids.iter().any(|id| id == value));
+            if !known {
+                return Err(format!(
+                    "{context}.activeNodes[{item_index}] không có node tương ứng"
+                ));
+            }
+        }
+    }
+    if let Some(active) = state.get("activeEdges") {
+        let active = active
+            .as_array()
+            .filter(|items| items.len() <= 24)
+            .ok_or_else(|| format!("{context}.activeEdges không được vượt quá 24 mục"))?;
+        for (item_index, item) in active.iter().enumerate() {
+            if item.as_u64().map_or(true, |value| value as usize >= edge_count) {
+                return Err(format!(
+                    "{context}.activeEdges[{item_index}] trỏ ngoài teachingScene.edges"
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_teaching_scene(value: &Value, index: usize) -> Result<(), String> {
+    let context = format!("script.segments[{index}].teachingScene");
+    let scene = value
+        .as_object()
+        .ok_or_else(|| format!("{context} phải là JSON object"))?;
+    const ALLOWED: [&str; 6] = ["kind", "code", "nodes", "edges", "states", "note"];
+    if let Some(unknown) = scene.keys().find(|key| !ALLOWED.contains(&key.as_str())) {
+        return Err(format!("{context}.{unknown} không được phép"));
+    }
+    if !matches!(
+        scene.get("kind").and_then(Value::as_str),
+        Some("array" | "architecture" | "code" | "summary")
+    ) {
+        return Err(format!("{context}.kind không hợp lệ"));
+    }
+    let code_line_count = validate_code_lines(scene.get("code"))?;
+    let node_ids = validate_scene_nodes(scene.get("nodes"))?;
+    let edge_count = validate_scene_edges(scene.get("edges"), &node_ids)?;
+    let states = scene
+        .get("states")
+        .and_then(Value::as_array)
+        .filter(|items| !items.is_empty() && items.len() <= 16)
+        .ok_or_else(|| format!("{context}.states phải có từ 1 đến 16 trạng thái"))?;
+    for (state_index, state) in states.iter().enumerate() {
+        validate_scene_state(state, state_index, code_line_count, &node_ids, edge_count)?;
+    }
+    if let Some(note) = scene.get("note") {
+        note.as_str()
+            .filter(|value| value.chars().count() <= 400)
+            .ok_or_else(|| format!("{context}.note vượt quá 400 ký tự"))?;
+    }
+    Ok(())
+}
+
 fn validate_local_script(script: &Value, require_approved: bool) -> Result<Value, String> {
     let object = script
         .as_object()
         .ok_or_else(|| "Script phải là JSON object".to_string())?;
-    const ALLOWED: [&str; 22] = [
+    const ALLOWED: [&str; 24] = [
         "schemaVersion",
         "scriptId",
         "briefId",
@@ -1495,6 +2106,8 @@ fn validate_local_script(script: &Value, require_approved: bool) -> Result<Value
         "networkCallsMade",
         "costStatus",
         "visualMode",
+        "audioMode",
+        "codingLesson",
         "footageManifestPath",
         "voiceSettings",
         "sceneMode",
@@ -1511,13 +2124,24 @@ fn validate_local_script(script: &Value, require_approved: bool) -> Result<Value
         return Err("script.schemaVersion phải là 1.0.0".to_string());
     }
     let visual_mode = object.get("visualMode").and_then(Value::as_str);
+    let coding = is_coding_visual_mode(visual_mode);
     if let Some(value) = visual_mode {
         if !matches!(
             value,
-            "space-25d" | "licensed-footage-space" | "cinematic-3d"
+            "space-25d" | "licensed-footage-space" | "cinematic-3d" | CODING_VISUAL_MODE
         ) {
             return Err("script.visualMode không hợp lệ".to_string());
         }
+    }
+    script_audio_mode(script)?;
+    if coding {
+        validate_coding_lesson(
+            object
+                .get("codingLesson")
+                .ok_or_else(|| "coding-25d cần script.codingLesson".to_string())?,
+        )?;
+    } else if object.contains_key("codingLesson") {
+        return Err("script.codingLesson chỉ dùng cho visualMode coding-25d".to_string());
     }
     if let Some(voice_settings) = object.get("voiceSettings") {
         validate_voice_settings(voice_settings)?;
@@ -1602,6 +2226,20 @@ fn validate_local_script(script: &Value, require_approved: bool) -> Result<Value
         if let Some(beats) = segment.get("beats") {
             validate_segment_beats(beats, index)?;
         }
+        match segment.get("teachingScene") {
+            Some(scene) if coding => validate_teaching_scene(scene, index)?,
+            Some(_) => {
+                return Err(format!(
+                    "script.segments[{index}].teachingScene chỉ dùng cho visualMode coding-25d"
+                ))
+            }
+            None if coding => {
+                return Err(format!(
+                    "script.segments[{index}] thiếu teachingScene cho visualMode coding-25d"
+                ))
+            }
+            None => {}
+        }
         if let Some(voice_cue) = segment.get("voiceCue") {
             if !matches!(
                 voice_cue.as_str(),
@@ -1663,7 +2301,10 @@ fn validate_local_script(script: &Value, require_approved: bool) -> Result<Value
         ) {
             return Err(format!("script.segments[{index}].claimStatus không hợp lệ"));
         }
-        if require_approved && claim_status == "needs_review" {
+        // Coding lessons are generated data that stays `needs_review`. Rendering a
+        // reviewable draft is the intended flow; the artifact is published as
+        // succeeded_needs_review and never marks a claim verified on the user's behalf.
+        if require_approved && claim_status == "needs_review" && !coding {
             return Err(format!(
                 "script.segments[{index}] còn claim chưa được kiểm tra"
             ));
@@ -2089,11 +2730,7 @@ async fn generate_local_video_script_inner(
             &run_id,
         );
     }
-    let script_worker = ensure_worker(
-        &workspace_root,
-        "local_script_worker.py",
-        LOCAL_SCRIPT_WORKER_SCRIPT,
-    )?;
+    let script_worker = ensure_script_worker(&workspace_root)?;
     let script_process = run_external_process(ExternalProcessRequest {
         spec: ProcessSpec {
             executable_id: "python".to_string(),
@@ -2198,20 +2835,24 @@ async fn render_approved_local_video_with_state(
         .map_err(|error| format!("Không canonicalize được workspace: {error}"))?;
     let run_id = now_id("local-video");
     let run_prefix = safe_rel(&format!(".auto3dvideo/pipeline/{run_id}"))?;
+    let audio_mode = script_audio_mode(&script)?;
+    let mut lifecycle_outputs = vec![
+        (script_relative.clone(), "metadata".to_string()),
+        (
+            format!("{run_prefix}/scenes/scene-manifest.json"),
+            "metadata".to_string(),
+        ),
+        (format!("{run_prefix}/captions.srt"), "subtitle".to_string()),
+        (format!("{run_prefix}/master.mp4"), "video".to_string()),
+    ];
+    if audio_mode == ScriptAudioMode::Narrated {
+        lifecycle_outputs.push((format!("{run_prefix}/narration.wav"), "audio".to_string()));
+    }
     let lifecycle = begin_local_video_lifecycle(
         state,
         project_id.trim(),
         &run_id,
-        vec![
-            (script_relative.clone(), "metadata".to_string()),
-            (
-                format!("{run_prefix}/scenes/scene-manifest.json"),
-                "metadata".to_string(),
-            ),
-            (format!("{run_prefix}/narration.wav"), "audio".to_string()),
-            (format!("{run_prefix}/captions.srt"), "subtitle".to_string()),
-            (format!("{run_prefix}/master.mp4"), "video".to_string()),
-        ],
+        lifecycle_outputs,
     )?;
     let mut result = render_approved_local_video_inner(
         project_id.clone(),
@@ -2302,51 +2943,21 @@ async fn render_approved_local_video_inner(
         );
     }
     let visual_mode = script.get("visualMode").and_then(Value::as_str);
-    let space_25d = visual_mode == Some("space-25d");
-    let licensed_footage = visual_mode == Some("licensed-footage-space");
-    let scene_worker = if licensed_footage {
-        ensure_worker(
-            &workspace_root,
-            "local_licensed_footage_worker.py",
-            LOCAL_LICENSED_FOOTAGE_WORKER_SCRIPT,
-        )?
-    } else if space_25d {
-        ensure_worker(
-            &workspace_root,
-            "local_space_25d_worker.py",
-            LOCAL_SPACE_25D_WORKER_SCRIPT,
-        )?
-    } else {
-        ensure_worker(
-            &workspace_root,
-            "local_scene_worker.py",
-            LOCAL_SCENE_WORKER_SCRIPT,
-        )?
-    };
-    let scene_process = run_external_process(ExternalProcessRequest {
-        spec: ProcessSpec {
-            executable_id: "python".to_string(),
-            args: vec![
-                scene_worker,
-                "--script".to_string(),
-                script_relative.clone(),
-                "--output-dir".to_string(),
-                scene_relative.clone(),
-                "--width".to_string(),
-                "720".to_string(),
-                "--height".to_string(),
-                "1280".to_string(),
-            ],
-            working_directory: ".".to_string(),
-            environment: BTreeMap::new(),
-            timeout_seconds: 180,
-            expected_outputs: vec![scene_manifest_relative.clone()],
-        },
-        executable_path: python_path.clone(),
-        absolute_working_directory: workspace_root.clone(),
-        output_root: workspace_root.clone(),
-        cancellation: Arc::new(AtomicBool::new(false)),
-    })
+    let audio_mode = script_audio_mode(&script)?;
+    let (frame_width, frame_height) = scene_frame_size(visual_mode);
+    let scene_worker = ensure_scene_worker(&workspace_root, visual_mode)?;
+    let scene_process = run_external_process(scene_process_request(
+        scene_worker,
+        &script_relative,
+        &scene_relative,
+        &frame_width.to_string(),
+        &frame_height.to_string(),
+        &scene_manifest_relative,
+        &python_path,
+        &workspace_root,
+        expected_frame_count(&script),
+        &cancellation,
+    ))
     .await?;
     require_success(&scene_process, "Tạo scene")?;
     let scene_manifest: Value = serde_json::from_slice(
@@ -2354,166 +2965,6 @@ async fn render_approved_local_video_inner(
             .map_err(|error| format!("Không đọc được scene manifest: {error}"))?,
     )
     .map_err(|error| format!("Scene manifest không hợp lệ: {error}"))?;
-    let voice_settings = script.get("voiceSettings");
-    let cue_by_segment = voice_settings
-        .and_then(|value| value.get("voiceCueBySegment"))
-        .and_then(Value::as_object);
-    let emotion_by_segment = voice_settings
-        .and_then(|value| value.get("emotionCodeBySegment"))
-        .and_then(Value::as_object);
-    let narration = script
-        .get("segments")
-        .and_then(Value::as_array)
-        .ok_or_else(|| "Script thiếu segments".to_string())?
-        .iter()
-        .filter_map(|segment| {
-            let text = segment.get("narration").and_then(Value::as_str)?;
-            let cue = segment.get("voiceCue").or_else(|| {
-                segment
-                    .get("segmentId")
-                    .and_then(Value::as_str)
-                    .and_then(|id| cue_by_segment.and_then(|map| map.get(id)))
-            });
-            let emotion = segment.get("emotionCode").or_else(|| {
-                segment
-                    .get("segmentId")
-                    .and_then(Value::as_str)
-                    .and_then(|id| emotion_by_segment.and_then(|map| map.get(id)))
-            });
-            Some(match voice_emotion_tag(emotion) {
-                Some(tag) => format!("{}{}", tag, text),
-                None => format!("{}{}", voice_cue_prefix(cue), text),
-            })
-        })
-        .collect::<Vec<_>>()
-        .join(" ");
-    let tts_request_relative = format!(".auto3dvideo/requests/{run_id}-tts.json");
-    let tts_request_path = workspace_root.join(&tts_request_relative);
-    fs::create_dir_all(
-        tts_request_path
-            .parent()
-            .ok_or_else(|| "Không xác định thư mục TTS request".to_string())?,
-    )
-    .map_err(|error| format!("Không tạo được thư mục TTS request: {error}"))?;
-    let profile = omnivoice_profile_for_render(
-        &workspace_root,
-        voice_settings,
-        voice.as_deref(),
-        script
-            .get("language")
-            .and_then(Value::as_str)
-            .unwrap_or("en"),
-    )?;
-    let profile_id = profile
-        .get("voiceProfileId")
-        .and_then(Value::as_str)
-        .unwrap_or("voice-profile")
-        .to_string();
-    let profile_mode = profile
-        .get("mode")
-        .and_then(Value::as_str)
-        .unwrap_or("design");
-    let profile_language = profile
-        .get("language")
-        .and_then(Value::as_str)
-        .unwrap_or("en");
-    let clone_consent = profile
-        .get("cloneConsent")
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    if profile_mode == "clone" {
-        let reference = profile
-            .get("referenceAudioPath")
-            .and_then(Value::as_str)
-            .ok_or_else(|| "Voice clone profile thiếu reference audio".to_string())?;
-        resolve_workspace_file(
-            &workspace_root,
-            reference,
-            "Reference audio",
-            50 * 1024 * 1024,
-        )?;
-        if !clone_consent {
-            return Err("Voice clone cần cloneConsent=true".to_string());
-        }
-    }
-    let tts_request = serde_json::json!({
-        "schemaVersion": "1.0.0",
-        "requestId": run_id,
-        "projectId": project_id,
-        "voiceProfileId": profile_id,
-        "modelId": "k2-fsa/OmniVoice",
-        "mode": profile_mode,
-        "text": narration,
-        "language": profile_language,
-        "instruct": profile.get("instruct"),
-        "referenceAudioPath": profile.get("referenceAudioPath"),
-        "referenceTranscript": profile.get("referenceTranscript"),
-        "outputPath": audio_relative,
-        "speed": profile.get("speed").and_then(Value::as_f64).unwrap_or(1.0),
-        "qualityPreset": "balanced",
-        "classTemperature": 0.0,
-        "positionTemperature": 5.0,
-        "normalizeText": false,
-        "postprocessOutput": true,
-        "cloneConsent": clone_consent,
-        "networkCallsAllowed": false,
-        "idempotencyKey": run_id
-    });
-    fs::write(
-        &tts_request_path,
-        serde_json::to_vec(&tts_request)
-            .map_err(|error| format!("Không serialize TTS request: {error}"))?,
-    )
-    .map_err(|error| format!("Không ghi TTS request: {error}"))?;
-    let (_tts_script, tts_worker) = ensure_omnivoice_worker_script(&workspace_root)?;
-    let tts_process = run_external_process(ExternalProcessRequest {
-        spec: ProcessSpec {
-            executable_id: "python".to_string(),
-            args: vec![
-                tts_worker,
-                "--synthesize".to_string(),
-                "--request".to_string(),
-                tts_request_relative.clone(),
-            ],
-            working_directory: ".".to_string(),
-            environment: omnivoice_worker_environment()?,
-            timeout_seconds: 1800,
-            expected_outputs: vec![audio_relative.clone()],
-        },
-        executable_path: python_path,
-        absolute_working_directory: workspace_root.clone(),
-        output_root: workspace_root.clone(),
-        cancellation: Arc::new(AtomicBool::new(false)),
-    })
-    .await;
-    let _ = fs::remove_file(&tts_request_path);
-    let tts_process = tts_process?;
-    require_success(&tts_process, "Tạo giọng OmniVoice")?;
-    validate_omnivoice_wav(&workspace_root.join(&audio_relative))?;
-    let audio_probe = run_external_process(ExternalProcessRequest {
-        spec: ProcessSpec {
-            executable_id: "ffprobe".to_string(),
-            args: vec![
-                "-v".to_string(),
-                "error".to_string(),
-                "-show_entries".to_string(),
-                "format=duration".to_string(),
-                "-of".to_string(),
-                "json".to_string(),
-                audio_relative.clone(),
-            ],
-            working_directory: ".".to_string(),
-            environment: BTreeMap::new(),
-            timeout_seconds: 120,
-            expected_outputs: Vec::new(),
-        },
-        executable_path: ffprobe_path.clone(),
-        absolute_working_directory: workspace_root.clone(),
-        output_root: workspace_root.clone(),
-        cancellation: Arc::new(AtomicBool::new(false)),
-    })
-    .await?;
-    let audio_duration = media_duration(&audio_probe, "FFprobe audio")?;
     let script_duration = script
         .get("totalDurationSeconds")
         .and_then(Value::as_f64)
@@ -2532,7 +2983,174 @@ async fn render_approved_local_video_inner(
         })
         .filter(|value| (1.0..=600.0).contains(value))
         .ok_or_else(|| "Script thiếu totalDurationSeconds hợp lệ".to_string())?;
-    let timing_scale = (audio_duration / script_duration).clamp(0.05, 20.0);
+    let mut audio_duration: Option<f64> = None;
+    if audio_mode == ScriptAudioMode::Narrated {
+        let voice_settings = script.get("voiceSettings");
+        let cue_by_segment = voice_settings
+            .and_then(|value| value.get("voiceCueBySegment"))
+            .and_then(Value::as_object);
+        let emotion_by_segment = voice_settings
+            .and_then(|value| value.get("emotionCodeBySegment"))
+            .and_then(Value::as_object);
+        let narration = script
+            .get("segments")
+            .and_then(Value::as_array)
+            .ok_or_else(|| "Script thiếu segments".to_string())?
+            .iter()
+            .filter_map(|segment| {
+                let text = segment.get("narration").and_then(Value::as_str)?;
+                let cue = segment.get("voiceCue").or_else(|| {
+                    segment
+                        .get("segmentId")
+                        .and_then(Value::as_str)
+                        .and_then(|id| cue_by_segment.and_then(|map| map.get(id)))
+                });
+                let emotion = segment.get("emotionCode").or_else(|| {
+                    segment
+                        .get("segmentId")
+                        .and_then(Value::as_str)
+                        .and_then(|id| emotion_by_segment.and_then(|map| map.get(id)))
+                });
+                Some(match voice_emotion_tag(emotion) {
+                    Some(tag) => format!("{}{}", tag, text),
+                    None => format!("{}{}", voice_cue_prefix(cue), text),
+                })
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
+        let tts_request_relative = format!(".auto3dvideo/requests/{run_id}-tts.json");
+        let tts_request_path = workspace_root.join(&tts_request_relative);
+        fs::create_dir_all(
+            tts_request_path
+                .parent()
+                .ok_or_else(|| "Không xác định thư mục TTS request".to_string())?,
+        )
+        .map_err(|error| format!("Không tạo được thư mục TTS request: {error}"))?;
+        let profile = omnivoice_profile_for_render(
+            &workspace_root,
+            voice_settings,
+            voice.as_deref(),
+            script
+                .get("language")
+                .and_then(Value::as_str)
+                .unwrap_or("en"),
+        )?;
+        let profile_id = profile
+            .get("voiceProfileId")
+            .and_then(Value::as_str)
+            .unwrap_or("voice-profile")
+            .to_string();
+        let profile_mode = profile
+            .get("mode")
+            .and_then(Value::as_str)
+            .unwrap_or("design");
+        let profile_language = profile
+            .get("language")
+            .and_then(Value::as_str)
+            .unwrap_or("en");
+        let clone_consent = profile
+            .get("cloneConsent")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        if profile_mode == "clone" {
+            let reference = profile
+                .get("referenceAudioPath")
+                .and_then(Value::as_str)
+                .ok_or_else(|| "Voice clone profile thiếu reference audio".to_string())?;
+            resolve_workspace_file(
+                &workspace_root,
+                reference,
+                "Reference audio",
+                50 * 1024 * 1024,
+            )?;
+            if !clone_consent {
+                return Err("Voice clone cần cloneConsent=true".to_string());
+            }
+        }
+        let tts_request = serde_json::json!({
+            "schemaVersion": "1.0.0",
+            "requestId": run_id,
+            "projectId": project_id,
+            "voiceProfileId": profile_id,
+            "modelId": "k2-fsa/OmniVoice",
+            "mode": profile_mode,
+            "text": narration,
+            "language": profile_language,
+            "instruct": profile.get("instruct"),
+            "referenceAudioPath": profile.get("referenceAudioPath"),
+            "referenceTranscript": profile.get("referenceTranscript"),
+            "outputPath": audio_relative,
+            "speed": profile.get("speed").and_then(Value::as_f64).unwrap_or(1.0),
+            "qualityPreset": "balanced",
+            "classTemperature": 0.0,
+            "positionTemperature": 5.0,
+            "normalizeText": false,
+            "postprocessOutput": true,
+            "cloneConsent": clone_consent,
+            "networkCallsAllowed": false,
+            "idempotencyKey": run_id
+        });
+        fs::write(
+            &tts_request_path,
+            serde_json::to_vec(&tts_request)
+                .map_err(|error| format!("Không serialize TTS request: {error}"))?,
+        )
+        .map_err(|error| format!("Không ghi TTS request: {error}"))?;
+        let (_tts_script, tts_worker) = ensure_omnivoice_worker_script(&workspace_root)?;
+        let tts_process = run_external_process(ExternalProcessRequest {
+            spec: ProcessSpec {
+                executable_id: "python".to_string(),
+                args: vec![
+                    tts_worker,
+                    "--synthesize".to_string(),
+                    "--request".to_string(),
+                    tts_request_relative.clone(),
+                ],
+                working_directory: ".".to_string(),
+                environment: omnivoice_worker_environment()?,
+                timeout_seconds: 1800,
+                expected_outputs: vec![audio_relative.clone()],
+            },
+            executable_path: python_path,
+            absolute_working_directory: workspace_root.clone(),
+            output_root: workspace_root.clone(),
+            cancellation: Arc::clone(&cancellation),
+        })
+        .await;
+        let _ = fs::remove_file(&tts_request_path);
+        let tts_process = tts_process?;
+        require_success(&tts_process, "Tạo giọng OmniVoice")?;
+        validate_omnivoice_wav(&workspace_root.join(&audio_relative))?;
+        let audio_probe = run_external_process(ExternalProcessRequest {
+            spec: ProcessSpec {
+                executable_id: "ffprobe".to_string(),
+                args: vec![
+                    "-v".to_string(),
+                    "error".to_string(),
+                    "-show_entries".to_string(),
+                    "format=duration".to_string(),
+                    "-of".to_string(),
+                    "json".to_string(),
+                    audio_relative.clone(),
+                ],
+                working_directory: ".".to_string(),
+                environment: BTreeMap::new(),
+                timeout_seconds: 120,
+                expected_outputs: Vec::new(),
+            },
+            executable_path: ffprobe_path.clone(),
+            absolute_working_directory: workspace_root.clone(),
+            output_root: workspace_root.clone(),
+            cancellation: Arc::clone(&cancellation),
+        })
+        .await?;
+        audio_duration = Some(media_duration(&audio_probe, "FFprobe audio")?);
+    }
+    // Caption-only keeps the authored timing; narrated renders stretch to the voice track.
+    let timing_scale = match audio_duration {
+        Some(duration) => (duration / script_duration).clamp(0.05, 20.0),
+        None => 1.0,
+    };
     let target_duration = script_duration * timing_scale;
     let captions = build_captions(&script, timing_scale)?;
     fs::write(workspace_root.join(&captions_relative), captions)
@@ -2636,7 +3254,7 @@ async fn render_approved_local_video_inner(
             executable_path: ffmpeg_path.clone(),
             absolute_working_directory: workspace_root.clone(),
             output_root: workspace_root.clone(),
-            cancellation: Arc::new(AtomicBool::new(false)),
+            cancellation: Arc::clone(&cancellation),
         })
         .await?;
         if !clip_process.succeeded {
@@ -2653,38 +3271,52 @@ async fn render_approved_local_video_inner(
         &scene_clips,
         &workspace_root.join(&concat_relative),
     )?;
+    let narrated_output = audio_duration.is_some();
+    let mut final_args = vec![
+        "-y".to_string(),
+        "-f".to_string(),
+        "concat".to_string(),
+        "-safe".to_string(),
+        "0".to_string(),
+        "-i".to_string(),
+        concat_relative.clone(),
+        "-map".to_string(),
+        "0:v:0".to_string(),
+    ];
+    if narrated_output {
+        final_args.extend([
+            "-i".to_string(),
+            audio_relative.clone(),
+            "-map".to_string(),
+            "1:a:0".to_string(),
+        ]);
+    }
+    final_args.extend([
+        "-c:v".to_string(),
+        "libx264".to_string(),
+        "-pix_fmt".to_string(),
+        "yuv420p".to_string(),
+        "-r".to_string(),
+        LOCAL_FRAME_RATE.to_string(),
+    ]);
+    if narrated_output {
+        final_args.extend([
+            "-c:a".to_string(),
+            "aac".to_string(),
+            "-shortest".to_string(),
+        ]);
+    }
+    final_args.extend([
+        "-t".to_string(),
+        format!("{target_duration:.3}"),
+        "-movflags".to_string(),
+        "+faststart".to_string(),
+        video_relative.clone(),
+    ]);
     let ffmpeg_process = run_external_process(ExternalProcessRequest {
         spec: ProcessSpec {
             executable_id: "ffmpeg".to_string(),
-            args: vec![
-                "-y".to_string(),
-                "-f".to_string(),
-                "concat".to_string(),
-                "-safe".to_string(),
-                "0".to_string(),
-                "-i".to_string(),
-                concat_relative.clone(),
-                "-i".to_string(),
-                audio_relative.clone(),
-                "-map".to_string(),
-                "0:v:0".to_string(),
-                "-map".to_string(),
-                "1:a:0".to_string(),
-                "-c:v".to_string(),
-                "libx264".to_string(),
-                "-pix_fmt".to_string(),
-                "yuv420p".to_string(),
-                "-r".to_string(),
-                "30".to_string(),
-                "-c:a".to_string(),
-                "aac".to_string(),
-                "-shortest".to_string(),
-                "-t".to_string(),
-                format!("{target_duration:.3}"),
-                "-movflags".to_string(),
-                "+faststart".to_string(),
-                video_relative.clone(),
-            ],
+            args: final_args,
             working_directory: ".".to_string(),
             environment: BTreeMap::new(),
             timeout_seconds: 1800,
@@ -2693,7 +3325,7 @@ async fn render_approved_local_video_inner(
         executable_path: ffmpeg_path,
         absolute_working_directory: workspace_root.clone(),
         output_root: workspace_root.clone(),
-        cancellation: Arc::new(AtomicBool::new(false)),
+        cancellation: Arc::clone(&cancellation),
     })
     .await?;
     if !ffmpeg_process.succeeded {
@@ -2709,8 +3341,7 @@ async fn render_approved_local_video_inner(
                 "-v".to_string(),
                 "error".to_string(),
                 "-show_entries".to_string(),
-                "format=duration:stream=codec_type,width,height,codec_name,sample_rate,channels"
-                    .to_string(),
+                RENDER_PROBE_ENTRIES.to_string(),
                 "-of".to_string(),
                 "json".to_string(),
                 video_relative.clone(),
@@ -2723,7 +3354,7 @@ async fn render_approved_local_video_inner(
         executable_path: ffprobe_path,
         absolute_working_directory: workspace_root.clone(),
         output_root: workspace_root.clone(),
-        cancellation: Arc::new(AtomicBool::new(false)),
+        cancellation: Arc::clone(&cancellation),
     })
     .await?;
     if !ffprobe_process.succeeded {
@@ -2731,7 +3362,11 @@ async fn render_approved_local_video_inner(
     }
     let probe: Value = serde_json::from_str(&ffprobe_process.stdout)
         .map_err(|error| format!("FFprobe trả JSON không hợp lệ: {error}"))?;
-    let duration = validate_local_video_probe(&probe, target_duration)?;
+    let duration = validate_rendered_video_probe(
+        &probe,
+        target_duration,
+        rendered_video_expectation(visual_mode, narrated_output),
+    )?;
     let video_path_absolute = workspace_root.join(&video_relative);
     let video_size_bytes = fs::metadata(&video_path_absolute)
         .map_err(|error| format!("Không đọc được kích thước MP4: {error}"))?
@@ -2740,13 +3375,14 @@ async fn render_approved_local_video_inner(
         return Err("MP4 đầu ra rỗng".to_string());
     }
     let video_sha256 = sha256_file(&video_path_absolute)?;
-    let network_calls_made = script
-        .get("networkCallsMade")
-        .and_then(Value::as_bool)
+    let generation_evidence = coding_generation_evidence(&script);
+    let network_calls_made = generation_evidence
+        .map(|(network, _)| network)
+        .or_else(|| script.get("networkCallsMade").and_then(Value::as_bool))
         .unwrap_or(true);
-    let cost_status = script
-        .get("costStatus")
-        .and_then(Value::as_str)
+    let cost_status = generation_evidence
+        .map(|(_, cost)| cost)
+        .or_else(|| script.get("costStatus").and_then(Value::as_str))
         .unwrap_or("local_gateway_unreported");
     let manifest_relative = format!("{run_prefix}/manifest.json");
     let manifest = serde_json::json!({
@@ -2755,9 +3391,19 @@ async fn render_approved_local_video_inner(
         "projectId": project_id.trim(),
         "scriptPath": script_relative,
         "sceneManifestPath": scene_manifest_relative,
-        "audioPath": audio_relative,
+        "audioPath": if narrated_output {
+            Value::String(audio_relative.clone())
+        } else {
+            Value::Null
+        },
         "captionsPath": captions_relative,
         "videoPath": video_relative,
+        "visualMode": visual_mode.unwrap_or("static-card"),
+        "audioMode": audio_mode.as_str(),
+        "audioPresent": narrated_output,
+        "width": scene_frame_size(visual_mode).0,
+        "height": scene_frame_size(visual_mode).1,
+        "frameRate": LOCAL_FRAME_RATE,
         "animationMode": scene_manifest
             .get("animationMode")
             .cloned()
@@ -2807,9 +3453,11 @@ async fn render_approved_local_video_inner(
         run_id,
         job_id: String::new(),
         attempt_id: String::new(),
+        visual_mode: visual_mode.unwrap_or("static-card").to_string(),
+        audio_mode: audio_mode.as_str().to_string(),
         script_path: script_relative,
         scene_manifest_path: scene_manifest_relative,
-        audio_path: audio_relative,
+        audio_path: if narrated_output { audio_relative } else { String::new() },
         captions_path: captions_relative,
         video_path: video_relative,
         duration_seconds: Some(duration),
@@ -2963,6 +3611,363 @@ mod tests {
         assert!(worker_status_is_success(Some("succeeded_local_fallback")));
         assert!(!worker_status_is_success(Some("failed")));
         assert!(!worker_status_is_success(None));
+    }
+}
+
+#[cfg(test)]
+mod coding_tests {
+    use super::*;
+
+    fn teaching_scene(kind: &str) -> Value {
+        serde_json::json!({
+            "kind": kind,
+            "code": ["seen = {}", "i = 0", "while i < len(nums):", "    need = target - nums[i]"],
+            "nodes": [
+                {"id": "client", "label": "Client", "column": 0, "row": 0},
+                {"id": "api", "label": "API", "column": 1, "row": 0}
+            ],
+            "edges": [{"from": "client", "to": "api", "label": "read"}],
+            "states": [{
+                "label": "Bắt đầu duyệt",
+                "values": [2, 7, 11],
+                "activeIndices": [0],
+                "variables": [{"name": "i", "value": "0"}],
+                "activeLine": 1,
+                "activeNodes": ["client"],
+                "activeEdges": [0]
+            }],
+            "note": "Ví dụ tự soạn cho giảng dạy."
+        })
+    }
+
+    fn coding_script() -> Value {
+        serde_json::json!({
+            "schemaVersion": "1.0.0",
+            "scriptId": "script-coding-001",
+            "briefId": "brief-coding-001",
+            "language": "vi-VN",
+            "title": "Two Sum",
+            "hook": "Tra bảng trước, chèn sau để không dùng lại cùng một chỉ số.",
+            "segments": [
+                {
+                    "segmentId": "segment-01",
+                    "narration": "Duyệt từng phần tử và tra bảng đã thấy.",
+                    "onScreenText": "Ý tưởng tra cứu",
+                    "durationSeconds": 5.0,
+                    "claimStatus": "needs_review",
+                    "sourceNote": "Ví dụ tự soạn",
+                    "teachingScene": teaching_scene("array")
+                },
+                {
+                    "segmentId": "segment-02",
+                    "narration": "Kết quả là cặp chỉ số khác nhau.",
+                    "onScreenText": "Kết quả",
+                    "durationSeconds": 5.0,
+                    "claimStatus": "needs_review",
+                    "sourceNote": "Ví dụ tự soạn",
+                    "teachingScene": teaching_scene("architecture")
+                }
+            ],
+            "totalDurationSeconds": 10.0,
+            "approvalStatus": "approved",
+            "visualMode": "coding-25d",
+            "codingLesson": {
+                "schemaVersion": "1.0.0",
+                "track": "algorithm",
+                "topicKey": "two-sum",
+                "learningObjectives": ["Theo dõi từng bước tra cứu trước khi chèn."],
+                "assumptions": ["Ví dụ tự soạn cho giảng dạy, không phải benchmark đo được."],
+                "complexity": "O(n) expected time, O(n) space.",
+                "checks": ["Không dùng lại cùng một chỉ số cho cả hai vế."],
+                "sources": [],
+                "planner": "local-catalog",
+                "promptVersion": "coding-25d-v1"
+            }
+        })
+    }
+
+    fn caption_only_probe() -> Value {
+        serde_json::json!({
+            "streams": [{
+                "codec_type": "video",
+                "codec_name": "h264",
+                "width": 1280,
+                "height": 720,
+                "r_frame_rate": "30/1"
+            }],
+            "format": {"duration": "10.000000"}
+        })
+    }
+
+    fn aac_stream() -> Value {
+        serde_json::json!({
+            "codec_type": "audio",
+            "codec_name": "aac",
+            "sample_rate": "48000",
+            "channels": 1
+        })
+    }
+
+    fn non_coding_script() -> Value {
+        serde_json::json!({
+            "schemaVersion": "1.0.0",
+            "scriptId": "script-non-coding-001",
+            "briefId": "brief-non-coding-001",
+            "language": "vi-VN",
+            "title": "Chủ đề thường",
+            "hook": "Mở đầu kiểm thử.",
+            "segments": [
+                {
+                    "segmentId": "segment-01",
+                    "narration": "Đoạn một.",
+                    "onScreenText": "Một",
+                    "durationSeconds": 5.0,
+                    "claimStatus": "not_applicable",
+                    "sourceNote": null
+                },
+                {
+                    "segmentId": "segment-02",
+                    "narration": "Đoạn hai.",
+                    "onScreenText": "Hai",
+                    "durationSeconds": 5.0,
+                    "claimStatus": "not_applicable",
+                    "sourceNote": null
+                }
+            ],
+            "totalDurationSeconds": 10.0,
+            "approvalStatus": "approved"
+        })
+    }
+
+    #[test]
+    fn coding_script_renders_with_caption_only_default_and_keeps_claims_unreviewed() {
+        let script = coding_script();
+        assert_eq!(
+            script_audio_mode(&script),
+            Ok(ScriptAudioMode::CaptionOnly)
+        );
+        let validated = validate_local_script(&script, true).expect("coding script phải hợp lệ");
+        assert_eq!(
+            validated["segments"][0]["claimStatus"],
+            Value::String("needs_review".to_string()),
+            "render không được tự đánh dấu claim đã kiểm chứng"
+        );
+        assert_eq!(
+            validated["approvalStatus"],
+            Value::String("approved".to_string())
+        );
+    }
+
+    #[test]
+    fn coding_scene_rejects_dangling_graph_and_out_of_range_indices() {
+        let mut dangling_edge = coding_script();
+        dangling_edge["segments"][0]["teachingScene"]["edges"][0]["to"] =
+            Value::String("missing-node".to_string());
+        assert!(validate_local_script(&dangling_edge, true).is_err());
+
+        let mut bad_cell = coding_script();
+        bad_cell["segments"][0]["teachingScene"]["states"][0]["activeIndices"] = serde_json::json!([7]);
+        assert!(validate_local_script(&bad_cell, true).is_err());
+
+        let mut bad_line = coding_script();
+        bad_line["segments"][0]["teachingScene"]["states"][0]["activeLine"] = Value::from(99);
+        assert!(validate_local_script(&bad_line, true).is_err());
+
+        let mut ghost_node = coding_script();
+        ghost_node["segments"][0]["teachingScene"]["states"][0]["activeNodes"] = serde_json::json!(["ghost"]);
+        assert!(validate_local_script(&ghost_node, true).is_err());
+
+        let mut bad_edge_index = coding_script();
+        bad_edge_index["segments"][0]["teachingScene"]["states"][0]["activeEdges"] = serde_json::json!([5]);
+        assert!(validate_local_script(&bad_edge_index, true).is_err());
+
+        let mut unknown_field = coding_script();
+        unknown_field["segments"][0]["teachingScene"]["surprise"] = Value::from(1);
+        assert!(validate_local_script(&unknown_field, true).is_err());
+
+        let mut unknown_node_field = coding_script();
+        unknown_node_field["segments"][0]["teachingScene"]["nodes"][0]["colour"] = Value::String("red".to_string());
+        assert!(validate_local_script(&unknown_node_field, true).is_err());
+    }
+
+    #[test]
+    fn coding_contract_is_bound_to_the_coding_visual_mode() {
+        let mut missing_lesson = coding_script();
+        missing_lesson
+            .as_object_mut()
+            .expect("script object")
+            .remove("codingLesson");
+        assert!(validate_local_script(&missing_lesson, true).is_err());
+
+        let mut missing_scene = coding_script();
+        missing_scene["segments"][0]
+            .as_object_mut()
+            .expect("segment object")
+            .remove("teachingScene");
+        assert!(validate_local_script(&missing_scene, true).is_err());
+
+        let mut non_coding_mode = coding_script();
+        non_coding_mode["visualMode"] = Value::String("space-25d".to_string());
+        assert!(validate_local_script(&non_coding_mode, true).is_err());
+
+        let mut bad_audio_mode = coding_script();
+        bad_audio_mode["audioMode"] = Value::String("muted-synth".to_string());
+        assert!(validate_local_script(&bad_audio_mode, true).is_err());
+
+        let mut narrated = coding_script();
+        narrated["audioMode"] = Value::String("narrated".to_string());
+        assert_eq!(script_audio_mode(&narrated), Ok(ScriptAudioMode::Narrated));
+        assert!(validate_local_script(&narrated, true).is_ok());
+    }
+
+    #[test]
+    fn existing_modes_keep_narrated_default_and_portrait_frames() {
+        let mut legacy = non_coding_script();
+        assert_eq!(
+            script_audio_mode(&legacy),
+            Ok(ScriptAudioMode::Narrated)
+        );
+        legacy["audioMode"] = Value::String("caption-only".to_string());
+        assert_eq!(
+            script_audio_mode(&legacy),
+            Ok(ScriptAudioMode::CaptionOnly)
+        );
+        assert_eq!(scene_frame_size(Some("space-25d")), (720, 1280));
+        assert_eq!(scene_frame_size(None), (720, 1280));
+        assert_eq!(scene_frame_size(Some(CODING_VISUAL_MODE)), (1280, 720));
+    }
+
+    #[test]
+    fn caption_only_coding_probe_requires_exact_video_only_streams() {
+        let expectation = rendered_video_expectation(Some(CODING_VISUAL_MODE), false);
+        assert_eq!(
+            validate_rendered_video_probe(&caption_only_probe(), 10.0, expectation)
+                .expect("caption-only probe hợp lệ"),
+            10.0
+        );
+
+        let mut with_audio = caption_only_probe();
+        with_audio["streams"]
+            .as_array_mut()
+            .expect("streams")
+            .push(aac_stream());
+        assert!(validate_rendered_video_probe(&with_audio, 10.0, expectation).is_err());
+
+        let mut wrong_rate = caption_only_probe();
+        wrong_rate["streams"][0]["r_frame_rate"] = Value::String("25/1".to_string());
+        assert!(validate_rendered_video_probe(&wrong_rate, 10.0, expectation).is_err());
+
+        let mut portrait = caption_only_probe();
+        portrait["streams"][0]["width"] = Value::from(720);
+        portrait["streams"][0]["height"] = Value::from(1280);
+        assert!(validate_rendered_video_probe(&portrait, 10.0, expectation).is_err());
+
+        let mut drifting = caption_only_probe();
+        drifting["format"]["duration"] = Value::String("40.000000".to_string());
+        assert!(validate_rendered_video_probe(&drifting, 10.0, expectation).is_err());
+    }
+
+    #[test]
+    fn narrated_coding_probe_requires_the_existing_aac_voice_track() {
+        let expectation = rendered_video_expectation(Some(CODING_VISUAL_MODE), true);
+        assert!(validate_rendered_video_probe(&caption_only_probe(), 10.0, expectation).is_err());
+        let mut narrated = caption_only_probe();
+        narrated["streams"]
+            .as_array_mut()
+            .expect("streams")
+            .push(aac_stream());
+        assert_eq!(
+            validate_rendered_video_probe(&narrated, 10.0, expectation).expect("narrated probe hợp lệ"),
+            10.0
+        );
+        let mut stereo = narrated.clone();
+        stereo["streams"][1]["channels"] = Value::from(2);
+        assert!(validate_rendered_video_probe(&stereo, 10.0, expectation).is_err());
+    }
+
+    #[test]
+    fn coding_delivery_evidence_follows_the_planner_that_ran() {
+        assert_eq!(
+            coding_generation_evidence(&coding_script()),
+            Some((false, "local_catalog_no_generation_cost"))
+        );
+        let mut gateway = coding_script();
+        gateway["codingLesson"]["planner"] = Value::String("configured-gateway".to_string());
+        assert_eq!(
+            coding_generation_evidence(&gateway),
+            Some((true, "configured_gateway_cost_unreported"))
+        );
+        let non_coding = non_coding_script();
+        assert_eq!(coding_generation_evidence(&non_coding), None);
+    }
+
+    #[test]
+    fn scene_process_request_carries_the_live_cancellation_token() {
+        let cancellation = Arc::new(AtomicBool::new(false));
+        let request = scene_process_request(
+            ".auto3dvideo/tools/local_coding_25d_worker.py".to_string(),
+            ".auto3dvideo/pipeline/run/script.json",
+            ".auto3dvideo/pipeline/run/scenes",
+            "1280",
+            "720",
+            ".auto3dvideo/pipeline/run/scenes/scene-manifest.json",
+            Path::new("python.exe"),
+            Path::new("workspace-root"),
+            120,
+            &cancellation,
+        );
+        assert!(!request.cancellation.load(Ordering::SeqCst));
+        cancellation.store(true, Ordering::SeqCst);
+        assert!(
+            request.cancellation.load(Ordering::SeqCst),
+            "scene worker phải dùng chính token hủy của render, không phải token mới"
+        );
+        assert_eq!(request.spec.args[0], ".auto3dvideo/tools/local_coding_25d_worker.py");
+        assert_eq!(request.spec.args[6], "1280");
+        assert_eq!(request.spec.args[8], "720");
+    }
+
+    #[test]
+    fn scene_timeout_grows_with_the_frame_budget_but_stays_bounded() {
+        // A short lesson keeps the historical budget other modes rely on.
+        assert_eq!(scene_timeout_seconds(0), 180);
+        assert_eq!(scene_timeout_seconds(60), 195);
+        // The coding contract allows 5400 frames; measured local rendering of
+        // 960 frames already needs more than the old flat 180 seconds.
+        assert_eq!(scene_timeout_seconds(960), 420);
+        assert_eq!(scene_timeout_seconds(5400), 1530);
+        // A runaway frame count can never make the budget unbounded.
+        assert_eq!(scene_timeout_seconds(1_000_000), 1800);
+        // The frame count comes from the validated lesson, not from free text.
+        let lesson = coding_script();
+        assert_eq!(expected_frame_count(&lesson), 2 * 5 * LOCAL_FRAME_RATE as u64);
+        // A payload without usable segment durations falls back to the base
+        // budget instead of inventing a frame count from free text.
+        let without_timing = serde_json::json!({"segments": [{"segmentId": "a"}]});
+        assert_eq!(expected_frame_count(&without_timing), 0);
+        assert_eq!(scene_timeout_seconds(expected_frame_count(&without_timing)), 180);
+    }
+
+    #[tokio::test]
+    async fn cancelled_render_stops_before_any_worker_runs() {
+        let state = AppState {
+            database: Mutex::new(Connection::open_in_memory().expect("in-memory database")),
+            cancellation_tokens: Mutex::new(HashMap::new()),
+        };
+        let cancellation = Arc::new(AtomicBool::new(true));
+        let error = render_approved_local_video_inner(
+            "project-cancel".to_string(),
+            "approved/script.json".to_string(),
+            non_coding_script(),
+            None,
+            true,
+            &state,
+            "run-cancel".to_string(),
+            Arc::clone(&cancellation),
+        )
+        .await
+        .expect_err("render đã hủy phải dừng trước khi chạy worker");
+        assert!(error.contains("hủy"), "unexpected error: {error}");
     }
 }
 
@@ -3374,6 +4379,156 @@ mod native_e2e_tests {
 }
 
 #[cfg(test)]
+mod coding_smoke_tests {
+    use super::*;
+
+    fn required_env(name: &str) -> String {
+        std::env::var(name)
+            .unwrap_or_else(|_| panic!("Set {name} to run this opt-in native smoke test"))
+    }
+
+    /// Real end-to-end proof for the caption-only coding path: the supervisor runs
+    /// the embedded coding worker and FFmpeg/FFprobe against an isolated temporary
+    /// workspace, then the produced MP4 is re-probed so the test never trusts the
+    /// render's own success report.
+    #[tokio::test]
+    #[ignore = "opt-in: requires AUTO3DVIDEO_CODING_SMOKE_SCRIPT and real Python/FFmpeg/FFprobe tools"]
+    async fn coding_25d_caption_only_render_native_smoke() {
+        let source_script = PathBuf::from(required_env("AUTO3DVIDEO_CODING_SMOKE_SCRIPT"));
+        let python_path = required_env("AUTO3DVIDEO_TEST_PYTHON");
+        let ffmpeg_path = required_env("AUTO3DVIDEO_TEST_FFMPEG");
+        let ffprobe_path = required_env("AUTO3DVIDEO_TEST_FFPROBE");
+        let mut script: Value = serde_json::from_slice(
+            &fs::read(&source_script).unwrap_or_else(|error| {
+                panic!("cannot read AUTO3DVIDEO_CODING_SMOKE_SCRIPT: {error}")
+            }),
+        )
+        .expect("approved coding script JSON");
+        assert_eq!(
+            script.get("visualMode").and_then(Value::as_str),
+            Some(CODING_VISUAL_MODE),
+            "smoke script must be a coding-25d lesson"
+        );
+        // Export approval is explicit; the smoke operator approves the lesson.
+        script["approvalStatus"] = Value::String("approved".to_string());
+        let expected_audio_mode = script_audio_mode(&script).expect("audio mode");
+
+        let run_id = now_id("coding-smoke");
+        let root = std::env::temp_dir().join(format!("auto3dvideo-coding-smoke-{run_id}"));
+        let script_path = "approved/script.json";
+        fs::create_dir_all(root.join("approved")).expect("approved script directory");
+        fs::write(
+            root.join(script_path),
+            serde_json::to_vec_pretty(&script).expect("approved script JSON"),
+        )
+        .expect("approved script fixture");
+
+        let mut connection = Connection::open_in_memory().expect("in-memory database");
+        apply_migrations(&mut connection).expect("migrations");
+        let project_id = "project-coding-smoke";
+        let timestamp = now_string();
+        connection
+            .execute(
+                "INSERT INTO projects(project_id, name, locale, workspace_root, policy_profile, created_at, updated_at) VALUES (?1, 'Coding smoke', 'vi-VN', ?2, 'safe-local', ?3, ?3)",
+                params![project_id, root.to_string_lossy().to_string(), timestamp],
+            )
+            .expect("project seed");
+        for (tool_id, executable_ref) in [
+            ("python", python_path.as_str()),
+            ("ffmpeg", ffmpeg_path.as_str()),
+            ("ffprobe", ffprobe_path.as_str()),
+        ] {
+            connection
+                .execute(
+                    "INSERT INTO tool_configs(tool_id, executable_ref, required, created_at, updated_at) VALUES (?1, ?2, 1, ?3, ?3)",
+                    params![tool_id, executable_ref, timestamp],
+                )
+                .expect("tool seed");
+        }
+        let state = AppState {
+            database: Mutex::new(connection),
+            cancellation_tokens: Mutex::new(HashMap::new()),
+        };
+
+        let report = render_approved_local_video_with_state(
+            project_id.to_string(),
+            script_path.to_string(),
+            script,
+            None,
+            true,
+            &state,
+        )
+        .await
+        .unwrap_or_else(|error| panic!("coding caption-only render failed: {error}"));
+        assert_eq!(report.status, "succeeded_needs_review");
+        assert_eq!(report.visual_mode, CODING_VISUAL_MODE);
+        assert_eq!(report.audio_mode, expected_audio_mode.as_str());
+        assert!(report.duration_seconds.is_some_and(|value| value > 0.1));
+        let output_path = root.join(&report.video_path);
+        assert!(fs::metadata(&output_path).expect("MP4 exists").len() > 0);
+        if expected_audio_mode == ScriptAudioMode::CaptionOnly {
+            assert!(
+                report.audio_path.is_empty(),
+                "caption-only render must not claim an audio artifact"
+            );
+        }
+
+        // Re-probe the produced file instead of trusting the render report.
+        let probe = run_external_process(ExternalProcessRequest {
+            spec: ProcessSpec {
+                executable_id: "ffprobe".to_string(),
+                args: vec![
+                    "-v".to_string(),
+                    "error".to_string(),
+                    "-show_entries".to_string(),
+                    RENDER_PROBE_ENTRIES.to_string(),
+                    "-of".to_string(),
+                    "json".to_string(),
+                    report.video_path.clone(),
+                ],
+                working_directory: ".".to_string(),
+                environment: BTreeMap::new(),
+                timeout_seconds: 120,
+                expected_outputs: Vec::new(),
+            },
+            executable_path: PathBuf::from(&ffprobe_path),
+            absolute_working_directory: root.clone(),
+            output_root: root.clone(),
+            cancellation: Arc::new(AtomicBool::new(false)),
+        })
+        .await
+        .expect("ffprobe process");
+        assert!(probe.succeeded, "ffprobe must read the produced MP4");
+        let probe_value: Value =
+            serde_json::from_str(&probe.stdout).expect("ffprobe JSON");
+        let expectation = rendered_video_expectation(Some(CODING_VISUAL_MODE), false);
+        let duration = validate_rendered_video_probe(&probe_value, report.duration_seconds.expect("duration"), expectation)
+            .expect("produced MP4 must match the caption-only coding contract");
+        assert!((duration - report.duration_seconds.expect("duration")).abs() < 0.25);
+
+        let manifest_path = root.join(report.video_path.replace("master.mp4", "manifest.json"));
+        let manifest: Value = serde_json::from_slice(
+            &fs::read(&manifest_path).expect("manifest exists"),
+        )
+        .expect("manifest JSON");
+        assert_eq!(manifest["reviewState"], "needs_review");
+        assert_eq!(manifest["visualMode"], CODING_VISUAL_MODE);
+        assert_eq!(manifest["audioMode"], expected_audio_mode.as_str());
+        assert_eq!(manifest["externalAssetsUsed"], false);
+        assert_eq!(manifest["width"], 1280);
+        assert_eq!(manifest["height"], 720);
+
+        // Keep the produced MP4/manifest for inspection with AUTO3DVIDEO_CODING_SMOKE_KEEP=1.
+        drop(state);
+        if std::env::var("AUTO3DVIDEO_CODING_SMOKE_KEEP").as_deref() == Ok("1") {
+            println!("coding smoke evidence kept at {}", root.display());
+            return;
+        }
+        fs::remove_dir_all(&root).expect("smoke cleanup");
+    }
+}
+
+#[cfg(test)]
 mod concat_tests {
     use super::*;
 
@@ -3436,6 +4591,8 @@ mod lifecycle_tests {
             run_id: "run-lifecycle-test".to_string(),
             job_id: lifecycle.job_id.clone(),
             attempt_id: lifecycle.attempt_id.clone(),
+            visual_mode: "space-25d".to_string(),
+            audio_mode: "narrated".to_string(),
             script_path: "script.json".to_string(),
             scene_manifest_path: "scenes/scene-manifest.json".to_string(),
             audio_path: "narration.wav".to_string(),

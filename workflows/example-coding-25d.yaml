@@ -1,0 +1,52 @@
+schema_version: "1.0.0"
+workflow_id: "coding-25d"
+name: "Coding 2.5D — algorithms and system design"
+profile: "local-first"
+inputs:
+  request: "examples/coding-25d/two-sum-request.json"
+  alternate_request: "examples/coding-25d/cache-aside-request.json"
+  language: "vi-VN"
+  aspect_ratio: "16:9"
+  width: 1280
+  height: 720
+  frame_rate: 30
+  audio_mode: "caption-only"
+policy:
+  dry_run_default: true
+  max_retries_per_job: 0
+  max_frames: 5400
+  allow_network_for_scene: false
+  allow_external_publish: false
+  external_assets_allowed: false
+  paid_generation_requires_approval: true
+  human_review_required: true
+stages:
+  - id: draft
+    type: script.draft
+    executor: local_script_worker
+    outputs: [script.json]
+  - id: review
+    type: human.review
+    depends_on: [draft]
+    approval: required
+    outputs: [script-approved.json]
+  - id: scenes
+    type: scene.build
+    executor: local_coding_25d_worker
+    depends_on: [review]
+    outputs: [scene-manifest.json]
+  - id: compose
+    type: media.compose
+    executor: ffmpeg
+    depends_on: [scenes]
+    outputs: [master.mp4, captions.srt]
+  - id: probe
+    type: media.probe
+    executor: ffprobe
+    depends_on: [compose]
+    outputs: [manifest.json]
+  - id: delivery_review
+    type: human.review
+    depends_on: [probe]
+    approval: required
+    outputs: [review.json]

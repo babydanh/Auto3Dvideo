@@ -21,6 +21,23 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+# The Windows embedded Python distribution may omit the script directory from
+# sys.path. Load only the application-owned sibling, not cwd/PYTHONPATH modules.
+import importlib.util
+
+_coding_spec = importlib.util.spec_from_file_location(
+    "auto3dvideo_coding_lesson", Path(__file__).resolve().with_name("coding_lesson.py")
+)
+if _coding_spec is None or _coding_spec.loader is None:
+    raise RuntimeError("Application coding lesson helper is unavailable")
+_coding_module = importlib.util.module_from_spec(_coding_spec)
+_coding_spec.loader.exec_module(_coding_module)
+UnsupportedCodingPrompt = _coding_module.UnsupportedCodingPrompt
+build_local_script = _coding_module.build_local_script
+gateway_messages = _coding_module.gateway_messages
+is_coding_request = _coding_module.is_coding_request
+normalize_gateway_script = _coding_module.normalize_gateway_script
+
 try:
     from flow_cinematic_directives import (
         default_flow_directives,
@@ -35,7 +52,9 @@ except ModuleNotFoundError:
     # arbitrary paths or executing any user-provided module.
     import importlib.util
 
-    _directive_path = Path(__file__).resolve().parents[2] / "scripts" / "flow_cinematic_directives.py"
+    _directive_path = Path(__file__).resolve().with_name("flow_cinematic_directives.py")
+    if not _directive_path.is_file():
+        _directive_path = Path(__file__).resolve().parents[2] / "scripts" / "flow_cinematic_directives.py"
     _directive_spec = importlib.util.spec_from_file_location("auto3dvideo_flow_cinematic_directives", _directive_path)
     if _directive_spec is None or _directive_spec.loader is None:
         raise
@@ -872,10 +891,83 @@ def persist_script(request: dict[str, Any], values: dict[str, str]) -> tuple[dic
     return script, output_relative
 
 
+class CodingNoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ValueError("Coding gateway redirects are not allowed")
+
+
+def call_coding_gateway(request: dict[str, Any], base_url: str, model: str, key: str) -> dict:
+    body = json.dumps({"model": model, "messages": gateway_messages(request),
+                       "max_tokens": 12000, "stream": False}, ensure_ascii=False).encode("utf-8")
+    message = urllib.request.Request(
+        f"{base_url.rstrip('/')}/chat/completions", data=body, method="POST",
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json",
+                 "x-cmd-zdr": "1", "User-Agent": "Auto3Dvideo-coding-25d/1.0"},
+    )
+    with urllib.request.build_opener(CodingNoRedirect()).open(message, timeout=120) as response:
+        raw = response.read(512 * 1024 + 1)
+        if len(raw) > 512 * 1024:
+            raise ValueError("Coding gateway response exceeds size limit")
+        payload = parse_openai_response(raw)
+    choices = payload.get("choices")
+    if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+        raise ValueError("Coding gateway has no completion")
+    content = choices[0].get("message", {}).get("content")
+    if not isinstance(content, str):
+        raise ValueError("Coding gateway has no JSON text")
+    return normalize_gateway_script(request, json.loads(content))
+
+
+def persist_coding_script(request: dict, script: dict) -> str:
+    workspace = Path.cwd().resolve()
+    relative = safe_output_path(request["outputPath"])
+    target = (workspace / relative).resolve()
+    if not target.is_relative_to(workspace):
+        raise ValueError("Coding script output escapes workspace")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    # Exclusive create: an existing artifact, including one from a failed run,
+    # is evidence rather than permission to overwrite.
+    with target.open("x", encoding="utf-8") as stream:
+        json.dump(script, stream, ensure_ascii=False, indent=2, allow_nan=False)
+        stream.write("\n")
+    return relative.as_posix()
+
+
+def run_coding_request(request: dict) -> int:
+    network = False
+    try:
+        try:
+            script = build_local_script(request)
+        except UnsupportedCodingPrompt as local_error:
+            # Coding planning never searches/reads .env. Native environment
+            # handles are the only credential/config source for this branch.
+            key = os.environ.get("AUTO3DVIDEO_LLM_API_KEY", "").strip()
+            base_url = os.environ.get("AUTO3DVIDEO_LLM_BASE_URL", "").strip()
+            model = os.environ.get("AUTO3DVIDEO_LLM_DIRECTOR_MODEL", "").strip() or os.environ.get("AUTO3DVIDEO_LLM_MODEL", "").strip()
+            if not key or base_url not in ALLOWED_BASE_URLS or model not in ALLOWED_MODELS:
+                return emit({"status": "blocked", "networkCallsMade": False, "costStatus": "not_called",
+                             "message": f"{local_error} Gateway chưa được cấu hình qua môi trường native."})
+            network = True
+            script = call_coding_gateway(request, base_url, model, key)
+        relative = persist_coding_script(request, script)
+        return emit({"status": "succeeded", "scriptPath": relative, "networkCallsMade": network,
+                     "costStatus": "local_gateway_unreported" if network else "not_called",
+                     "model": "configured-gateway" if network else "local-catalog",
+                     "shotCount": len(script["segments"]),
+                     "message": "Đã tạo bài giảng và trace Coding 2.5D; cần review nội dung trước render."})
+    except (OSError, ValueError, TypeError, KeyError) as error:
+        # Never surface provider bodies, URLs with tokens, or HTTP error text.
+        message = f"Gateway Coding thất bại ({type(error).__name__}); không tạo fallback." if network else f"Coding input không hợp lệ: {str(error)[:240]}"
+        return emit({"status": "failed", "networkCallsMade": network,
+                     "costStatus": "local_gateway_unreported" if network else "not_called", "message": message})
+
+
 
 def run(request_path: Path) -> int:
     try:
         request = load_request(request_path)
+        if is_coding_request(request):
+            return run_coding_request(request)
         dotenv = find_dotenv()
         key = os.environ.get("AUTO3DVIDEO_LLM_API_KEY", "").strip() or read_dotenv_value(dotenv, "AUTO3DVIDEO_LLM_API_KEY")
         base_url = os.environ.get("AUTO3DVIDEO_LLM_BASE_URL", "").strip() or read_dotenv_value(dotenv, "AUTO3DVIDEO_LLM_BASE_URL")

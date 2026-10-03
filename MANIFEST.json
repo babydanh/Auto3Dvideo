@@ -32,6 +32,7 @@
     "docs/PROJECT_STATUS.md"
   ],
   "planningFiles": [
+    "plans/PLAN-028-CODING_25D_VIDEO.md",
     "plans/README.md",
     "plans/MASTER_IMPLEMENTATION_PLAN.md",
     "plans/PLAN-001-MVP.md",
@@ -65,6 +66,7 @@
     "plans/PLAN-027-DESKTOP-MODULARIZATION.md"
   ],
   "architectureFiles": [
+    "docs/architecture/CODING_25D_VIDEO.md",
     "docs/architecture/README.md",
     "docs/architecture/TECH_STACK.md",
     "docs/architecture/AUTOMATION_ARCHITECTURE.md",
@@ -136,6 +138,7 @@
     "docs/operations/GFLOW_CLI_RUNBOOK.md"
   ],
   "researchFiles": [
+    "research/RESEARCH_CODING_ANIMATION_REPOS_2026-10-02.md",
     "research/RESEARCH_SOURCES.md",
     "research/REPOSITORY_CASE_STUDIES.md",
     "research/AI_VIDEO_TOOLS_2026.md",
@@ -158,6 +161,7 @@
   ],
   "contractFiles": [
     "contracts/README.md",
+    "contracts/coding-lesson.schema.json",
     "contracts/project.schema.json",
     "contracts/episode.schema.json",
     "contracts/shot.schema.json",
@@ -228,6 +232,7 @@
     "contracts/flow-visual-evaluation.schema.json"
   ],
   "workflowExamples": [
+    "workflows/example-coding-25d.yaml",
     "workflows/README.md",
     "workflows/example-3d-product-explainer.yaml",
     "workflows/example-cinematic-3d-topic-to-frame-captioned.yaml",
@@ -242,6 +247,7 @@
     "workflows/WORKFLOW-026-MULTI-PLATFORM-PREVIEW-RADAR.md"
   ],
   "configurationFiles": [
+    "configs/prompt-templates.coding-25d.json",
     "configs/defaults.yaml",
     "configs/tool-paths.example.yaml",
     "configs/provider-profiles.example.yaml",
@@ -300,6 +306,10 @@
     "scripts/video_vision_evidence_worker.py",
     "scripts/test_video_vision_evidence.py",
     "scripts/mechanism_explainer_worker.py",
+    "scripts/coding_lesson.py",
+    "scripts/test_coding_lesson.py",
+    "scripts/local_coding_25d_worker.py",
+    "scripts/test_local_coding_25d_worker.py",
     "scripts/test_mechanism_explainer_worker.py",
     "scripts/browser_handoff_worker.py",
     "scripts/test_browser_handoff_worker.py",
@@ -398,6 +408,8 @@
     "scripts/test_public_preview_catalog_worker.mjs"
   ],
   "examples": [
+    "examples/coding-25d/two-sum-request.json",
+    "examples/coding-25d/cache-aside-request.json",
     "examples/minimal-3d-video/brief.md",
     "examples/minimal-3d-video/style-bible.yaml",
     "examples/minimal-3d-video/recipe.json",
@@ -502,6 +514,7 @@
     "desktop/src/features/shared/ui.tsx",
     "desktop/src/features/shared/workspaceActivityTypes.ts",
     "desktop/src/features/subtitles/useSubtitleStudioState.ts",
+    "desktop/src/features/topic/codingSceneReview.tsx",
     "desktop/src/features/topic/TopicWorkflowPanel.tsx",
     "desktop/src/features/topic/topicTypes.ts",
     "desktop/src/features/topic/useTopicWorkflowState.ts",

@@ -12,6 +12,7 @@ Read in this order for implementation:
 8. `COMFYUI_INTEGRATION.md` — local graph executor integration.
 9. `BLENDER_INTEGRATION.md` — controlled true-3D worker.
 10. `MEDIA_PROCESSING.md` — deterministic FFmpeg and editor handoff.
+13. `CODING_25D_VIDEO.md` — prompt-driven algorithm and system-design teaching videos (data-only scenes, caption-only export).
 11. `TIMELINE_AND_EDITOR_INTERCHANGE.md` — internal timeline and OTIO boundary.
 12. `DESKTOP_CONTROL_PLANE.md` — UI and Tauri command surface.
 

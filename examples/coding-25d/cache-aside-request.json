@@ -1,0 +1,19 @@
+{
+  "requestId": "coding-cache-aside-example",
+  "projectId": "coding-demo",
+  "briefId": "brief-coding-cache-aside",
+  "profileId": "coding-25d",
+  "promptTemplateId": "coding-25d-v1",
+  "topic": "System design cache-aside. Video 40 giây: cold miss, đọc database, fill cache, warm hit, write invalidation, stale data và cache stampede.",
+  "objective": "Phân biệt hit/miss, thứ tự request/response, race invalidation và giới hạn consistency.",
+  "audience": "Lập trình viên học system design",
+  "language": "vi-VN",
+  "durationSeconds": 40,
+  "requestedDurationSeconds": 40,
+  "aspectRatio": "16:9",
+  "width": 1280,
+  "height": 720,
+  "frameRate": 30,
+  "outputPath": "outputs/coding-25d/cache-aside/script.json",
+  "approvalStatus": "approved"
+}

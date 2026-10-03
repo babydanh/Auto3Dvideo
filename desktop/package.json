@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:3101": "vite --host 127.0.0.1 --port 3101 --strictPort",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri"

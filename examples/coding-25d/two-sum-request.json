@@ -1,0 +1,19 @@
+{
+  "requestId": "coding-two-sum-example",
+  "projectId": "coding-demo",
+  "briefId": "brief-coding-two-sum",
+  "profileId": "coding-25d",
+  "promptTemplateId": "coding-25d-v1",
+  "topic": "LeetCode Two Sum nums=[2,7,11,15], target=9. Video 32 giây, giải thích hash map và vì sao phải tra cứu trước khi chèn.",
+  "objective": "Dạy invariant, trace từng bước, chỉ số khác nhau, độ phức tạp trung bình và edge case số trùng.",
+  "audience": "Lập trình viên chuẩn bị phỏng vấn",
+  "language": "vi-VN",
+  "durationSeconds": 32,
+  "requestedDurationSeconds": 32,
+  "aspectRatio": "16:9",
+  "width": 1280,
+  "height": 720,
+  "frameRate": 30,
+  "outputPath": "outputs/coding-25d/two-sum/script.json",
+  "approvalStatus": "approved"
+}

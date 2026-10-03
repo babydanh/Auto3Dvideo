@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://auto3dvideo.local/contracts/coding-lesson.schema.json",
+  "title": "Auto3Dvideo data-only coding lesson",
+  "$ref": "#/$defs/lesson",
+  "$defs": {
+    "lesson": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "track",
+        "topicKey",
+        "learningObjectives",
+        "assumptions",
+        "complexity",
+        "checks",
+        "sources",
+        "planner",
+        "promptVersion"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "1.0.0"
+        },
+        "track": {
+          "enum": [
+            "algorithm",
+            "system-design"
+          ]
+        },
+        "topicKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "learningObjectives": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "assumptions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "complexity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 400
+        },
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "maxLength": 500,
+            "pattern": "^https://"
+          }
+        },
+        "planner": {
+          "enum": [
+            "local-catalog",
+            "configured-gateway"
+          ]
+        },
+        "promptVersion": {
+          "const": "coding-25d-v1"
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "values",
+        "activeIndices",
+        "variables",
+        "activeLine",
+        "activeNodes",
+        "activeEdges"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "values": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 16,
+          "items": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "minimum": -1000000000,
+                "maximum": 1000000000
+              },
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1
+              }
+            ]
+          }
+        },
+        "activeIndices": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 16,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 15
+          }
+        },
+        "variables": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "value"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 24
+              },
+              "value": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 180
+              }
+            }
+          }
+        },
+        "activeLine": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 13
+        },
+        "activeNodes": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 12,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        },
+        "activeEdges": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 24,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23
+          }
+        }
+      }
+    },
+    "teachingScene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "code",
+        "nodes",
+        "edges",
+        "states",
+        "note"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "array",
+            "architecture",
+            "code",
+            "summary"
+          ]
+        },
+        "code": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 14,
+          "items": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 120
+          }
+        },
+        "nodes": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 12,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "label",
+              "column",
+              "row"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 48
+              },
+              "column": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 3
+              },
+              "row": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2
+              }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 24,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to",
+              "label"
+            ],
+            "properties": {
+              "from": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              "label": {
+                "type": "string",
+                "minLength": 0,
+                "maxLength": 48
+              }
+            }
+          }
+        },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/state"
+          }
+        },
+        "note": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 400
+        }
+      }
+    }
+  }
+}

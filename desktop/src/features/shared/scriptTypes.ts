@@ -29,10 +29,74 @@ export type LocalScriptSegment = {
   sceneMode?: string;
   flowDirectives?: string[];
   beats?: LocalScriptBeat[];
+  teachingScene?: CodingTeachingScene;
   revisionId?: string;
   revisionPrompt?: string;
   revisionImagePath?: string | null;
   dirty?: boolean;
+};
+
+export type LocalVisualMode = "space-25d" | "licensed-footage-space" | "cinematic-3d" | "coding-25d";
+
+export type CodingAudioMode = "narrated" | "caption-only";
+
+export type CodingTrack = "algorithm" | "system-design";
+
+export type CodingPlanner = "local-catalog" | "configured-gateway";
+
+export type CodingLesson = {
+  schemaVersion: string;
+  track: CodingTrack;
+  topicKey: string;
+  learningObjectives: string[];
+  assumptions: string[];
+  complexity: string;
+  checks: string[];
+  sources: string[];
+  planner: CodingPlanner;
+  promptVersion: string;
+};
+
+export type CodingSceneKind = "array" | "architecture" | "code" | "summary";
+
+export type CodingSceneNode = {
+  id: string;
+  label: string;
+  column: number;
+  row: number;
+};
+
+export type CodingSceneEdge = {
+  from: string;
+  to: string;
+  label: string;
+};
+
+/** A snapshot value is a bounded integer or one printable character. */
+export type CodingSceneValue = number | string;
+
+export type CodingSceneVariable = {
+  name: string;
+  value: string;
+};
+
+export type CodingSceneState = {
+  label: string;
+  values: CodingSceneValue[];
+  activeIndices: number[];
+  variables: CodingSceneVariable[];
+  activeLine: number | null;
+  activeNodes: string[];
+  activeEdges: number[];
+};
+
+export type CodingTeachingScene = {
+  kind: CodingSceneKind;
+  code: string[];
+  nodes: CodingSceneNode[];
+  edges: CodingSceneEdge[];
+  states: CodingSceneState[];
+  note?: string;
 };
 
 export type LocalScriptDocument = {
@@ -50,7 +114,9 @@ export type LocalScriptDocument = {
   geminiAssetPaths?: string[];
   comfyuiAssetPaths?: string[];
   approvalStatus: "pending" | "approved" | "rejected";
-  visualMode?: "space-25d" | "licensed-footage-space" | "cinematic-3d";
+  visualMode?: LocalVisualMode;
+  audioMode?: CodingAudioMode;
+  codingLesson?: CodingLesson;
   footageManifestPath?: string;
   voiceSettings?: VoiceSettings;
   generatedAt?: string;
